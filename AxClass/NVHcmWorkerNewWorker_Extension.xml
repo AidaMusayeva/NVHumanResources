@@ -346,9 +346,9 @@ internal final class nvhcmworkernewworker_extension
 				<Source><![CDATA[
     public void init()
     {
-        next init();
-
         personnelnumber.text('');
+
+        next init();
 
         Args args = this.args();
 
