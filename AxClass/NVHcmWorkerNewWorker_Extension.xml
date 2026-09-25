@@ -283,15 +283,17 @@ internal final class nvhcmworkernewworker_extension
                                                 break;
 
                                             default:
-                warning(strFmt(
-                    "Unknown marital status received from API: '%1'",
-                    response.parmMaritalStatus()));
+                                                warning(strFmt(
+                                                      "Unknown marital status received from API: '%1'",
+                                                     response.parmMaritalStatus()));
                                                 break;
                                         }
                                     }
+                                
+                                     personDetails.update();
                                 }
 
-                                personDetails.update();
+                             
 
                               
                                 if (response.parmImage())
@@ -321,7 +323,7 @@ internal final class nvhcmworkernewworker_extension
 
             }
 
-        }
+        
         return success;
     }
 
