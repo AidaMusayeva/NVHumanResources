@@ -235,18 +235,17 @@ internal final class nvhcmworkernewworker_extension
                                 // =========================
 
                                 HcmPersonDetails personDetails;
-                                                                str maritalStatusValue = strLwr(strLRTrim(response.parmMaritalStatus()));
+                                str maritalStatusValue = strLwr(strLRTrim(response.parmMaritalStatus()));
 
                                 select firstOnly forUpdate personDetails
-                                                                    where personDetails.Person == newlyCreatedWorker.Person;
+                                    where personDetails.Person == person.RecId;
 
                                 if (!personDetails.RecId)
                                 {
-                                                                        personDetails.Person = newlyCreatedWorker.Person;
+                                    personDetails.clear();
+                                    personDetails.Person = person.RecId;
                                     personDetails.insert();
                                 }
-
-                                personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
 
                                 if (maritalStatusValue)
                                 {
@@ -257,6 +256,7 @@ internal final class nvhcmworkernewworker_extension
                                                 break;
 
                                             case "evli":
+                                            case "married":
                                                 personDetails.MaritalStatus = HcmPersonMaritalStatus::Married;
                                                 break;
 
@@ -293,6 +293,7 @@ internal final class nvhcmworkernewworker_extension
                                     }
                                 }
 
+                                personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
                                 personDetails.update();
 
                               
