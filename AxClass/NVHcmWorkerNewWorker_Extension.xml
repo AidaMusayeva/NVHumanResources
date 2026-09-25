@@ -239,14 +239,18 @@ internal final class nvhcmworkernewworker_extension
                                 select firstOnly forUpdate personDetails
                                   where personDetails.Person == person.RecId;
 
-                                if (personDetails.RecId)
+                                if (!personDetails.RecId)
                                 {
-                                    personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+                                    personDetails.Person = person.RecId;
+                                    personDetails.insert();
+                                }
 
-                                    if (response.parmMaritalStatus())
+                                personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+
+                                if (response.parmMaritalStatus())
+                                {
+                                    switch (strLwr(strLRTrim(response.parmMaritalStatus())))
                                     {
-                                        switch (strLwr(strLRTrim(response.parmMaritalStatus())))
-                                        {
                                             case "subay":
                                                 personDetails.MaritalStatus = HcmPersonMaritalStatus::Single;
                                                 break;
@@ -286,15 +290,9 @@ internal final class nvhcmworkernewworker_extension
                                                 break;
                                         }
                                     }
+                                }
 
-                                    personDetails.update();
-                                }
-                                else
-                                {
-                                    warning(strFmt(
-        "HcmPersonDetails record not found for Person RecId %1.",
-        person.RecId));
-                                }
+                                personDetails.update();
 
                               
                                 if (response.parmImage())
