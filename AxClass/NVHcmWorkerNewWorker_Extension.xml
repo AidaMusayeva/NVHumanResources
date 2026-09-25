@@ -346,6 +346,8 @@ internal final class nvhcmworkernewworker_extension
     {
         next init();
 
+        personnelnumber.clear();
+
         Args args = this.args();
 
         if (args && args.parmObject())
