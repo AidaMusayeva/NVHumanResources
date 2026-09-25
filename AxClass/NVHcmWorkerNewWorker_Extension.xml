@@ -220,7 +220,6 @@ internal final class nvhcmworkernewworker_extension
                                 if (response.parmGivenDate())
                                 {
                                     identification.IssuedDate = str2Date(response.parmGivenDate(),123);
-                                    Nijat Hidayetzade | Novum LLC
                                     
                                 }
                                 if (response.parmExpireDate())
@@ -346,11 +345,7 @@ internal final class nvhcmworkernewworker_extension
 				<Source><![CDATA[
     public void init()
     {
-        if (personnelnumber != null)
-        {
-            personnelnumber.text('');
-        }
-
+      
         next init();
 
         Args args = this.args();
