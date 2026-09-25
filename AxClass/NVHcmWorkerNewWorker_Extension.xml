@@ -28,13 +28,6 @@ internal final class nvhcmworkernewworker_extension
 				<Source><![CDATA[
     protected final boolean tryhire(companyinfo _companyinfo)
     {
-        hcmpersonnelnumberid requestedPersonnelNumber = personnelnumber.text();
-
-        if (requestedPersonnelNumber && HcmWorker::findByPersonnelNumber(requestedPersonnelNumber).RecId)
-        {
-            personnelnumber.text('');
-        }
-
         boolean success = next tryhire(_companyinfo);
 
         if (success)
