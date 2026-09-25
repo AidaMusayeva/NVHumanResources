@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTimesheetWorkerDailyEntryContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContractAttribute]
+public class NVTimesheetWorkerDailyEntryContract  
+{
+    TransDate transDate;
+    str value;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmTransDate</Name>
+				<Source><![CDATA[
+    [DataMember("transDate")]
+    public TransDate parmTransDate(TransDate _parm = transDate)
+    {
+        transDate = _parm;
+        return transDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmValue</Name>
+				<Source><![CDATA[
+    [DataMember("value")]
+    public str parmValue(str _parm = value)
+    {
+        value = _parm;
+        return value;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

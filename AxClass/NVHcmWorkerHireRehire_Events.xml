@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerHireRehire_Events</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVHcmWorkerHireRehire_Events
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>NVHcmWorkerHireReasonId_OnLookup</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(HcmWorkerNewWorker, NVHcmWorkerHireReasonId), FormControlEventType::Lookup)]
+    public static void NVHcmWorkerHireReasonId_OnLookup(FormControl sender, FormControlEventArgs e)
+    {
+        NVHcmWorkerHireReason::workerHireReasonLookup(sender, NoYes::Yes, NoYes::No);
+
+        FormControlCancelableSuperEventArgs cancelSuper = e as FormControlCancelableSuperEventArgs;
+        cancelSuper.CancelSuperCall();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>NVHcmWorkerRehireReasonId_OnLookup</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(HcmEmploymentDialog, NVHcmWorkerRehireReasonId), FormControlEventType::Lookup)]
+    public static void NVHcmWorkerRehireReasonId_OnLookup(FormControl sender, FormControlEventArgs e)
+    {
+        NVHcmWorkerHireReason::workerHireReasonLookup(sender, NoYes::No, NoYes::Yes);
+
+        FormControlCancelableSuperEventArgs cancelSuper = e as FormControlCancelableSuperEventArgs;
+        cancelSuper.CancelSuperCall();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

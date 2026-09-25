@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeavePlan_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(LeavePlan))]
+final class NVLeavePlan_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>nvAccrualFrequencyHasAccrualPeriods</Name>
+				<Source><![CDATA[
+    static boolean nvAccrualFrequencyHasAccrualPeriods(LeavePlanAccrualFrequency _accrualFrequency)
+    {
+        return
+            _accrualFrequency != LeavePlanAccrualFrequency::NoAccruals
+            && _accrualFrequency != LeavePlanAccrualFrequency::None;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>nvHasAccrualPeriods</Name>
+				<Source><![CDATA[
+    boolean nvHasAccrualPeriods()
+    {
+        return LeavePlan::nvAccrualFrequencyHasAccrualPeriods(this.AccrualFrequency);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

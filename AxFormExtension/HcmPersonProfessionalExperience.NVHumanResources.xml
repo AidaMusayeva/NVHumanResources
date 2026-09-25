@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmPersonProfessionalExperience.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlnpn4on1t1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVYearsOfServiceGroup</Name>
+				<Type>Group</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>YearsOfService</Name>
+						<EnableFormRef>No</EnableFormRef>
+						<Skip>Yes</Skip>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataMethod>NVHcmPersonProfessionalExperience_Extension.yearsOfService</DataMethod>
+						<DataSource>HcmPersonProfessionalExperience</DataSource>
+						<Label>@HCM:YearsOfService</Label>
+						<NoOfDecimals>1</NoOfDecimals>
+						<NoOfDecimalsMode>Fixed</NoOfDecimalsMode>
+						<ShowZero>Yes</ShowZero>
+						<Style>SimpleReadOnly</Style>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormCheckBoxControl">
+						<Name>NVCivilAviationExperience</Name>
+						<Type>CheckBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVCivilAviationExperience</DataField>
+						<DataSource>HcmPersonProfessionalExperience</DataSource>
+					</AxFormControl>
+				</Controls>
+			</FormControl>
+			<Parent>DetailsTabPage</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

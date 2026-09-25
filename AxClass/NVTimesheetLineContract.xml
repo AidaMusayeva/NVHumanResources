@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTimesheetLineContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContractAttribute]
+public class NVTimesheetLineContract  
+{
+    str workerId;
+    real overtimeHours;
+    real nightHours;
+    int status;
+    List dailyEntries;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmWorkerId</Name>
+				<Source><![CDATA[
+    [DataMember("workerId")]
+    public str parmWorkerId(str _workerId = workerId)
+    {
+        workerId = _workerId;
+        return workerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmOvertimeHours</Name>
+				<Source><![CDATA[
+    [DataMember("overtimeHours")]
+    public real parmOvertimeHours(real _val = overtimeHours)
+    {
+        overtimeHours = _val;
+        return overtimeHours;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmNightHours</Name>
+				<Source><![CDATA[
+    [DataMember("nightHours")]
+    public real parmNightHours(real _val = nightHours)
+    {
+        nightHours = _val;
+        return nightHours;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmStatus</Name>
+				<Source><![CDATA[
+    [DataMember("status")]
+    public int parmStatus(int _status = status)
+    {
+        status = _status;
+        return status;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDailyEntries</Name>
+				<Source><![CDATA[
+    [DataMember("dailyEntries"), AifCollectionTypeAttribute("_entries", Types::Class, classStr(NVTimesheetWorkerDailyEntryContract))]
+    public List parmDailyEntries(List _entries = dailyEntries)
+    {
+        dailyEntries = _entries;
+        return dailyEntries;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

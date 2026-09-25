@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVPayrollWorkerReplaceEarningCode</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVPayrollWorkerReplaceEarningCode extends common
+{
+
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>initValue</Name>
+				<Source><![CDATA[
+    public void initValue()
+    {
+        this.Formula = 1.00;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>checkExist</Name>
+				<Source><![CDATA[
+    public static boolean checkExist(RecId _recId)
+    {
+        boolean ret = true;
+
+        if (!NVPayrollWorkerReplaceEarningCode::exist(_recId))
+        {
+            ret = checkFailed(strFmt(NVPayrollWorkerReplaceEarningCode::txtNotExist(), tableId2name(tableNum(NVPayrollWorkerReplaceEarningCode))));
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>exist</Name>
+				<Source><![CDATA[
+    public static boolean exist(RecId _recId)
+    {
+        return (NVPayrollWorkerReplaceEarningCode::find(_recId).RecId != 0);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>existPosition</Name>
+				<Source><![CDATA[
+    public static boolean existPosition(HcmPositionRecId _positionRecId, date _checkDate = dateNull())
+    {
+        NVPayrollWorkerReplaceEarningCode payrollWorkerReplaceEarningCode;
+
+        select firstonly payrollWorkerReplaceEarningCode
+             where payrollWorkerReplaceEarningCode.ReplacedPosition == _positionRecId
+                && (_checkDate == dateNull() ||
+                    (payrollWorkerReplaceEarningCode.StartDate <= _checkDate && payrollWorkerReplaceEarningCode.EndDate >= _checkDate))
+            ;
+
+        boolean ret = (payrollWorkerReplaceEarningCode.RecId != 0);
+
+        if(ret)
+        {
+            HcmPosition position    = HcmPosition::find(payrollWorkerReplaceEarningCode.ReplacedPosition);
+            HcmWorker   worker      = HcmWorker::find(payrollWorkerReplaceEarningCode.Worker);
+
+            warning(strFmt("%1 position is assigned to %2 as temporary replacement.", position.PositionId, worker.PersonnelNumber));
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    public static NVPayrollWorkerReplaceEarningCode find(
+        RefRecId            _recId,
+        boolean             _forUpdate = false)
+    {
+        NVPayrollWorkerReplaceEarningCode payrollWorkerReplaceEarningCode;
+        ValidFromDate  validFrom = DateTimeUtil::getSystemDate(DateTimeUtil::getUserPreferredTimeZone());
+        ValidToDate    validTo   = dateMax();
+
+        payrollWorkerReplaceEarningCode.selectForUpdate(_forUpdate );
+       
+        select firstonly payrollWorkerReplaceEarningCode
+             where payrollWorkerReplaceEarningCode.RecId == _recId;
+
+        return payrollWorkerReplaceEarningCode;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>txtNotExist</Name>
+				<Source><![CDATA[
+    public static TxtNotExist txtNotExist()
+    {
+        return "@SYS329226";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateField</Name>
+				<Source><![CDATA[
+    public boolean validateField(FieldId _fieldIdToCheck)
+    {
+        boolean ret;
+
+        ret = super(_fieldIdToCheck);
+
+        if(_fieldIdToCheck == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedPosition))
+        {
+            HcmWorkerRecId workerRecId = HcmPositionWorkerAssignment::findByPosition(this.ReplacedPosition).Worker;
+            if(this.ReplacedWorker != 0 && workerRecId != this.ReplacedWorker)
+            {
+                HcmWorker   worker      = HcmWorker::find(this.ReplacedWorker);
+                HcmPosition position    = HcmPosition::find(this.ReplacedPosition);
+                
+                ret = checkFailed(strFmt("%1 not assigned to %2.", position.description(), worker.name()));
+            }
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>modifiedField</Name>
+				<Source><![CDATA[
+    public void modifiedField(FieldId _fieldId)
+    {
+        super(_fieldId);
+
+        if(_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacementMethod))
+        {
+            if(this.ReplacementMethod != NVPayrollReplacementMethod::Fixed)
+            {
+                this.Formula = 1;
+            }
+        }
+        else if(_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedWorker))
+        {
+            if(this.ReplacedPosition == 0)
+            {
+                this.ReplacedPosition   = HcmPosition::findByPosition(HcmWorker::find(this.ReplacedWorker).primaryPositionId()).RecId;
+            }
+        }
+        else if(_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedPosition))
+        {
+            this.ReplacedWorker         = HcmPositionWorkerAssignment::findByPosition(this.ReplacedPosition).Worker;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    public boolean validateWrite()
+    {
+        boolean ret;
+
+        ret = super();
+
+        if (this.ReplacedEarningCode == 0 &&
+            ((this.ReplacementMethod == NVPayrollReplacementMethod::Percentage && this.ReplacementMethodPerc == NVPayrollReplacementMethodPerc::ReplacedWorker)
+            || this.ReplacementMethod == NVPayrollReplacementMethod::Difference))
+        {
+            ret = checkFailed(strFmt("%1 must be filled in.", fieldPName(NVPayrollWorkerReplaceEarningCode, ReplacedEarningCode)));
+        }
+
+        if (ret && this.ReplacedWorker == 0 && this.ReplacementMethod != NVPayrollReplacementMethod::Fixed)
+        {
+            ret = checkFailed(strFmt("%1 must be %2, if worker is not selected.", fieldPName(NVPayrollWorkerReplaceEarningCode, ReplacementMethod), this.ReplacementMethod));
+        }
+
+        if(ret
+            && this.Position    != 0
+            && this.Worker      != 0
+            && !HcmPositionWorkerAssignment::existPositionWorker(this.Position, this.Worker))
+        {
+            HcmPosition position    = HcmPosition::find(this.Position);
+            HcmWorker   worker      = HcmWorker::find(this.Worker);
+
+            ret = checkFailed(strFmt("Position '%1' not assigned to worker '%2'", position.PositionId, worker.PersonnelNumber));
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<DeveloperDocumentation>@Payroll:ThePayrollworkerpositionearningcodeTableIsUsedToSpecifyTheEa</DeveloperDocumentation>
+	<Label>Worker replacement earnings</Label>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>Worker</TitleField1>
+	<TitleField2>EarningCode</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>FoundAndEmpty</CacheLookup>
+	<ModifiedBy>Yes</ModifiedBy>
+	<ReplacementKey>WorkerEarningCodeIdx</ReplacementKey>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Worker</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Formula</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>EarningCode</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>StartDate</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>EndDate</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Worker</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>EarningCode</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>StartDate</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>EndDate</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>ReplacedPosition</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Position</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Overview</Name>
+			<Label>@Payroll:Overview</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>EarningCode</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Formula</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Worker</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>PositionEarningCode</Name>
+			<Label>@Payroll:EarningCode</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>EarningCode</Name>
+			<AllowEdit>No</AllowEdit>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>PayrollEarningCodeRecId</ExtendedDataType>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>Formula</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>AmountCur</ExtendedDataType>
+			<HelpText>If replacement method is Fixed, then define amount as per day</HelpText>
+			<Label>@Payroll:Amount1</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Worker</Name>
+			<AllowEdit>No</AllowEdit>
+			<AssetClassification>System Metadata</AssetClassification>
+			<ExtendedDataType>HcmWorkerRecId</ExtendedDataType>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>ReplacedWorker</Name>
+			<AssetClassification>System Metadata</AssetClassification>
+			<ExtendedDataType>HcmWorkerRecId</ExtendedDataType>
+			<Label>Replaced worker</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>ReplacedEarningCode</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>PayrollEarningCodeRecId</ExtendedDataType>
+			<Label>Replaced earning code</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>ReplacementMethod</Name>
+			<EnumType>NVPayrollReplacementMethod</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>ReplacementMethodPerc</Name>
+			<EnumType>NVPayrollReplacementMethodPerc</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>StartDate</Name>
+			<ExtendedDataType>StartDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>EndDate</Name>
+			<ExtendedDataType>EndDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>ReplacedPosition</Name>
+			<ExtendedDataType>HcmPositionRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Replaced position</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Position</Name>
+			<ExtendedDataType>HcmPositionRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>EarningCodeIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>EarningCode</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+		<AxTableIndex>
+			<Name>WorkerEarningCodeIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<ValidTimeStateMode>Gap</ValidTimeStateMode>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>Worker</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>EarningCode</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>StartDate</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>EndDate</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>ReplacedPosition</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>Position</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>EarningCode</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>PayrollEarningCode</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>EarningCode</Name>
+					<Field>EarningCode</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmWorker</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Worker</Name>
+					<Field>Worker</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>PayrollEarningCodeDetail</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<RelatedTable>PayrollEarningCodeDetail</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>EarningCode</Name>
+					<Field>EarningCode</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmReplacedWorker</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>ReplacedWorker</Name>
+					<Field>ReplacedWorker</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>ReplacedPayrollEarningCode</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>PayrollEarningCode</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>ReplacedEarningCode</Name>
+					<Field>ReplacedEarningCode</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>ReplacedPayrollEarningCodeDetail</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<RelatedTable>PayrollEarningCodeDetail</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>ReplacedEarningCode</Name>
+					<Field>ReplacedEarningCode</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>ReplacedPosition</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>HcmPosition</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelatedTableRole>ReplacedPosition</RelatedTableRole>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>ReplacedPosition</Name>
+					<Field>ReplacedPosition</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmPosition</Name>
+			<RelatedTable>HcmPosition</RelatedTable>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Position</Name>
+					<Field>Position</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

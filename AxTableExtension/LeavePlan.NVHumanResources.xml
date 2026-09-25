@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTableExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>LeavePlan.NVHumanResources</Name>
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVHcmLeaveGroupId</Name>
+			<ExtendedDataType>NVHcmLeaveGroupId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>NVAdditionalLeaveChildrenAge</Name>
+			<ExtendedDataType>HrmReferenceYearsKnown</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Additional leave children age</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>NVAdditionalLeaveChildrenDisability</Name>
+			<ExtendedDataType>HrmReferenceYearsKnown</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Additional leave children disability age</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVPilotAdditionalLeaveType</Name>
+			<ExtendedDataType>LeaveTypeRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Pilot additional leave type</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<PropertyModifications />
+	<RelationExtensions />
+	<RelationModifications />
+	<Relations>
+		<AxTableRelation>
+			<Name>NVHcmLeaveGroup</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVHcmLeaveGroup</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVHcmLeaveGroupId</Name>
+					<Field>NVHcmLeaveGroupId</Field>
+					<RelatedField>Id</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>NVPilotAdditionalLeaveType</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>LeaveType</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVPilotAdditionalLeaveType</Name>
+					<Field>NVPilotAdditionalLeaveType</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+	</Relations>
+</AxTableExtension>

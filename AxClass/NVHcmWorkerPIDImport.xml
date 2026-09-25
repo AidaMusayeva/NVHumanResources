@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerPIDImport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+Using System.IO;
+Using OfficeOpenXml;
+Using OfficeOpenXml.ExcelPackage;
+Using OfficeOpenXml.ExcelRange;
+
+final class NVHcmWorkerPIDImport
+{
+    #Define.TotalColumns(2)
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        System.IO.Stream            stream;
+        ExcelSpreadsheetName        sheeet;
+        FileUploadBuild             fileUpload;
+        DialogGroup                 dlgUploadGroup;
+        FileUploadBuild             fileUploadBuild;
+        FormBuildControl            formBuildControl;
+        FormBuildButtonControl      FormBuildButtonControl;
+        FormBuildControl            FormBuildMenuButtonControl;
+        MenuItemBuild               MenuItemBuild;
+        Dialog                      dialog = new Dialog("Import worker FIN");
+ 
+        dlgUploadGroup          = dialog.addGroup("@SYS54759");
+        formBuildControl        = dialog.formBuildDesign().control(dlgUploadGroup.name());
+        fileUploadBuild         = formBuildControl.addControlEx(classstr(FileUpload), "Upload");
+        fileUploadBuild.style(FileUploadStyle::MinimalWithFilename);
+        fileUploadBuild.fileTypesAccepted(".xlsx");
+   
+        if (dialog.run() && dialog.closedOk())
+        {
+            FileUpload fileUploadControl     = dialog.formRun().control(dialog.formRun().controlId("Upload"));
+            FileUploadTemporaryStorageResult fileUploadResult = fileUploadControl.getFileUploadResult();
+ 
+            if (fileUploadResult != null && fileUploadResult.getUploadStatus())
+            {
+                stream = fileUploadResult.openResult();
+                using (ExcelPackage Package = new ExcelPackage(stream))
+                {
+                    int               rowCount, i,j;
+                    Package.Load(stream);
+                    ExcelWorksheet worksheet = package.get_Workbook().get_Worksheets().get_Item(1);
+                
+                    OfficeOpenXml.ExcelRange range       = worksheet.Cells;
+                    rowCount = worksheet.Dimension.End.Row -worksheet.Dimension.Start.Row + 1;
+                    
+                    ttsbegin;
+                    for (i = 2 ; i <= rowCount; i++)
+                    {
+                        container recordCon = conNull();
+                        for(j= 1; j <= #TotalColumns; j++)
+                        {
+                            recordCon += [range.get_Item(i, j).Value ? range.get_Item(i, j).Value.ToString() : ""];
+                        }
+
+                        if(recordCon != conNull())
+                        {
+                            boolean canInsert = true;
+                            HcmPersonnelNumberId    personnelNumberId   = conPeek(recordCon, 1);
+                            NVHcmWorkerPID          workerPID           = conPeek(recordCon, 2);
+
+                            HcmWorker worker = HcmWorker::findByPersonnelNumber(personnelNumberId);
+                            if(worker.RecId == 0)
+                                canInsert = checkFailed(strFmt("Worker not found against personnel number '%1'", conPeek(recordCon, 2)));
+
+                            if(canInsert)
+                            {
+                                worker.selectForUpdate(true);
+                                worker.NVHcmWorkerPID = workerPID;
+                                worker.doUpdate();
+                            }
+                        }
+                    }
+                    ttscommit;
+                }
+
+            }
+            else
+            {
+                error("Error occured during upload. Please try again.");
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NVHcmWorkerPIDImport import = new NVHcmWorkerPIDImport();
+        
+        import.run();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVNumberSeqApplicationModuleHRM</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public final class NVNumberSeqApplicationModuleHRM extends NumberSeqApplicationModule
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>loadModule</Name>
+				<Source><![CDATA[
+    protected void loadModule()
+    {
+        NumberSeqDatatype datatype = NumberSeqDatatype::construct();
+
+        datatype.parmDatatypeId(extendedtypenum(NVTrvWorkerExpenseRequestId));
+        datatype.parmReferenceLabel((literalstr("Travel expense request Id")));
+        datatype.parmReferenceHelp(literalstr("Unique key for travel expense request Id"));
+        datatype.parmWizardIsContinuous(true);
+        datatype.parmWizardIsManual(NoYes::No);
+        datatype.parmWizardIsChangeDownAllowed(NoYes::No);
+        datatype.parmWizardIsChangeUpAllowed(NoYes::No);
+        datatype.parmSortField(18);
+
+        this.create(datatype);
+
+        /*datatype.parmDatatypeId(extendedtypenum(HcmJobId));
+        datatype.parmReferenceLabel("@PersonnelCore:Job");
+        datatype.parmReferenceHelp("@PersonnelCore:Job");
+        datatype.parmWizardIsContinuous(true);
+        datatype.parmWizardIsManual(NoYes::No);
+        datatype.parmWizardIsChangeDownAllowed(NoYes::No);
+        datatype.parmWizardIsChangeUpAllowed(NoYes::No);
+        datatype.parmSortField(19);
+
+        this.create(datatype);*/
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>loadModuleEventHandler</Name>
+				<Source><![CDATA[
+    [SubscribesTo(classstr(NumberSeqModuleHRM), delegatestr(NumberSeqModuleHRM, loadedModule))]
+    public static void loadModuleEventHandler(NumberSeqModuleHRM _numberSeqModuleHRM, NumberSeqDatatype _datatype)
+    {
+        _datatype.parmDatatypeId(extendedtypenum(HcmJobId));
+        _datatype.parmReferenceLabel("@PersonnelCore:Job");
+        _datatype.parmReferenceHelp("@PersonnelCore:Job");
+        _datatype.parmWizardIsContinuous(true);
+        _datatype.parmWizardIsManual(NoYes::No);
+        _datatype.parmWizardIsChangeDownAllowed(NoYes::No);
+        _datatype.parmWizardIsChangeUpAllowed(NoYes::No);
+        _datatype.parmSortField(25);
+
+        _numberSeqModuleHRM.createNumberSequence(_datatype);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>numberSeqModule</Name>
+				<Source><![CDATA[
+    public NumberSeqModule numberSeqModule()
+    {
+        return NumberSeqModule::HRM;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildModulesMapSubscribes</Name>
+				<Source><![CDATA[
+    [SubscribesTo(classstr(NumberSeqGlobal), delegateStr(NumberSeqGlobal, buildModulesMapDelegate))]
+    static void buildModulesMapSubscribes(Map numberSeqModuleNameMap)
+    {
+        NumberSeqGlobal::addModuleToMap(classNum(NVNumberSeqApplicationModuleHRM), numberSeqModuleNameMap);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTrvWorkerExpenseRequestId</Name>
+				<Source><![CDATA[
+    public static NVTrvWorkerExpenseRequestId getTrvWorkerExpenseRequestId()
+    {
+        NumberSequenceReference numSeqRef = NumberSeqReference::findReference(extendedTypeNum(NVTrvWorkerExpenseRequestId));
+        NumberSeq num = NumberSeq::newGetNum(numSeqRef);
+
+        num.used();
+
+        return num.num();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getHcmJobNumSeqRef</Name>
+				<Source><![CDATA[
+    public static NumberSequenceReference getHcmJobNumSeqRef()
+    {
+        NumberSequenceReference numSeqRef = NumberSeqReference::findReference(extendedTypeNum(NVHcmJobNumSequence));
+        
+        return numSeqRef;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NumberSeqApplicationModule::loadAll();
+
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

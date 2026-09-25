@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkerLeaveRequestAttachmentContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVWorkerLeaveRequestAttachmentContract  
+{
+    str file;
+    str extension;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFile</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("File")]
+    public str parmFile(str _parm = file)
+    {
+        file = _parm;
+        return file;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmExtension</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Extension")]
+    public str parmExtension(str _parm = extension)
+    {
+        extension = _parm;
+        return extension;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

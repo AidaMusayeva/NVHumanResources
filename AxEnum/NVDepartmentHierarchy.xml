@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVDepartmentHierarchy</Name>
+	<Label>Deparment hierarchy</Label>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>None</Name>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Level1</Name>
+			<Label>Business unit</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Level2</Name>
+			<Label>Department</Label>
+			<Value>2</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Level3</Name>
+			<Label>Unit</Label>
+			<Value>3</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Level4</Name>
+			<Label>Group 1</Label>
+			<Value>4</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Level5</Name>
+			<Label>Group 2</Label>
+			<Value>5</Value>
+		</AxEnumValue>
+	</EnumValues>
+</AxEnum>

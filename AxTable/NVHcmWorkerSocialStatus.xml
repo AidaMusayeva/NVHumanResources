@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerSocialStatus</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerSocialStatus extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>taxExemtion</Name>
+				<Source><![CDATA[
+    display public Amount taxExemtion()
+    {
+        return NVHcmSocialStatus::find(this.SocialStatus).TaxExemption;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>additionLeaveType</Name>
+				<Source><![CDATA[
+    display public HcmLeaveTypeId additionLeaveType()
+    {
+        return NVHcmSocialStatus::find(this.SocialStatus).AdditionalLeaveType;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>numOfLeaves</Name>
+				<Source><![CDATA[
+    display public int numOfLeaves()
+    {
+        return NVHcmSocialStatus::find(this.SocialStatus).NumOfLeaves;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<FormRef>NVHcmWorkerSocialStatus</FormRef>
+	<Label>Worker social status &amp; tax exemption</Label>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>Worker</TitleField1>
+	<TitleField2>SocialStatus</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>EntireTable</CacheLookup>
+	<Modules>HumanResource</Modules>
+	<PrimaryIndex>WorkerSocialStatusIdx</PrimaryIndex>
+	<ReplacementKey>WorkerSocialStatusIdx</ReplacementKey>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Worker</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>SocialStatus</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Administration</Name>
+			<Label>@SYS9853</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>SysRowVersionNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>SysRowVersionNumber</ExtendedDataType>
+			<Null>Yes</Null>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Worker</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>HcmWorkerRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>SocialStatus</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>NVHcmSocialStatusId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>TaxExemptionReason</Name>
+			<ExtendedDataType>NVHcmTaxExemptionReasonId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Tax exemption reason</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>TaxExemptionAmount</Name>
+			<ExtendedDataType>Amount</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Tax exemption amount</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>WorkerSocialStatusIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>Worker</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>SocialStatus</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmWorker</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Cascade</OnDelete>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Worker</Name>
+					<Field>Worker</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>NVHcmTaxExemptionReason</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVHcmTaxExemptionReason</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>TaxExemptionReason</Name>
+					<Field>TaxExemptionReason</Field>
+					<RelatedField>Id</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>Idx</Index>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVHcmSocialStatus</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVHcmSocialStatus</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>SocialStatus</Name>
+					<Field>SocialStatus</Field>
+					<RelatedField>SocialStatus</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

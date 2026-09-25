@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxDataEntityViewExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>HcmWorkerEntity.NVHumanResources</Name>
+	<DataSources />
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVIsExpatriate</Name>
+			<DataField>NVIsExpatriate</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmWorkerPID</Name>
+			<DataField>NVHcmWorkerPID</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmWorkerEducationTypeId</Name>
+			<DataField>NVHcmWorkerEducationTypeId</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmLeaveGroupId</Name>
+			<DataField>NVHcmLeaveGroupId</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+	</Fields>
+	<Mappings />
+	<PropertyModifications />
+	<Relations />
+</AxDataEntityViewExtension>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmTotalExperienceTmp</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmTotalExperienceTmp extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>populateTotalExperience</Name>
+				<Source><![CDATA[
+    public static NVHcmTotalExperienceTmp populateTotalExperience(HcmWorker _worker)
+    {
+        NVHcmTotalExperienceTmp totalExperienceTmp;
+        HcmPersonProfessionalExperience pastExperience;
+        while select pastExperience
+            where pastExperience.Person == _worker.Person
+        {
+            totalExperienceTmp.EmployerName     = pastExperience.EmployerName;
+            totalExperienceTmp.StartDate        = pastExperience.StartDate;
+            totalExperienceTmp.EndDate          = pastExperience.EndDate;
+            totalExperienceTmp.YearsOfService   = pastExperience.yearsOfService();
+            totalExperienceTmp.insert();
+        }
+
+        HcmEmploymentView employmentView;
+        while select employmentView
+            where employmentView.Worker == _worker.RecId
+        {
+            HcmEmployment employment = HcmEmployment::find(employmentView.NVEmploymentRecId);
+            totalExperienceTmp.EmployerName     = CompanyInfo::findRecId(employment.LegalEntity).name();
+            totalExperienceTmp.StartDate        = DateTimeUtil::date(employment.ValidFrom);
+            totalExperienceTmp.EndDate          = DateTimeUtil::date(employment.ValidTo);
+            totalExperienceTmp.YearsOfService   = employment.yearsOfService();
+            totalExperienceTmp.insert();
+        }
+        return totalExperienceTmp;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTotalExperience</Name>
+				<Source><![CDATA[
+    public static real getTotalExperience(HcmWorker _worker)
+    {
+        real yearOfSerice = 0;
+        HcmPersonProfessionalExperience pastExperience;
+        while select pastExperience
+            where pastExperience.Person == _worker.Person
+        {
+            yearOfSerice += pastExperience.yearsOfService();
+        }
+
+        HcmEmploymentView employmentView;
+        while select employmentView
+            where employmentView.Worker == _worker.RecId
+        {
+            HcmEmployment employment = HcmEmployment::find(employmentView.NVEmploymentRecId);
+            yearOfSerice += employment.yearsOfService();
+        }
+        return yearOfSerice;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<Label>Total experience</Label>
+	<Modules>HumanResource</Modules>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<TableContents>DefaultData</TableContents>
+	<TableType>InMemory</TableType>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Administration</Name>
+			<Label>@SYS9853</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>EmployerName</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>Name</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Company name</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>StartDate</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>StartDate</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>EndDate</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>EndDate</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>YearsOfService</Name>
+			<Label>Years of service</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<Relations />
+	<StateMachines />
+</AxTable>

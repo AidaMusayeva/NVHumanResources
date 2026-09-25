@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeavePlanAdditionalTier</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Microsoft.Dynamics.HR.Platform.Instrumentation;
+
+public class NVLeavePlanAdditionalTier extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///    Finds the specified record in the <c>NVLeavePlanAdditionalTier</c> table.
+    /// </summary>
+    /// <param name="_recId">
+    ///    The record ID of the record to find.
+    /// </param>
+    /// <param name="_forUpdate">
+    ///    A Boolean value that specifies whether to read the record for update; optional.
+    /// </param>
+    /// <param name="_concurrencyModel">
+    ///    An enumeration value that indicates the concurrency setting to use on the table; optional.
+    /// </param>
+    /// <returns>
+    ///    A record in the <c>NVLeavePlanAdditionalTier</c> table; otherwise, an empty record.
+    /// </returns>
+    [Hookable(False)]
+    public static NVLeavePlanAdditionalTier find(
+        RefRecId _recId,
+        boolean _forUpdate = false,
+        ConcurrencyModel _concurrencyModel = ConcurrencyModel::Auto)
+    {
+        NVLeavePlanAdditionalTier leavePlanAdditionalTier;
+
+        leavePlanAdditionalTier.selectForUpdate(_forUpdate);
+        if (_forUpdate && _concurrencyModel != ConcurrencyModel::Auto)
+        {
+            leavePlanAdditionalTier.concurrencyModel(_concurrencyModel);
+        }
+
+        select firstonly leavePlanAdditionalTier
+            where leavePlanAdditionalTier.RecId == _recId;
+
+        return leavePlanAdditionalTier;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateField</Name>
+				<Source><![CDATA[
+    public boolean validateField(FieldId _fieldIdToCheck)
+    {
+        boolean ret = super(_fieldIdToCheck);
+    
+        switch (_fieldIdToCheck)
+        {
+            case fieldNum(LeavePlanTier, QualifyingAmount):
+                ret = ret && this.validateUniqueQualifyingAmount();
+                break;
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    public boolean validateWrite()
+    {
+        boolean ret = super();
+
+        ret = ret
+            && this.validateUniqueQualifyingAmount();
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateUniqueQualifyingAmount</Name>
+				<Source><![CDATA[
+    private boolean validateUniqueQualifyingAmount()
+    {
+        boolean isValid = true;
+
+        NVLeavePlanAdditionalTier planAdditionalTier;
+
+        select firstonly RecId from planAdditionalTier
+            where planAdditionalTier.RecId  != this.RecId
+            && planAdditionalTier.PlanTier  == this.PlanTier
+            && planAdditionalTier.Type      == this.Type
+            && planAdditionalTier.QualifyingAmount == this.QualifyingAmount;
+
+        if (planAdditionalTier)
+        {
+            switch (planAdditionalTier.Category)
+            {
+                case NVLeaveCategory::MOS:
+                    isValid = checkFailed(strFmt(
+                        "@Leave:LeavePlanTier_SameMonthsOfService",
+                        this.QualifyingAmount,
+                        LeavePlan::find(LeavePlanTier::find(this.PlanTier).Plan).Name));
+                    break;
+            }
+        }
+
+        return isValid;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insert</Name>
+				<Source><![CDATA[
+    public void insert()
+    {
+        if (!this.AdditionalTierNumber)
+        {
+            this.fillAdditionalTierNumber();
+        }
+
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getLastAdditionalTierNumber</Name>
+				<Source><![CDATA[
+    [Hookable(False)]
+    private static LineNum getLastAdditionalTierNumber(RecId _planTierRecId, LeaveTypeRecId _typeRecId)
+    {
+        NVLeavePlanAdditionalTier planAdditionalTier;
+
+        select maxof(AdditionalTierNumber) from planAdditionalTier
+            where planAdditionalTier.Type       == _typeRecId
+                && planAdditionalTier.PlanTier  == _planTierRecId;
+
+        return planAdditionalTier.AdditionalTierNumber;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>fillAdditionalTierNumber</Name>
+				<Source><![CDATA[
+    private void fillAdditionalTierNumber()
+    {
+        this.AdditionalTierNumber = NVLeavePlanAdditionalTier::getLastAdditionalTierNumber(this.PlanTier, this.Type) + 1;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<Label>Leave and absence plan additional tier</Label>
+	<TitleField1>Category</TitleField1>
+	<TitleField2>AdditionalTierNumber</TitleField2>
+	<CacheLookup>Found</CacheLookup>
+	<ReplacementKey>PlanTierNumberIdx</ReplacementKey>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>AccrualAmount</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>QualifyingAmount</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>AdditionalTierNumber</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>PlanTier</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Category</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>AccrualAmount</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeaveAmountUnsigned</ExtendedDataType>
+			<HelpText>@Leave:LeavePlanTier_AccrualAmount_HelpText</HelpText>
+			<Label>@Leave:AccrualAmount</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>QualifyingAmount</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeaveAmountUnsigned</ExtendedDataType>
+			<HelpText>@Leave:LeavePlanTier_QualifyingAmount_HelpText</HelpText>
+			<Label>@Leave:LeavePlanTier_QualifyingAmount</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Type</Name>
+			<AllowEdit>No</AllowEdit>
+			<AssetClassification>System metadata</AssetClassification>
+			<ExtendedDataType>LeaveTypeRecId</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Category</Name>
+			<Mandatory>Yes</Mandatory>
+			<EnumType>NVLeaveCategory</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>AdditionalTierNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeavePlanTierNumber</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>EmployeeGender</Name>
+			<Label>Employee gender</Label>
+			<EnumType>HcmPersonGender</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>PlanTier</Name>
+			<AllowEdit>No</AllowEdit>
+			<AssetClassification>System metadata</AssetClassification>
+			<ExtendedDataType>RefRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>EmployeeMaritalStatus</Name>
+			<AosAuthorization>Yes</AosAuthorization>
+			<AssetClassification>Customer Content</AssetClassification>
+			<EnumType>HcmPersonMaritalStatus</EnumType>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>PlanTierNumberIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>AdditionalTierNumber</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>PlanTier</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>Category</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>LeaveType</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>LeaveType</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Type</Name>
+					<Field>Type</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>LeavePlanTier</Name>
+			<Cardinality>OneMore</Cardinality>
+			<OnDelete>Cascade</OnDelete>
+			<RelatedTable>LeavePlanTier</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Composition</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>PlanTier</Name>
+					<Field>PlanTier</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

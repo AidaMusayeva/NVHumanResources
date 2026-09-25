@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPositionLookup_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(HcmPositionLookup))]
+internal final class NVHcmPositionLookup_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        next init();
+
+        this.design().viewEditMode(ViewEditMode::Edit);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateShowAll</Name>
+				<Source><![CDATA[
+    public void updateShowAll(boolean _showAll)
+    {
+        HcmPositionLookup locPositionLookup;
+        Query             lookupQuery;
+
+        if (_showAll)
+        {
+            // Show all positions: open + filled
+            locPositionLookup = HcmPositionLookup::newAllPositions();
+        }
+        else
+        {
+            // Show only open positions
+            locPositionLookup = HcmPositionLookup::newActivePositions();
+            locPositionLookup.parmIncludeOpen(true);
+            locPositionLookup.parmIncludeFilled(false);
+        }
+
+        lookupQuery = locPositionLookup.updateQuery();
+
+        hcmPosition_ds.query(lookupQuery);
+        hcmPosition_ds.executeQuery();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>NVShowAll_OnModified</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(HcmPositionLookup, NVShowAll), FormControlEventType::Modified)]
+    public static void NVShowAll_OnModified(FormControl sender, FormControlEventArgs e)
+    {
+        FormCheckBoxControl showAllControl = sender as FormCheckBoxControl;
+        FormRun             formRun        = sender.formRun();
+
+        formRun.updateShowAll(showAllControl.value());
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerTerminationEventHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVHcmWorkerTerminationEventHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>HcmWorkerTermination_workerTerminated</Name>
+				<Source><![CDATA[
+    [SubscribesTo(formStr(HcmWorkerTermination), delegateStr(HcmWorkerTermination, workerTerminated))]
+    public static void HcmWorkerTermination_workerTerminated(
+        FormRun _formRun,
+        HcmWorkerRecId _worker)
+    {
+        Notes terminationNotes = _formRun.design().controlName(formControlStr(HcmWorkerTermination, NVTerminationNote)).valueStr();
+        utcdatetime startDate;
+        utcdatetime EndDate;
+        utcdatetime now = DateTimeUtil::utcNow();
+        FormDateTimeControl terminationDate = _formRun.design().controlName(formControlStr(HcmWorkerTermination, TerminationDate));
+        utcdatetime lastWorkDateTime = terminationDate.dateTimeValue();
+        FormReferenceControl realTerminationReason = _formRun.design().controlName(formControlStr(HcmWorkerTermination, NVHcmRealTermReasonCode));
+        RecId realTerminationReasonRecId = realTerminationReason.value();
+        HcmEmployment employment;
+        HcmEmploymentDetail employmentDetail;
+        
+        startDate   = DateTimeUtil::minValue();
+        endDate     = DateTimeUtil::maxValue();
+        while select ValidTimeState(startDate, endDate) employmentDetail
+                order by ValidFrom desc
+            exists join employment
+                order by ValidTo desc
+            where employment.RecId      == employmentDetail.Employment
+                && employment.Worker    == _worker
+                && employmentDetail.BenefitEmploymentStatus == BenefitEmploymentStatus::Terminated
+        {
+            ttsbegin;
+            employmentDetail.selectForUpdate(true);
+            employmentDetail.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+            employmentDetail.NVTerminationNotes = terminationNotes;
+            employmentDetail.NVHcmRealTermReasonCode = realTerminationReasonRecId;
+            employmentDetail.update();
+            ttscommit;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>ReasonCode_OnModified</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(HcmWorkerTermination, NVHcmRealTermReasonCode), FormControlEventType::Modified)]
+    public static void ReasonCode_OnModified(FormControl sender, FormControlEventArgs e)
+    {
+        FormReferenceGroupControl reasonCodeCtrl = sender;
+        NVHcmRealTermReasonCodeRecId reasonCodeRecId = reasonCodeCtrl.value();
+        FormRun formRun = sender.formRun();
+        FormComboBoxControl reasonCodeClass = formRun.design().controlName(formControlStr(HcmWorkerTermination, NVReasonClassification));
+        reasonCodeClass.selection(NVHcmRealTermReasonCode::find(reasonCodeRecId).TerminationClassification);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

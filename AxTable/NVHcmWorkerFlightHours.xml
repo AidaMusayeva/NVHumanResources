@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerFlightHours</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerFlightHours extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    public boolean validateWrite()
+    {
+        boolean ret;
+    
+        ret = super();
+    
+        if(this.Hours < 0)
+            ret = checkFailed(strFmt("%1 must be greater than or equal to 0", fieldPName(NVHcmWorkerFlightHours, Hours)));
+        
+        if(this.FromDate > this.ToDate)
+            ret = checkFailed(strFmt("%1 must be greater or equal to %2.", fieldPName(NVHcmWorkerFlightHours, FromDate), fieldPName(NVHcmWorkerFlightHours, ToDate)));
+
+        ret = this.validateDateOverlap();
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDateOverlap</Name>
+				<Source><![CDATA[
+    private boolean validateDateOverlap()
+    {
+        NVHcmWorkerFlightHours otherFlightHours;
+
+        while select otherFlightHours
+            where otherFlightHours.RecId    != this.RecId
+                && otherFlightHours.Worker  == this.Worker
+                && (this.FromDate           <= otherFlightHours.ToDate && this.ToDate >= otherFlightHours.FromDate)
+        {            
+            return checkFailed("Dates are overlapping with other record. Period must be unique to proceed.");
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>totalDays</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethodAttribute(true)]
+    public display Days totalDays()
+    {
+        return this.ToDate - this.FromDate + 1;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>totalHours</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethodAttribute(true)]
+    public display Hours totalHours()
+    {
+        NVHcmWorkerFlightHours flightHours;
+
+        select sum(Hours) from flightHours
+            where flightHours.Worker    == this.Worker
+                && flightHours.ToDate   < this.FromDate;
+    
+        return flightHours.Hours + this.Hours;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>totalHoursCurrentYear</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethodAttribute(true)]
+    public display Hours totalHoursCurrentYear()
+    {
+        NVHcmWorkerFlightHours flightHours;
+        FromDate currentYearStartDate = mkDate(1, 1, Year(this.FromDate));
+
+        select sum(Hours) from flightHours
+            where flightHours.Worker        == this.Worker
+                && flightHours.ToDate       < this.FromDate
+                && flightHours.FromDate     >= currentYearStartDate;
+    
+        return flightHours.Hours  + this.Hours;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>totalHoursYear</Name>
+				<Source><![CDATA[
+    public static Hours totalHoursYear(HcmWorkerRecId _worker, date _yearDate = today())
+    {
+        NVHcmWorkerFlightHours flightHours;
+        FromDate currentYearStartDate = mkDate(1, 1, Year(_yearDate));
+
+        select sum(Hours) from flightHours
+            where flightHours.Worker        == _worker
+                && flightHours.FromDate     >= currentYearStartDate;
+    
+        return flightHours.Hours;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<FormRef>NVHcmWorkerFlightHours</FormRef>
+	<Label>Worker flight hours</Label>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>FromDate</TitleField1>
+	<TitleField2>Hours</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>EntireTable</CacheLookup>
+	<Modules>HumanResource</Modules>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<TableContents>DefaultData</TableContents>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Administration</Name>
+			<Label>@SYS9853</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>SysRowVersionNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>SysRowVersionNumber</ExtendedDataType>
+			<Null>Yes</Null>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>Hours</Name>
+			<ExtendedDataType>Hours</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Hours</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>FromDate</Name>
+			<ExtendedDataType>FromDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>ToDate</Name>
+			<ExtendedDataType>ToDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Worker</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>HcmWorkerRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmWorker</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Cascade</OnDelete>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Worker</Name>
+					<Field>Worker</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

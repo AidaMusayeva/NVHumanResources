@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTimesheetContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContractAttribute]
+public class NVTimesheetContract  
+{
+    str payCycle;
+    TransDate payPeriodStartDate;
+    TransDate payPeriodEndDate;
+    int status;
+    List lines;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmPayCycle</Name>
+				<Source><![CDATA[
+    [DataMember("payCycle")]
+    public str parmPayCycle(str _payCycle = payCycle)
+    {
+        payCycle = _payCycle;
+        return payCycle;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPayPeriodStartDate</Name>
+				<Source><![CDATA[
+    [DataMember("payPeriodStartDate")]
+    public TransDate parmPayPeriodStartDate(TransDate _date = payPeriodStartDate)
+    {
+        payPeriodStartDate = _date;
+        return payPeriodStartDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPayPeriodEndDate</Name>
+				<Source><![CDATA[
+    [DataMember("payPeriodEndDate")]
+    public TransDate parmPayPeriodEndDate(TransDate _date = payPeriodEndDate)
+    {
+        payPeriodEndDate = _date;
+        return payPeriodEndDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLines</Name>
+				<Source><![CDATA[
+    [DataMember("lines"), AifCollectionTypeAttribute("_lines", Types::Class, classStr(NVTimesheetLineContract))]
+    public List parmLines(List _lines = lines)
+    {
+        lines = _lines;
+        return lines;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

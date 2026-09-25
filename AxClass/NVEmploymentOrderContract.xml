@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVEmploymentOrderContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract class for Employment Order Report.
+/// This class serves as a parameter container passed between the controller and data provider.
+/// It holds the Order Header RecId to identify which order should be printed.
+/// </summary>
+/// <remarks>
+/// Usage: This contract is automatically instantiated by the SSRS framework when the report is invoked.
+/// The controller populates the orderHeaderRecId, and the data provider retrieves it to fetch order data.
+///
+/// Architecture:
+/// Controller → Contract (OrderHeaderRecId) → Data Provider → Report
+/// </remarks>
+[DataContractAttribute]
+public class NVEmploymentOrderContract
+{
+    /// <summary>
+    /// The RecId of the Order Header record to be printed.
+    /// This value is set by the controller based on the selected order in the UI.
+    /// </summary>
+    private RecId orderHeaderRecId;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmOrderHeaderRecId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets or sets the Order Header RecId.
+    /// This method follows the standard D365 parameter pattern (parm*).
+    /// </summary>
+    /// <param name="_orderHeaderRecId">
+    /// The RecId of the NVOrderHeader record.
+    /// If not provided, returns the current value.
+    /// </param>
+    /// <returns>
+    /// The Order Header RecId that will be used to fetch order data in the report.
+    /// </returns>
+    /// <example>
+    /// // Setting the value:
+    /// contract.parmOrderHeaderRecId(5637164826);
+    ///
+    /// // Getting the value:
+    /// RecId orderId = contract.parmOrderHeaderRecId();
+    /// </example>
+    [DataMemberAttribute("OrderHeaderRecId")] // ВАЖНО: двойные кавычки!
+    public RecId parmOrderHeaderRecId(RecId _orderHeaderRecId = orderHeaderRecId)
+    {
+        orderHeaderRecId = _orderHeaderRecId;
+        return orderHeaderRecId;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHumanResoureNumSeq</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVHumanResoureNumSeq extends NumberSeqApplicationModule
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>loadModule</Name>
+				<Source><![CDATA[
+    protected void loadModule()
+    {
+        NumberSeqDatatype datatype = NumberSeqDatatype::construct();
+
+        datatype.parmDatatypeId(extendedTypeNum(NVOvertimeId));
+        datatype.parmReferenceHelp(literalStr("Overtime Id"));
+        datatype.parmWizardIsContinuous(false);
+        datatype.parmWizardIsManual(NoYes::No);
+        datatype.parmWizardFetchAheadQty(10);
+        datatype.parmWizardIsChangeDownAllowed(NoYes::No);
+        datatype.parmWizardIsChangeUpAllowed(NoYes::No);
+        datatype.parmSortField(1);
+
+        datatype.addParameterType(NumberSeqParameterType::DataArea, true, false);
+        this.create(datatype);
+
+        datatype.parmDatatypeId(extendedtypenum(NVHcmJobNumSequence));
+        datatype.parmReferenceHelp(literalstr("Job Id NS"));
+        datatype.parmReferenceLabel(literalstr("Job Id NS"));
+        datatype.parmWizardIsContinuous(false);
+        datatype.parmWizardIsManual(NoYes::No);
+        datatype.parmWizardIsChangeDownAllowed(NoYes::No);
+        datatype.parmWizardIsChangeUpAllowed(NoYes::No);
+        datatype.parmWizardHighest(99999999);
+        datatype.parmWizardfetchAheadQty(10);
+        datatype.parmSortField(23);
+
+        this.create(datatype);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>numberSeqModule</Name>
+				<Source><![CDATA[
+    public NumberSeqModule numberSeqModule()
+    {
+        return NumberSeqModule::HRM;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildModulesMapSubsciber</Name>
+				<Source><![CDATA[
+    [SubscribesTo(classstr(NumberSeqGlobal),delegatestr(NumberSeqGlobal,buildModulesMapDelegate))]
+    static void buildModulesMapSubsciber(Map numberSeqModuleNamesMap)
+    {
+        NumberSeqGlobal::addModuleToMap(classnum(NVHumanResoureNumSeq), numberSeqModuleNamesMap);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

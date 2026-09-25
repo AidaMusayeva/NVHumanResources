@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>PayrollEarningCode.NVReplace</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyoiat13tk1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormRealControl">
+				<Name>PayrollEarningCode_NVReplacementPercent</Name>
+				<Type>Real</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVReplacementPercent</DataField>
+				<DataSource>PayrollEarningCode</DataSource>
+			</FormControl>
+			<Parent>RateCalculationRuleGroup</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

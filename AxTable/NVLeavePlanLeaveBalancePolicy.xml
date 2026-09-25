@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeavePlanLeaveBalancePolicy</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVLeavePlanLeaveBalancePolicy extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>createAllByPlan</Name>
+				<Source><![CDATA[
+    public static void createAllByPlan(LeavePlan _plan)
+    {
+        if(!_plan)
+            return;
+
+        DictEnum dictEnum = new DictEnum(enumNum(NVLeaveCategory));
+        int      valueCount = dictEnum.values();
+        
+        for (int incr = 0; incr < valueCount; incr++)
+        {
+            NVLeavePlanLeaveBalancePolicy balancePolicy;
+
+            balancePolicy.LeavePlan     = _plan.RecId;
+            balancePolicy.Category      = dictEnum.index2Value(incr);
+            balancePolicy.Priority      = incr;
+
+            balancePolicy.insert();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>findByPlan</Name>
+				<Source><![CDATA[
+    public static NVLeavePlanLeaveBalancePolicy findByPlan(LeavePlanRecId _plan, NVLeaveCategory _category)
+    {
+        NVLeavePlanLeaveBalancePolicy balancePolicy;
+
+        select firstonly balancePolicy
+            where balancePolicy.LeavePlan == _plan
+                && balancePolicy.Category == _category;
+
+        return balancePolicy;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<Label>Leave and absence plan balance policy</Label>
+	<TitleField1>LeavePlan</TitleField1>
+	<TitleField2>Category</TitleField2>
+	<CacheLookup>Found</CacheLookup>
+	<ReplacementKey>PlanCategoryIdx</ReplacementKey>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Category</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>LeavePlan</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Category</Name>
+			<EnumType>NVLeaveCategory</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>LeavePlan</Name>
+			<ExtendedDataType>LeavePlanRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>IncludeBalanceInBase</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Include balance in base</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>Priority</Name>
+			<ExtendedDataType>Priority</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Deduct priority</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>PlanCategoryIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>Category</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>LeavePlan</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>LeavePlan</Name>
+			<RelatedTable>LeavePlan</RelatedTable>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>LeavePlan</Name>
+					<Field>LeavePlan</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

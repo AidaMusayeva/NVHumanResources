@@ -1,0 +1,534 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxView xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeavePlanTypeBalanceView</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVLeavePlanTypeBalanceView extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>calculateAmount</Name>
+				<Source><![CDATA[
+    private static str calculateAmount(LeaveTransactionType _leaveTransactionType)
+    {
+        str sumAmount = SysComputedColumn::returnField(tableStr(NVLeavePlanTypeBalanceView), identifierStr(LeaveBankTransaction), fieldStr(LeaveBankTransaction, Amount));
+        str transactionType = SysComputedColumn::returnField(tableStr(NVLeavePlanTypeBalanceView), identifierStr(LeaveBankTransaction), fieldStr(LeaveBankTransaction, TransactionType));
+        str ifStatement = SysComputedColumn::if(SysComputedColumn::equalExpression(transactionType, SysComputedColumn::returnLiteral(_leaveTransactionType)),
+            sumAmount, SysComputedColumn::returnLiteral(0));
+
+        return SysComputedColumn::sum(ifStatement);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrual</Name>
+				<Source><![CDATA[
+    private static str accrual()
+    {
+        return SysComputedColumn::add(NVLeavePlanTypeBalanceView::calculateAmount(LeaveTransactionType::Accrual), NVLeavePlanTypeBalanceView::calculateAmount(LeaveTransactionType::Grant));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>carryForwardTransfer</Name>
+				<Source><![CDATA[
+    private static str carryForwardTransfer()
+    {
+        return NVLeavePlanTypeBalanceView::calculateAmount(LeaveTransactionType::CarryForwardTransfer);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>carryForwardAdjustment</Name>
+				<Source><![CDATA[
+    private static str carryForwardAdjustment()
+    {
+        return NVLeavePlanTypeBalanceView::calculateAmount(LeaveTransactionType::CarryForwardAdjustment);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>carryForward</Name>
+				<Source><![CDATA[
+    private static str carryForward()
+    {
+        str carryForwardTransfer = NVLeavePlanTypeBalanceView::carryForwardTransfer();
+        str carryForwardAdjustment = NVLeavePlanTypeBalanceView::carryForwardAdjustment();
+
+        return SysComputedColumn::add(carryForwardTransfer, carryForwardAdjustment);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>balance</Name>
+				<Source><![CDATA[
+    private static str balance()
+    {
+        return strFmt(
+            @"SELECT COALESCE(SUM(AMOUNT), 0)
+                FROM %1 AS PROCESSEDTRANS
+                WHERE PROCESSEDTRANS.WORKER = %2
+                AND PROCESSEDTRANS.LEAVEPLAN = %3
+                AND PROCESSEDTRANS.LEAVETYPE = %4
+                AND PROCESSEDTRANS.PARTITION = %5",
+            (new SysDictTable(tableNum(LeaveBankTransaction))).name(DbBackend::Sql),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Worker)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Plan)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveBankTransaction),
+                fieldStr(LeaveBankTransaction, LeaveType)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Partition)));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pendingBalance</Name>
+				<Source><![CDATA[
+    private static str pendingBalance()
+    {
+        return strFmt(
+            @"SELECT COALESCE(SUM(PENDINGREQUESTDETAIL.OFFSETAMOUNT), 0)
+                FROM %1 AS PENDINGREQUESTDETAIL
+                JOIN %2 AS PENDINGREQUEST
+                    ON PENDINGREQUESTDETAIL.REQUEST = PENDINGREQUEST.RECID
+                    AND PENDINGREQUESTDETAIL.PARTITION = PENDINGREQUEST.PARTITION
+                WHERE EXISTS (SELECT * FROM %3 AS PLANTIER
+                                    WHERE PENDINGREQUESTDETAIL.LEAVETYPE = PLANTIER.TYPE
+                                        AND PLANTIER.PLAN_ = %4)
+                    AND PENDINGREQUEST.WORKER = %5
+                    AND PENDINGREQUEST.PARTITION = %6
+                    AND PENDINGREQUESTDETAIL.LeaveType = %7" ,
+            (new SysDictTable(tableNum(LeaveRequestDetailOffsetView))).name(DbBackend::Sql),
+            (new SysDictTable(tableNum(LeaveRequestsPendingView))).name(DbBackend::Sql),
+            (new SysDictTable(tableNum(LeavePlanTier))).name(DbBackend::Sql),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Plan)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Worker)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Partition)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveBankTransaction),
+                fieldStr(LeaveBankTransaction, LeaveType)));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getBalanceCalculationEndDate</Name>
+				<Source><![CDATA[
+    public static LeaveDate getBalanceCalculationEndDate(HcmWorkerRecId _workerRecId, LeavePlanRecId _planRecId)
+    {
+        LeaveDate companyCurrentDate = HcmDateTimeUtil::companyCurrentDate();
+        LeaveDate balanceCalculationEndDate;
+
+        if (HRMParameters::find().LeaveBalanceCalculationOption == LeaveBalanceCalculationOption::AccrualPeriod)
+        {
+            LeaveEnrollment enrollment = LeaveEnrollment::findByWorkerPlan(_workerRecId, _planRecId);
+            LeavePlan plan = LeavePlan::find(_planRecId);
+
+            if (plan.nvHasAccrualPeriods())
+            {
+                NVLeaveAccrualPeriodCalculator accrualPeriodCalculator = NVLeaveAccrualPeriodCalculator::newForPlanEnrollment(
+                    plan,
+                    enrollment);
+
+                LeaveAccrualPeriod currentAccrualPeriod = accrualPeriodCalculator.getAccrualPeriod(companyCurrentDate);
+
+                balanceCalculationEndDate = currentAccrualPeriod.getEndDate();
+            }
+            else
+            {
+                balanceCalculationEndDate = companyCurrentDate;
+            }
+        }
+        else
+        {
+            balanceCalculationEndDate = companyCurrentDate;
+        }
+
+        return balanceCalculationEndDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>takenBalance</Name>
+				<Source><![CDATA[
+    private static str takenBalance()
+    {
+        str worker = SysComputedColumn::returnField(tableStr(NVLeavePlanTypeBalanceView), identifierStr(LeaveEnrollment), fieldStr(LeaveEnrollment, Worker));
+        str plan = SysComputedColumn::returnField(tableStr(NVLeavePlanTypeBalanceView), identifierStr(LeaveEnrollment), fieldStr(LeaveEnrollment, Plan));
+
+        LeaveDate currentDate = HcmDateTimeUtil::companyCurrentDate();
+        LeaveEnrollment enrollment = LeaveEnrollment::findByWorkerPlan(str2Int64(worker), str2Int64(plan));
+        LeavePlan leavePlan = LeavePlan::find(str2Int64(plan));
+
+        NVLeaveAccrualPeriodCalculator calculator = NVLeaveAccrualPeriodCalculator::newForPlanEnrollment(leavePlan, enrollment);
+        LeaveDate accrualDateBasis = calculator.getAccrualDateBasis();
+
+        LeaveDate planYearStartDate = NVLeaveAccrualPeriodUtil::getLastAccrualDateRelativeTo(
+            currentDate,
+            accrualDateBasis,
+            LeavePlanAccrualFrequency::Annually);
+
+        LeaveDate balanceCalculationEndDate = NVLeavePlanTypeBalanceView::getBalanceCalculationEndDate(str2Int64(worker), str2Int64(plan));
+        
+        return strFmt(
+            @"SELECT COALESCE(SUM(-AMOUNT), 0)
+                FROM %1 AS PROCESSEDTRANS
+                WHERE EXISTS (SELECT * FROM %2 AS PLANTIER
+                                WHERE PROCESSEDTRANS.LEAVETYPE = PLANTIER.TYPE
+                                    AND PLANTIER.PLAN_ = %3)
+                    AND PROCESSEDTRANS.WORKER = %4
+                    AND PROCESSEDTRANS.TRANSACTIONDATE >= %6
+                    AND (PROCESSEDTRANS.TRANSACTIONTYPE = %7
+                    OR PROCESSEDTRANS.TRANSACTIONTYPE = %8)
+                    AND PROCESSEDTRANS.LeaveType = %9
+                    AND PROCESSEDTRANS.PARTITION = %10",
+            (new SysDictTable(tableNum(LeaveBankTransaction))).name(DbBackend::Sql),
+            (new SysDictTable(tableNum(LeavePlanTier))).name(DbBackend::Sql),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Plan)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Worker)),
+            SysComputedColumn::returnLiteral(balanceCalculationEndDate),
+            SysComputedColumn::returnLiteral(planYearStartDate),
+            SysComputedColumn::returnLiteral(LeaveTransactionType::Request),
+            SysComputedColumn::returnLiteral(LeaveTransactionType::LeaveOfAbsenceRequest),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveBankTransaction),
+                fieldStr(LeaveBankTransaction, LeaveType)),
+            SysComputedColumn::returnField(
+                viewstr(NVLeavePlanTypeBalanceView),
+                identifierStr(LeaveEnrollment),
+                fieldStr(LeaveEnrollment, Partition)));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>totalBalance</Name>
+				<Source><![CDATA[
+    private static str totalBalance()
+    {
+        return SysComputedColumn::add(NVLeavePlanTypeBalanceView::balance(),
+            NVLeavePlanTypeBalanceView::takenBalance());
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>BalanceGroup</Name>
+			<Label>@Leave:Balances</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>WorkerName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>PlanName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>AccrualStartDate</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>LeaveAccrual</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>CarryForward</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Used</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Pending</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>TotalBalance</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>Worker</Name>
+			<DataField>Worker</DataField>
+			<DataSource>LeaveEnrollment</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>WorkerName</Name>
+			<Label>@SYS4705</Label>
+			<DataField>Name</DataField>
+			<DataSource>DirPerson</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>Plan</Name>
+			<DataField>Plan</DataField>
+			<DataSource>LeaveEnrollment</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>PlanName</Name>
+			<Label>@Leave:Leave_Plan_Title</Label>
+			<DataField>Name</DataField>
+			<DataSource>LeavePlan</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>AccrualStartDate</Name>
+			<Label>@Leave:LeaveAbsencePlanStartDate</Label>
+			<DataField>AccrualStartDate</DataField>
+			<DataSource>LeaveEnrollment</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>LeaveAccrual</Name>
+			<Label>@SYS35816</Label>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<ViewMethod>accrual</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>CarryForward</Name>
+			<Label>@Leave:CarryForwardBalance</Label>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<ViewMethod>carryForward</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>CarryForwardTransfer</Name>
+			<Label>@Leave:CarryForwardTransfer</Label>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<ViewMethod>carryForwardTransfer</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>CarryForwardAdjustment</Name>
+			<Label>@Leave:CarryForwardAdjustment</Label>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<ViewMethod>carryForwardAdjustment</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>Balance</Name>
+			<Label>@SYS6350</Label>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<ViewMethod>balance</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>Pending</Name>
+			<ViewMethod>pendingBalance</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>Used</Name>
+			<Label>@Leave:Taken</Label>
+			<ViewMethod>takenBalance</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldComputedReal">
+			<Name>TotalBalance</Name>
+			<Label>@SYS30545</Label>
+			<ViewMethod>totalBalance</ViewMethod>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>LeaveType</Name>
+			<DataField>LeaveType</DataField>
+			<DataSource>LeaveBankTransaction</DataSource>
+		</AxViewField>
+	</Fields>
+	<Indexes />
+	<Mappings />
+	<Relations />
+	<StateMachines />
+	<ViewMetadata>
+		<Name>Metadata</Name>
+		<SourceCode>
+			<Methods />
+		</SourceCode>
+		<DataSources>
+			<AxQuerySimpleRootDataSource>
+				<Name>LeaveEnrollment</Name>
+				<DynamicFields>Yes</DynamicFields>
+				<Table>LeaveEnrollment</Table>
+				<DataSources>
+					<AxQuerySimpleEmbeddedDataSource>
+						<Name>LeaveBankTransaction</Name>
+						<DynamicFields>Yes</DynamicFields>
+						<Table>LeaveBankTransaction</Table>
+						<DataSources>
+							<AxQuerySimpleEmbeddedDataSource>
+								<Name>LeavePlan</Name>
+								<DynamicFields>Yes</DynamicFields>
+								<Table>LeavePlan</Table>
+								<DataSources />
+								<DerivedDataSources />
+								<Fields />
+								<Ranges />
+								<Relations>
+									<AxQuerySimpleDataSourceRelation>
+										<Name>QueryDataSourceRelation1</Name>
+										<Field>LeavePlan</Field>
+										<JoinDataSource>LeaveBankTransaction</JoinDataSource>
+										<RelatedField>RecId</RelatedField>
+									</AxQuerySimpleDataSourceRelation>
+								</Relations>
+							</AxQuerySimpleEmbeddedDataSource>
+							<AxQuerySimpleEmbeddedDataSource>
+								<Name>HcmWorker</Name>
+								<DynamicFields>Yes</DynamicFields>
+								<Table>HcmWorker</Table>
+								<DataSources>
+									<AxQuerySimpleEmbeddedDataSource>
+										<Name>DirPerson</Name>
+										<DynamicFields>Yes</DynamicFields>
+										<Table>DirPerson</Table>
+										<DataSources />
+										<DerivedDataSources />
+										<Fields />
+										<Ranges />
+										<Relations>
+											<AxQuerySimpleDataSourceRelation>
+												<Name>QueryDataSourceRelation1</Name>
+												<Field>Person</Field>
+												<JoinDataSource>HcmWorker</JoinDataSource>
+												<RelatedField>RecId</RelatedField>
+											</AxQuerySimpleDataSourceRelation>
+										</Relations>
+									</AxQuerySimpleEmbeddedDataSource>
+								</DataSources>
+								<DerivedDataSources />
+								<Fields />
+								<Ranges />
+								<Relations>
+									<AxQuerySimpleDataSourceRelation>
+										<Name>QueryDataSourceRelation1</Name>
+										<Field>Worker</Field>
+										<JoinDataSource>LeaveBankTransaction</JoinDataSource>
+										<RelatedField>RecId</RelatedField>
+									</AxQuerySimpleDataSourceRelation>
+								</Relations>
+							</AxQuerySimpleEmbeddedDataSource>
+						</DataSources>
+						<DerivedDataSources />
+						<Fields />
+						<Ranges />
+						<Relations>
+							<AxQuerySimpleDataSourceRelation>
+								<Name>QueryDataSourceRelation1</Name>
+								<Field>Worker</Field>
+								<JoinDataSource>LeaveEnrollment</JoinDataSource>
+								<RelatedField>Worker</RelatedField>
+							</AxQuerySimpleDataSourceRelation>
+							<AxQuerySimpleDataSourceRelation>
+								<Name>QueryDataSourceRelation2</Name>
+								<Field>Plan</Field>
+								<JoinDataSource>LeaveEnrollment</JoinDataSource>
+								<RelatedField>LeavePlan</RelatedField>
+							</AxQuerySimpleDataSourceRelation>
+						</Relations>
+					</AxQuerySimpleEmbeddedDataSource>
+				</DataSources>
+				<DerivedDataSources />
+				<Fields />
+				<Ranges />
+				<GroupBy>
+					<AxQuerySimpleGroupByField>
+						<Name>Worker</Name>
+						<DataSource>LeaveEnrollment</DataSource>
+						<Field>Worker</Field>
+					</AxQuerySimpleGroupByField>
+					<AxQuerySimpleGroupByField>
+						<Name>Plan</Name>
+						<DataSource>LeaveEnrollment</DataSource>
+						<Field>Plan</Field>
+					</AxQuerySimpleGroupByField>
+					<AxQuerySimpleGroupByField>
+						<Name>Name</Name>
+						<DataSource>LeavePlan</DataSource>
+						<Field>Name</Field>
+					</AxQuerySimpleGroupByField>
+					<AxQuerySimpleGroupByField>
+						<Name>AccrualStartDate</Name>
+						<DataSource>LeaveEnrollment</DataSource>
+						<Field>AccrualStartDate</Field>
+					</AxQuerySimpleGroupByField>
+					<AxQuerySimpleGroupByField>
+						<Name>NameCopy1</Name>
+						<DataSource>DirPerson</DataSource>
+						<Field>Name</Field>
+					</AxQuerySimpleGroupByField>
+					<AxQuerySimpleGroupByField>
+						<Name>LeaveType</Name>
+						<DataSource>LeaveBankTransaction</DataSource>
+						<Field>LeaveType</Field>
+					</AxQuerySimpleGroupByField>
+				</GroupBy>
+				<Having />
+				<OrderBy />
+			</AxQuerySimpleRootDataSource>
+		</DataSources>
+	</ViewMetadata>
+</AxView>

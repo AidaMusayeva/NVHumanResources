@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVFillOrderTypeGroups</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Job class to populate NVOrderTypeGroup table with 12 predefined order groups.
+/// This is a one-time initialization job that should be run during system setup.
+/// </summary>
+/// <remarks>
+/// Includes duplicate prevention - the job will not insert data if 12+ groups already exist.
+/// Run this job BEFORE running NVFillOrderTypes as order types require group references.
+/// </remarks>
+class NVFillOrderTypeGroups
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Main entry point for the job.
+    /// Populates NVOrderTypeGroup with 12 order type groups (Recruitment, Termination, Leave, etc.).
+    /// </summary>
+    /// <param name="_args">Job arguments (not used)</param>
+    public static void main(Args _args)
+    {
+        NVOrderTypeGroup orderTypeGroup;
+        int insertCount = 0;
+        int existingCount = 0;
+
+        // Check if data already exists to prevent duplicates
+        existingCount = (select count(RecId) from NVOrderTypeGroup).RecId;
+        
+        if (existingCount >= 12)
+        {
+            warning(strFmt("Data already exists! Found %1 groups in table.", existingCount));
+            warning("Job execution cancelled to prevent duplicates.");
+            return;
+        }
+        
+        ttsbegin;
+        
+        // GROUP 1: Recruitment
+        if (!NVOrderTypeGroup::findByGroupId(1).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 1;
+            orderTypeGroup.GroupName = "Recruitment process related";
+            orderTypeGroup.Description = "İşə qəbul əmri";
+            orderTypeGroup.SortOrder = 1;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 2: Position and salary
+        if (!NVOrderTypeGroup::findByGroupId(2).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 2;
+            orderTypeGroup.GroupName = "Position and salary change";
+            orderTypeGroup.Description = "Vəzifə və əmək haqqı dəyişikliyi";
+            orderTypeGroup.SortOrder = 2;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 3: Termination
+        if (!NVOrderTypeGroup::findByGroupId(3).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 3;
+            orderTypeGroup.GroupName = "Termination process";
+            orderTypeGroup.Description = "Xitam əmrləri";
+            orderTypeGroup.SortOrder = 3;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 4: Average salary protection
+        if (!NVOrderTypeGroup::findByGroupId(4).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 4;
+            orderTypeGroup.GroupName = "Average salary protection";
+            orderTypeGroup.Description = "Orta əmək haqqının saxlanılması";
+            orderTypeGroup.SortOrder = 4;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 5: Maternity leave
+        if (!NVOrderTypeGroup::findByGroupId(5).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 5;
+            orderTypeGroup.GroupName = "Maternity leave";
+            orderTypeGroup.Description = "Analıq məzuniyyəti";
+            orderTypeGroup.SortOrder = 5;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 6: Business trip
+        if (!NVOrderTypeGroup::findByGroupId(6).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 6;
+            orderTypeGroup.GroupName = "Business trip";
+            orderTypeGroup.Description = "Ezam əmrləri";
+            orderTypeGroup.SortOrder = 6;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 7: Paid leave
+        if (!NVOrderTypeGroup::findByGroupId(7).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 7;
+            orderTypeGroup.GroupName = "Paid leave";
+            orderTypeGroup.Description = "Ödənişli məzuniyyət";
+            orderTypeGroup.SortOrder = 7;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 8: Social leave
+        if (!NVOrderTypeGroup::findByGroupId(8).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 8;
+            orderTypeGroup.GroupName = "Social leave";
+            orderTypeGroup.Description = "Sosial məzuniyyət";
+            orderTypeGroup.SortOrder = 8;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 9: Education leave
+        if (!NVOrderTypeGroup::findByGroupId(9).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 9;
+            orderTypeGroup.GroupName = "Education leave";
+            orderTypeGroup.Description = "Təhsil məzuniyyəti";
+            orderTypeGroup.SortOrder = 9;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 10: Unpaid leave
+        if (!NVOrderTypeGroup::findByGroupId(10).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 10;
+            orderTypeGroup.GroupName = "Unpaid leave";
+            orderTypeGroup.Description = "Ödənişsiz məzuniyyət";
+            orderTypeGroup.SortOrder = 10;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 11: Overtime
+        if (!NVOrderTypeGroup::findByGroupId(11).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 11;
+            orderTypeGroup.GroupName = "Overtime";
+            orderTypeGroup.Description = "Artıq vaxt işi";
+            orderTypeGroup.SortOrder = 11;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        // GROUP 12: Others
+        if (!NVOrderTypeGroup::findByGroupId(12).RecId)
+        {
+            orderTypeGroup.clear();
+            orderTypeGroup.GroupId = 12;
+            orderTypeGroup.GroupName = "Others";
+            orderTypeGroup.Description = "Digər əmrlər";
+            orderTypeGroup.SortOrder = 12;
+            orderTypeGroup.insert();
+            insertCount++;
+        }
+        
+        ttscommit;
+        
+        info(strFmt("Job completed successfully. Inserted %1 groups.", insertCount));
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

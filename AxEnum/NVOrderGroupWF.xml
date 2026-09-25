@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderGroupWF</Name>
+	<Label>Order Group</Label>
+	<UseEnumValue>No</UseEnumValue>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>Recruitment</Name>
+			<Label>Recruitment process related</Label>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>PositionSalary</Name>
+			<Label>Position and salary change</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Termination</Name>
+			<Label>Termination process</Label>
+			<Value>2</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>AvgSalaryProtection</Name>
+			<Label>Average salary protection</Label>
+			<Value>3</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>MaternityLeave</Name>
+			<Label>Maternity leave</Label>
+			<Value>4</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>BusinessTrip</Name>
+			<Label>Business trip</Label>
+			<Value>5</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>PaidLeave</Name>
+			<Label>Paid leave</Label>
+			<Value>6</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SocialLeave</Name>
+			<Label>Social leave</Label>
+			<Value>7</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>EducationLeave</Name>
+			<Label>Education leave</Label>
+			<Value>8</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>UnpaidLeave</Name>
+			<Label>Unpaid leave</Label>
+			<Value>9</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Overtime</Name>
+			<Label>Overtime</Label>
+			<Value>10</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Others</Name>
+			<Label>Others</Label>
+			<Value>11</Value>
+		</AxEnumValue>
+	</EnumValues>
+	<IsExtensible>true</IsExtensible>
+</AxEnum>

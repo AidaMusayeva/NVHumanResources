@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerV2_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(HcmWorkerV2))]
+internal final class NVHcmWorkerV2_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>applyFilterOptions</Name>
+				<Source><![CDATA[
+    public void applyFilterOptions()
+    {
+        next applyFilterOptions();
+
+        NVTerminationNotes.visible(workerFilterOptions.ShowExited);
+        NVHcmTerminationClassification.visible(workerFilterOptions.ShowExited);
+        NVHcmRealTermReasonCode.visible(workerFilterOptions.ShowExited);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    void init()
+    {
+        next init();
+
+        this.applyFilterOptions();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

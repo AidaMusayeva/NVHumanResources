@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorker_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(HcmWorker))]
+internal final class NVHcmWorker_Extension
+{
+    #Define.Child('Child')
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>lastDisability</Name>
+				<Source><![CDATA[
+    public display NVHcmDisabilityId lastDisability()
+    {
+        NVHcmWorkerDisability disability;
+
+        select firstOnly disability
+            order by disability.CreatedDateTime desc
+            where disability.Worker == this.RecId;
+
+        return disability.DisabilityId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>findNextWorkingDate</Name>
+				<Source><![CDATA[
+    public date findNextWorkingDate(date _lastLeaveDate)
+    {
+        date nextDate = _lastLeaveDate + 1;
+
+        utcdatetime curDateTime = DateTimeUtil::getSystemDateTime();
+        HcmEmployment employment;
+        select firstonly employment
+            order by employment.ModifiedDateTime desc
+            where employment.Worker         == this.RecId
+                && employment.LegalEntity   == CompanyInfo::find().RecId
+                && employment.ValidFrom     <= curDateTime
+                && employment.ValidTo       >= curDateTime;
+
+        if(!employment)
+        {
+            select firstonly employment
+            order by employment.ModifiedDateTime desc
+            where employment.Worker         == this.RecId
+                && employment.ValidFrom     <= curDateTime
+                && employment.ValidTo       >= curDateTime;
+        }
+        DataAreaId dataAreaId = CompanyInfo::findRecId(employment.LegalEntity).DataArea;
+        changecompany(dataAreaId)
+        {
+            WorkCalendarEmployment employmentCal;
+            select firstonly employmentCal
+                where employmentCal.Employment == employment.RecId
+                    && employmentCal.CalendarDataAreaId == dataAreaId;;
+
+            while(true)
+            {
+                WorkCalendarDate calendarDate;
+                select firstonly calendarDate
+                    where calendarDate.CalendarId == employmentCal.CalendarId
+                        && calendarDate.TransDate == nextDate;
+                if(calendarDate.WorkTimeControl == WorkTimeControl::Open)
+                    break;
+                    
+                nextDate = nextDate + 1;
+            }
+        }
+
+        return nextDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pastCivilExperience</Name>
+				<Source><![CDATA[
+    private real pastCivilExperience()
+    {
+        real civilAviationExperience = 0;
+        HcmPersonProfessionalExperience professionalExperience;
+
+        while select professionalExperience
+            where professionalExperience.NVCivilAviationExperience == NoYes::Yes
+                && professionalExperience.Person == this.Person
+        {
+            civilAviationExperience = civilAviationExperience + professionalExperience.yearsOfService();
+        }
+
+        return civilAviationExperience;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>civilAviationExperience</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethod(true)]
+    public display real civilAviationExperience()
+    {
+        return this.pastCivilExperience() + this.yearsOfServiceByParameter();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>hasCivilAviationExperience</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethod(true)]
+    public display NoYesId hasCivilAviationExperience()
+    {
+        return this.pastCivilExperience() == 0? NoYes::No: NoYes::Yes;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>totalPastExperience</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethod(true)]
+    public display real totalPastExperience()
+    {
+        real experience = 0;
+        HcmPersonProfessionalExperience professionalExperience;
+
+        while select professionalExperience
+            where professionalExperience.Person == this.Person
+        {
+            experience = experience + professionalExperience.yearsOfService();
+        }
+
+        return experience;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>hasHazardousPosition</Name>
+				<Source><![CDATA[
+    public boolean hasHazardousPosition()
+    {
+        boolean ret = false;
+        HcmPositionWorkerAssignment assignment;
+        HcmPositionDetail           positionDetail;
+
+        while select assignment
+            where assignment.Worker             == this.RecId
+        {
+            positionDetail = HcmPositionDetail::findByPosition(assignment.Position);
+            
+            if(positionDetail.NVHazardousWork  == NoYes::Yes)
+            {
+                ret = true;
+                break;
+            }
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>hasActiveDisabilityDate</Name>
+				<Source><![CDATA[
+    public boolean hasActiveDisabilityDate(TransDate _transDate)
+    {
+        NVHcmWorkerDisability disability;
+
+        select firstOnly disability
+            order by disability.CreatedDateTime desc
+            where disability.Worker     == this.RecId
+                && disability.EndDate   >= _transDate;
+
+        return disability.RecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>numberChildrenAge</Name>
+				<Source><![CDATA[
+    public int numberChildrenAge(real _ageLimit)
+    {
+        date    today           = DateTimeUtil::date(DateTimeUtil::utcNow());
+        int     childCount      = 0;
+
+        DirPartyRelationship relation;
+        while select relation
+            where relation.ParentParty == this.Person
+                && relation.RelationshipTypeId == #Child
+        {
+            HcmPersonPrivateDetails childPrivateDetails;
+            select firstonly childPrivateDetails
+                where childPrivateDetails.Person == relation.ChildParty;
+
+            date        childBirthDate  = childPrivateDetails.BirthDate;
+            int         childAge        = year(today) - year(childBirthDate);
+
+            if (dayOfMth(today) < dayOfMth(childBirthDate) && mthOfYr(today) <= mthOfYr(childBirthDate))
+                childAge--;
+
+            if(childAge <= _ageLimit)
+                childCount++;
+        }
+
+        return childCount;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>numberChildDisabilityAge</Name>
+				<Source><![CDATA[
+    public int numberChildDisabilityAge(real _ageLimit)
+    {
+        date    today               = DateTimeUtil::date(DateTimeUtil::utcNow());
+        int     disableChildCount   = 0;
+
+        DirPartyRelationship relation;
+        while select relation
+            where relation.ParentParty == this.Person
+                && relation.RelationshipTypeId == #Child
+        {
+            HcmPersonPrivateDetails childPrivateDetails;
+            select firstonly childPrivateDetails
+                where childPrivateDetails.Person == relation.ChildParty;
+
+            date        childBirthDate  = childPrivateDetails.BirthDate;
+            int         childAge        = year(today) - year(childBirthDate);
+
+            if (dayOfMth(today) < dayOfMth(childBirthDate) && mthOfYr(today) <= mthOfYr(childBirthDate))
+                childAge--;
+            
+            if(childAge <= _ageLimit
+                && childPrivateDetails.IsDisabled == NoYes::Yes
+                && childPrivateDetails.DisabledVerificationDate >= today)
+                disableChildCount++;
+        }
+
+        return disableChildCount;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

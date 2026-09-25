@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeavePlanTier_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(LeavePlanTier))]
+final class NVLeavePlanTier_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>modifiedField</Name>
+				<Source><![CDATA[
+    public void modifiedField(FieldId _fieldId)
+    {
+        next modifiedField(_fieldId);
+
+        if(_fieldId == fieldNum(LeavePlanTier, NVBaseLeaves)
+            || _fieldId == fieldNum(LeavePlanTier, NVAdditionalLeaves))
+        {
+            this.AccrualAmount = this.NVBaseLeaves + this.NVAdditionalLeaves;
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

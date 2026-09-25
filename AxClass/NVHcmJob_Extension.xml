@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmJob_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(HcmJob))]
+internal final class NVHcmJob_Extension
+{
+    public NumberSeqFormHandler numberSeqFormHandler;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>copyCustomJobIdToStandardJobId</Name>
+				<Source><![CDATA[
+    public void copyCustomJobIdToStandardJobId(FormDataSource _hcmJob_ds)
+    {
+        HcmJob locHcmJob = _hcmJob_ds.cursor();
+
+        if (locHcmJob.NVHcmJobNumSequence && !locHcmJob.JobId)
+        {
+            locHcmJob.JobId = locHcmJob.NVHcmJobNumSequence;
+
+            _hcmJob_ds.object(fieldNum(HcmJob, JobId)).setValue(locHcmJob.JobId);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>numberSeqFormHandler</Name>
+				<Source><![CDATA[
+    public NumberSeqFormHandler numberSeqFormHandler()
+    {
+        if(!numberSeqFormHandler)
+        {
+            numberSeqFormHandler = NumberSeqFormHandler::newForm(
+                NVNumberSeqApplicationModuleHRM::getHcmJobNumSeqRef().NumberSequenceId, this, this.HcmJob_ds, fieldNum(HcmJob, NVHcmJobNumSequence));
+        }
+        return numberSeqFormHandler;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>JobId_OnModified</Name>
+				<Source><![CDATA[
+    [FormDataFieldEventHandler(formDataFieldStr(HcmJob, HcmJob, NVHcmJobNumSequence), FormDataFieldEventType::Modified)]
+    public static void JobId_OnModified(FormDataObject sender, FormDataFieldEventArgs e)
+    {
+        FormDataSource fds = sender.datasource();
+        
+        fds.object(fieldNum(HcmJob, JobId)).setValue(sender.getValue());
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_onInserting</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(HcmJob), DataEventType::Inserting)]
+    public static void HcmJob_onInserting(Common sender, DataEventArgs e)
+    {
+        HcmJob job = sender as HcmJob;
+
+        if(job.JobId == '')
+        {
+            job.JobId = job.NVHcmJobNumSequence;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_Table_onValidatedWrite</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(HcmJob), DataEventType::ValidatingWrite)]
+    public static void HcmJob_Table_onValidatedWrite(Common sender, DataEventArgs e)
+    {
+        HcmJob job = sender as HcmJob;
+
+        if(job.JobId == '')
+        {
+            job.JobId = job.NVHcmJobNumSequence;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_onModifiedField</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(HcmJob), DataEventType::ModifiedField)]
+    public static void HcmJob_onModifiedField(Common sender, DataEventArgs e)
+    {
+        HcmJob job = sender as HcmJob;
+
+        if(job.JobId == '')
+        {
+            job.JobId = job.NVHcmJobNumSequence;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_OnCreating</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(HcmJob, HcmJob), FormDataSourceEventType::Creating)]
+    public void HcmJob_OnCreating(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        this.numberSeqFormHandler().formMethodDataSourceCreatePre();
+
+       
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_OnCreated</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(HcmJob, HcmJob), FormDataSourceEventType::Created)]
+    public void HcmJob_OnCreated(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        this.numberSeqFormHandler().formMethodDataSourceCreate();
+
+        this.copyCustomJobIdToStandardJobId(sender);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_OnDeleting</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(HcmJob, HcmJob), FormDataSourceEventType::Deleting)]
+    public void HcmJob_OnDeleting(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        this.numberSeqFormHandler().formMethodDataSourceDelete();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_OnWritten</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(HcmJob, HcmJob), FormDataSourceEventType::Written)]
+    public void HcmJob_OnWritten(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        this.numberSeqFormHandler().formMethodDataSourceWrite();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_OnValidatedWrite</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(HcmJob, HcmJob), FormDataSourceEventType::ValidatedWrite)]
+    public void HcmJob_OnValidatedWrite(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        boolean ret = this.numberSeqFormHandler().formMethodDataSourceValidateWrite();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmJob_OnClosing</Name>
+				<Source><![CDATA[
+    [FormEventHandler(formStr(HcmJob), FormEventType::Closing)]
+    public void HcmJob_OnClosing(xFormRun sender, FormEventArgs e)
+    {
+        numberSeqFormHandler.formMethodClose();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

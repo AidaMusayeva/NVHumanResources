@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPositionDetail_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(HcmPositionDetail))]
+internal final class NVHcmPositionDetail_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>modifiedField</Name>
+				<Source><![CDATA[
+    public void modifiedField(FieldId _fieldId)
+    {
+        next modifiedField(_fieldId);
+
+        OMDepartmentRecId parentDepartmentUnit = 0;
+
+        switch(_fieldId)
+        {
+            case fieldNum(HcmPositionDetail, NVDepartGroup2):
+                if(this.NVDepartGroup2 == 0)
+                    break;
+
+                if(this.NVDepartGroup1 != 0)
+                    break;
+
+                parentDepartmentUnit = NVOMOperatingUnit_Events::getParentDepartment(this.NVDepartGroup2);
+                if(parentDepartmentUnit != 0)
+                {
+                    this.NVDepartGroup1 = parentDepartmentUnit;
+                }
+
+            case fieldNum(HcmPositionDetail, NVDepartGroup1):
+                if(this.NVDepartGroup1 == 0)
+                    break;
+
+                if(this.NVDepartDivision != 0)
+                    break;
+
+                parentDepartmentUnit = NVOMOperatingUnit_Events::getParentDepartment(this.NVDepartGroup1);
+                if(parentDepartmentUnit != 0)
+                {
+                    this.NVDepartDivision = parentDepartmentUnit;
+                }
+
+            case fieldNum(HcmPositionDetail, NVDepartDivision):
+                if(this.NVDepartDivision == 0)
+                    break;
+
+                if(this.NVDepartDepartment != 0)
+                    break;
+
+                parentDepartmentUnit = NVOMOperatingUnit_Events::getParentDepartment(this.NVDepartDivision);
+                if(parentDepartmentUnit != 0)
+                {
+                    this.NVDepartDepartment = parentDepartmentUnit;
+                }
+
+            case fieldNum(HcmPositionDetail, NVDepartDepartment):
+                this.Department = this.NVDepartDepartment;
+                if(this.NVDepartDepartment == 0)
+                    break;
+
+                if(this.NVDepartBusinessUnit != 0)
+                    break;
+
+                parentDepartmentUnit = NVOMOperatingUnit_Events::getParentDepartment(this.NVDepartDepartment);
+                if(parentDepartmentUnit != 0)
+                {
+                    this.NVDepartBusinessUnit = parentDepartmentUnit;
+                }
+
+            case fieldNum(HcmPositionDetail, NVDepartBusinessUnit):
+                if(this.NVDepartBusinessUnit == 0)
+                    break;
+
+                if(this.NVDepartLegalEntity != 0)
+                    break;
+
+                parentDepartmentUnit = NVOMOperatingUnit_Events::getParentDepartment(this.NVDepartBusinessUnit);
+                if(parentDepartmentUnit != 0)
+                {
+                    this.NVDepartLegalEntity = parentDepartmentUnit;
+                }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>internalGradeMinAmount</Name>
+				<Source><![CDATA[
+    public display Amount internalGradeMinAmount()
+    {
+        NVHcmCompensationLevelPayroll levelPayroll = NVHcmCompensationLevelPayroll::findCurrent(this.NVInternalGrade);
+
+        if(levelPayroll)
+            return levelPayroll.MinSalary * this.getInternalGradeCoefficient();
+        
+        return 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>internalGradeMedAmount</Name>
+				<Source><![CDATA[
+    public display Amount internalGradeMedAmount()
+    {
+        NVHcmCompensationLevelPayroll levelPayroll = NVHcmCompensationLevelPayroll::findCurrent(this.NVInternalGrade);
+
+        if(levelPayroll)
+            return levelPayroll.MedSalary * this.getInternalGradeCoefficient();
+        
+        return 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>internalGradeMaxAmount</Name>
+				<Source><![CDATA[
+    public display Amount internalGradeMaxAmount()
+    {
+        NVHcmCompensationLevelPayroll levelPayroll = NVHcmCompensationLevelPayroll::findCurrent(this.NVInternalGrade);
+
+        if(levelPayroll)
+            return levelPayroll.MaxSalary * this.getInternalGradeCoefficient();
+        
+        return 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getInternalGradeCoefficient</Name>
+				<Source><![CDATA[
+    private Amount getInternalGradeCoefficient()
+    {
+        NVOMDepartmentGradeCoefficient gradeCoefficient;
+
+        select gradeCoefficient
+            where gradeCoefficient.InternalGrade == this.NVInternalGrade 
+            && gradeCoefficient.Department == this.NVDepartDepartment;
+
+        return gradeCoefficient.Coefficient;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

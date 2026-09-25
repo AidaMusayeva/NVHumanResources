@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPositionStructureImport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+Using System.IO;
+Using OfficeOpenXml;
+Using OfficeOpenXml.ExcelPackage;
+Using OfficeOpenXml.ExcelRange;
+
+final class NVHcmPositionStructureImport
+{
+    #Define.TotalColumns(7)
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        System.IO.Stream            stream;
+        ExcelSpreadsheetName        sheeet;
+        FileUploadBuild             fileUpload;
+        DialogGroup                 dlgUploadGroup;
+        FileUploadBuild             fileUploadBuild;
+        FormBuildControl            formBuildControl;
+        FormBuildButtonControl      FormBuildButtonControl;
+        FormBuildControl            FormBuildMenuButtonControl;
+        MenuItemBuild               MenuItemBuild;
+        Dialog                      dialog = new Dialog("Update position organization hierarchy");
+ 
+        dlgUploadGroup          = dialog.addGroup("@SYS54759");
+        formBuildControl        = dialog.formBuildDesign().control(dlgUploadGroup.name());
+        fileUploadBuild         = formBuildControl.addControlEx(classstr(FileUpload), "Upload");
+        fileUploadBuild.style(FileUploadStyle::MinimalWithFilename);
+        fileUploadBuild.fileTypesAccepted(".xlsx");
+   
+        if (dialog.run() && dialog.closedOk())
+        {
+            FileUpload fileUploadControl     = dialog.formRun().control(dialog.formRun().controlId("Upload"));
+            FileUploadTemporaryStorageResult fileUploadResult = fileUploadControl.getFileUploadResult();
+ 
+            if (fileUploadResult != null && fileUploadResult.getUploadStatus())
+            {
+                stream = fileUploadResult.openResult();
+                using (ExcelPackage Package = new ExcelPackage(stream))
+                {
+                    int               rowCount, i,j;
+                    Package.Load(stream);
+                    ExcelWorksheet worksheet = package.get_Workbook().get_Worksheets().get_Item(1);
+                
+                    OfficeOpenXml.ExcelRange range       = worksheet.Cells;
+                    rowCount = worksheet.Dimension.End.Row -worksheet.Dimension.Start.Row + 1;
+                    
+                    ttsbegin;
+                    boolean updateSet = true;
+                    Set recordSet = new Set(Types::String);
+                    for (i = 2 ; i <= rowCount; i++)
+                    {
+                        container recordCon = conNull();
+                        for(j= 1; j <= #TotalColumns; j++)
+                        {
+                            recordCon += [range.get_Item(i, j).Value ? range.get_Item(i, j).Value.ToString() : ""];
+                        }
+
+                        if(recordCon != conNull())
+                        {
+                            setPrefix(strFmt("Line # %1", i));
+                            
+                            boolean canUpdateRec = true;
+                            str positionId = conPeek(recordCon, 1);
+                            HcmPosition position = HcmPosition::findByPosition(positionId);
+                            if(position.RecId == 0)
+                                canUpdateRec = checkFailed(strFmt("Position with Id '%1' not found.", positionId));
+
+                            str lev1 = conPeek(recordCon, 2);
+                            str lev2 = conPeek(recordCon, 3);
+                            str lev3 = conPeek(recordCon, 4);
+                            str lev4 = conPeek(recordCon, 5);
+                            str lev5 = conPeek(recordCon, 6);
+
+                            OMOperatingUnit level1 = this.getDepartment(lev1, NVDepartmentHierarchy::Level1);
+                            OMOperatingUnit level2 = this.getDepartment(lev2, NVDepartmentHierarchy::Level2);
+                            OMOperatingUnit level3 = this.getDepartment(lev3, NVDepartmentHierarchy::Level3);
+                            OMOperatingUnit level4 = this.getDepartment(lev4, NVDepartmentHierarchy::Level4);
+                            OMOperatingUnit level5 = this.getDepartment(lev5, NVDepartmentHierarchy::Level5);
+                            
+                            if(level1.RecId == 0 && lev1 != "")
+                                canUpdateRec = false;
+
+                            if(level2.RecId == 0 && lev2 != "")
+                                canUpdateRec = false;
+
+                            if(level3.RecId == 0 && lev3 != "")
+                                canUpdateRec = false;
+
+                            if(level4.RecId == 0 && lev4 != "")
+                                canUpdateRec = false;
+
+                            if(level5.RecId == 0 && lev5 != "")
+                                canUpdateRec = false;
+
+                            if(canUpdateRec)
+                            {
+                                str recStr = strFmt("%1", positionId);
+                                if(recordSet.in(recStr))
+                                    canUpdateRec = checkFailed("Duplicate record found.");
+
+                                if(canUpdateRec)
+                                {
+                                    HcmPositionDetail positionDetail = HcmPositionDetail::findByPosition(position.RecId);
+
+                                    positionDetail.selectForUpdate(true);
+                                    positionDetail.validTimeStateUpdateMode(ValidTimeStateUpdate::CreateNewTimePeriod);
+    
+                                    positionDetail.NVDepartBusinessUnit     = level1.RecId;
+                                    positionDetail.NVDepartDepartment       = level2.RecId;
+                                    positionDetail.NVDepartDivision         = level3.RecId;
+                                    positionDetail.NVDepartGroup1           = level4.RecId;
+                                    positionDetail.NVDepartGroup2           = level5.RecId;
+
+                                    positionDetail.update();
+                                    recordSet.add(recStr);
+                                }
+                            }
+
+                            updateSet = updateSet && canUpdateRec;
+                        }
+                    }
+
+                    if(updateSet)
+                    {
+                        info("Operation completed.");
+                    }
+                    else
+                    {
+                        throw error("Please fix errors in file to proceed.");
+                    }
+                    ttscommit;
+                }
+
+            }
+            else
+            {
+                error("Error occured during upload. Please try again.");
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getDepartment</Name>
+				<Source><![CDATA[
+    public OMOperatingUnit getDepartment(str _parm, NVDepartmentHierarchy _hierarchy)
+    {
+        OMOperatingUnit operatingUnit = NVOMOperatingUnit_Events::findNameHierarchy(_parm, OMOperatingUnitType::OMDepartment, _hierarchy);
+        if(_parm != "" && operatingUnit.RecId == 0)
+        {
+            checkFailed(strFmt("Structure with name '%1' of type '%2' not found.", _parm, _hierarchy));
+        }
+
+        return operatingUnit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NVHcmPositionStructureImport import = new NVHcmPositionStructureImport();
+        
+        import.run();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

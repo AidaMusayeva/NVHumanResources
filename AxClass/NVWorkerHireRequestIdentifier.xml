@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkerHireRequestIdentifier</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContract]
+class NVWorkerHireRequestIdentifier
+{
+    str requestIdentifier;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmRequestIdentifier</Name>
+				<Source><![CDATA[
+    [DataMember("RequestIdentifier")]
+    public str parmRequestIdentifier(str _requestIdentifier = requestIdentifier)
+    {
+        requestIdentifier = _requestIdentifier;
+        return requestIdentifier;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

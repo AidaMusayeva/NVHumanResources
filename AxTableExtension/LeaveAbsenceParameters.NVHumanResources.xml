@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTableExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>LeaveAbsenceParameters.NVHumanResources</Name>
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>NVLeaveConsumptionPriority</Name>
+			<IsObsolete>Yes</IsObsolete>
+			<Visible>No</Visible>
+			<EnumType>NVLeaveConsumptionPriority</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>NVLeaveConsumptionApplyDate</Name>
+			<ExtendedDataType>TransDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<IsObsolete>Yes</IsObsolete>
+			<Label>Consumption priority date</Label>
+			<Visible>No</Visible>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<PropertyModifications />
+	<RelationExtensions />
+	<RelationModifications />
+	<Relations />
+</AxTableExtension>

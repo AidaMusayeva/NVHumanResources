@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerLocationPerDiemContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVTrvWorkerLocationPerDiemContract
+{
+    str fromLocationId;
+    str fromLocationDescription;
+    str toLocationId;
+    str toLocationDescription;
+    str purpose;
+    str currency;
+    real perDiem;
+    real hotelPercentage;
+    real otherAllowancePercentage;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFromLocationId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FromLocationId")]
+    public str parmFromLocationId(str _parm = fromLocationId)
+    {
+        fromLocationId = _parm;
+        return fromLocationId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFromLocationDescription</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FromLocationDescription")]
+    public str parmFromLocationDescription(str _parm = fromLocationDescription)
+    {
+        fromLocationDescription = _parm;
+        return fromLocationDescription;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmToLocationId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ToLocationId")]
+    public str parmToLocationId(str _parm = toLocationId)
+    {
+        toLocationId = _parm;
+        return toLocationId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmToLocationDescription</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ToLocationDescription")]
+    public str parmToLocationDescription(str _parm = toLocationDescription)
+    {
+        toLocationDescription = _parm;
+        return toLocationDescription;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPurpose</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Purpose")]
+    public str parmPurpose(str _parm = purpose)
+    {
+        purpose = _parm;
+        return purpose;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCurrency</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Currency")]
+    public str parmCurrency(str _parm = currency)
+    {
+        currency = _parm;
+        return currency;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPerDiem</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PerDiem")]
+    public real parmPerDiem(real _parm = perDiem)
+    {
+        perDiem = _parm;
+        return perDiem;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmHotelPercentage</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("HotelPercentage")]
+    public real parmHotelPercentage(real _parm = hotelPercentage)
+    {
+        hotelPercentage = _parm;
+        return hotelPercentage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parOtherAllowancePercentage</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("OtherAllowancePercentage")]
+    public real parOtherAllowancePercentage(real _parm = otherAllowancePercentage)
+    {
+        otherAllowancePercentage = _parm;
+        return otherAllowancePercentage ;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerSalaryDetailsContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerSalaryDetailsContract
+{
+    str workerId;
+    str workerName;
+    str company;
+    str designation;
+    date dayOfJoining;
+    str payPeriod;
+    date payDate;
+    Amount salary;
+    Amount insurance;
+    Amount deduction;
+    Amount bonus;
+    Amount leave;
+    Amount tax;
+    Amount netSalary;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmWorkerId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("WorkerId")]
+    public str parmWorkerId(str _parm = workerId)
+    {
+        workerId = _parm;
+        return workerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmWorkerName</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("WorkerName")]
+    public str parmWorkerName(str _parm = workerName)
+    {
+        workerName = _parm;
+        return workerName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCompany</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Company")]
+    public str parmCompany(str _parm = company)
+    {
+        company = _parm;
+        return company;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDesignation</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Designation")]
+    public str parmDesignation(str _parm = designation)
+    {
+        designation = _parm;
+        return designation;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDayOfJoining</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("DayOfJoining")]
+    public date parmDayOfJoining(date _parm = dayOfJoining)
+    {
+        dayOfJoining = _parm;
+        return dayOfJoining;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPayPeriod</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PayPeriod")]
+    public str parmPayPeriod(str _parm = payPeriod)
+    {
+        payPeriod = _parm;
+        return payPeriod;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPayDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PayDate")]
+    public date parmPayDate(date _parm = payDate)
+    {
+        payDate = _parm;
+        return payDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSalary</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Salary")]
+    public Amount parmSalary(Amount _parm = salary)
+    {
+        salary = _parm;
+        return salary;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmInsurance</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Insurance")]
+    public Amount parmInsurance(Amount _parm = insurance)
+    {
+        insurance = _parm;
+        return insurance;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDeduction</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Deduction")]
+    public Amount parmDeduction(Amount _parm = deduction)
+    {
+        deduction = _parm;
+        return deduction;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBonus</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Bonus")]
+    public Amount parmBonus(Amount _parm = bonus)
+    {
+        bonus = _parm;
+        return bonus;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLeave</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Leave")]
+    public Amount parmLeave(Amount _parm = leave)
+    {
+        leave = _parm;
+        return leave;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTax</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Tax")]
+    public Amount parmTax(Amount _parm = tax)
+    {
+        tax = _parm;
+        return tax;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmNetSalary</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("NetSalary")]
+    public Amount parmNetSalary(Amount _parm = netSalary)
+    {
+        netSalary = _parm;
+        return netSalary;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxMenuExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V1">
+	<Name>HRM.NVHumanResources</Name>
+	<Customizations>
+		<AxMenuCustomizationElement xmlns="">
+			<Name>HcmCompensationLevel</Name>
+			<Visible>No</Visible>
+		</AxMenuCustomizationElement>
+	</Customizations>
+	<Elements>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>Setup</Parent>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementSubMenu">
+				<Name>NVCustomSetup</Name>
+				<Label>Custom setup</Label>
+				<Elements>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVFlightCrew</Name>
+						<MenuItemName>NVFlightCrew</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmPositionRate</Name>
+						<MenuItemName>NVHcmPositionRate</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVPositionLocations</Name>
+						<MenuItemName>NVPositionLocations</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmWorkerReferralRelation</Name>
+						<MenuItemName>NVHcmWorkerReferralRelation</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmWorkerContractType</Name>
+						<MenuItemName>NVHcmWorkerContractType</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmWorkerContractReason</Name>
+						<MenuItemName>NVHcmWorkerContractReason</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmSocialStatus</Name>
+						<MenuItemName>NVHcmSocialStatus</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmTaxExemptionReason</Name>
+						<MenuItemName>NVHcmTaxExemptionReason</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmWorkerHireReason</Name>
+						<MenuItemName>NVHcmWorkerHireReason</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmSalaryChangeReason</Name>
+						<MenuItemName>NVHcmSalaryChangeReason</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmLeaveGroup</Name>
+						<MenuItemName>NVHcmLeaveGroup</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmEmailAlertsSetup</Name>
+						<MenuItemName>NVHcmEmailAlertsSetup</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmWorkerEducationType</Name>
+						<MenuItemName>NVHcmWorkerEducationType</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVOMOperatingUnitAddress</Name>
+						<MenuItemName>NVOMOperatingUnitAddress</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmDisability</Name>
+						<MenuItemName>NVHcmDisability</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmHazardousAllowance</Name>
+						<MenuItemName>NVHcmHazardousAllowance</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmRealTermReasonCode</Name>
+						<MenuItemName>NVHcmRealTermReasonCode</MenuItemName>
+					</AxMenuElement>
+				</Elements>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>Absence</Parent>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementMenuItem">
+				<Name>NVLeaveAdjustmentImport</Name>
+				<MenuItemName>NVLeaveAdjustmentImport</MenuItemName>
+				<MenuItemType>Action</MenuItemType>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>UserDefinedLink</PreviousSibling>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementSubMenu">
+				<Name>NVBusinesTrips</Name>
+				<Label>Business trip</Label>
+				<Elements>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVTrvWorkerLocation</Name>
+						<MenuItemName>NVTrvWorkerLocation</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVTrvWorkerLocationPerDiem</Name>
+						<MenuItemName>NVTrvWorkerLocationPerDiem</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVTrvWorkerExpenseRequest</Name>
+						<MenuItemName>NVTrvWorkerExpenseRequest</MenuItemName>
+					</AxMenuElement>
+				</Elements>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>InquiriesAndReports_Worker</Parent>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementMenuItem">
+				<Name>NVHcmEmailAlerts</Name>
+				<MenuItemName>NVHcmEmailAlerts</MenuItemName>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>Workers</Parent>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementSubMenu">
+				<Name>NVImports</Name>
+				<Label>Imports</Label>
+				<Elements>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmWorkerPIDImport</Name>
+						<MenuItemName>NVHcmWorkerPIDImport</MenuItemName>
+						<MenuItemType>Action</MenuItemType>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmPositionStructureImport</Name>
+						<MenuItemName>NVHcmPositionStructureImport</MenuItemName>
+						<MenuItemType>Action</MenuItemType>
+					</AxMenuElement>
+				</Elements>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>UserDefinedLink</PreviousSibling>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementSubMenu">
+				<Name>NVTimeSheet</Name>
+				<Label>Time Sheet</Label>
+				<Elements>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVGenerateTimeSheet</Name>
+						<MenuItemName>NVGenerateTimeSheet</MenuItemName>
+						<MenuItemType>Action</MenuItemType>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVTimeSheetHeader</Name>
+						<MenuItemName>NVTimeSheetHeader</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVTimeSheetLinesAllowedValues</Name>
+						<MenuItemName>NVTimeSheetLinesAllowedValues</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVTimeSheetLinesNoOverwriteValues</Name>
+						<MenuItemName>NVTimeSheetLinesNoOverwriteValues</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVTimesheetUpdateBatch</Name>
+						<MenuItemName>NVTimesheetUpdateBatch</MenuItemName>
+						<MenuItemType>Action</MenuItemType>
+					</AxMenuElement>
+				</Elements>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>UserDefinedLink</PreviousSibling>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementSubMenu">
+				<Name>NVOvertime</Name>
+				<Label>Cabin crew flight hours</Label>
+				<Elements>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVOverTimeRate</Name>
+						<MenuItemName>NVOverTimeRate</MenuItemName>
+					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVEmpOverTime</Name>
+						<MenuItemName>NVEmpOverTime</MenuItemName>
+					</AxMenuElement>
+				</Elements>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>FixedCompensation</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>HcmCompensationLevel</PreviousSibling>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementMenuItem">
+				<Name>NVHcmCompensationLevel</Name>
+				<MenuItemName>NVHcmCompensationLevel</MenuItemName>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>FixedCompensation</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>HcmCompensationLevel</PreviousSibling>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementMenuItem">
+				<Name>NVHcmSyncGradeWisePayroll</Name>
+				<MenuItemName>NVHcmSyncGradeWisePayroll</MenuItemName>
+				<MenuItemType>Action</MenuItemType>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>UserDefinedLink</Parent>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementMenuItem">
+				<Name>NVHcmProcessESSChangeLog</Name>
+				<MenuItemName>NVHcmProcessESSChangeLog</MenuItemName>
+				<MenuItemType>Action</MenuItemType>
+			</MenuElement>
+		</AxMenuExtensionElement>
+		<AxMenuExtensionElement xmlns="">
+			<Parent>UserDefinedLink</Parent>
+			<MenuElement xmlns=""
+				i:type="AxMenuElementMenuItem">
+				<Name>NVHcmESSChangeLog</Name>
+				<MenuItemName>NVHcmESSChangeLog</MenuItemName>
+			</MenuElement>
+		</AxMenuExtensionElement>
+	</Elements>
+	<MenuElementModifications />
+	<PropertyModifications />
+</AxMenuExtension>

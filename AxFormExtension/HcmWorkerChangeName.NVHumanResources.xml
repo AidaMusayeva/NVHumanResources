@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerChangeName.NVHumanResources</Name>
+	<ControlModifications>
+		<AxExtensionModification xmlns="">
+			<Name>Name_MiddleName</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>Father name</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</ControlModifications>
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyudpg5xv21</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVPersonEnglishNameGroup</Name>
+				<ElementPosition>1116691494</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>Group</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVPersonEnglishNameGroup_NVEngFirstName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVEngFirstName</DataField>
+						<DataSource>DirPersonName</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVPersonEnglishNameGroup_NVEngMiddleName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVEngMiddleName</DataField>
+						<DataSource>DirPersonName</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVPersonEnglishNameGroup_NVEngLastName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVEngLastName</DataField>
+						<DataSource>DirPersonName</DataSource>
+					</AxFormControl>
+				</Controls>
+				<DataGroup>NVEnglishName</DataGroup>
+				<DataSource>DirPersonName</DataSource>
+			</FormControl>
+			<Parent>WorkerSummaryFields</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>PersonNameGroup</PreviousSibling>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

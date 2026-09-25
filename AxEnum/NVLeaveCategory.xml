@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveCategory</Name>
+	<Label>Category</Label>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>None</Name>
+			<Label>Base</Label>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Hazardous</Name>
+			<Label>Hazardous</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Disability</Name>
+			<Label>Disability</Label>
+			<Value>2</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Children</Name>
+			<Label>Number of children</Label>
+			<Value>3</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>MOS</Name>
+			<Label>Months of service</Label>
+			<Value>5</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>ChildDisability</Name>
+			<Label>Child disability</Label>
+			<Value>6</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>FlightHours</Name>
+			<Label>Flight hours</Label>
+			<Value>7</Value>
+		</AxEnumValue>
+	</EnumValues>
+</AxEnum>

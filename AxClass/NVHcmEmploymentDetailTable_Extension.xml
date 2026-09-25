@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmEmploymentDetailTable_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(HcmEmploymentDetail))]
+internal final class NVHcmEmploymentDetailTable_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>modifiedField</Name>
+				<Source><![CDATA[
+    public void modifiedField(FieldId _fieldId)
+    {
+        next modifiedField(_fieldId);
+
+        if(_fieldId == fieldNum(HcmEmploymentDetail, TransitionReasonCode))
+        {
+            this.updateTransition();            
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>update</Name>
+				<Source><![CDATA[
+    public void update()
+    {
+        this.updateTransition();
+        next update();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insert</Name>
+				<Source><![CDATA[
+    public void insert()
+    {
+        this.updateTransition();
+        next insert();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateTransition</Name>
+				<Source><![CDATA[
+    private void updateTransition()
+    {
+        this.NVHcmTerminationClassification = NVHcmRealTermReasonCode::find(this.NVHcmRealTermReasonCode).TerminationClassification;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

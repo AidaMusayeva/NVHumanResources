@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVEssLeaveRequestEntry_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(EssLeaveRequestEntry))]
+internal final class NVEssLeaveRequestEntry_Extension
+{
+    private HcmWorker locCallerWorker;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        next init();
+
+        if (this.args().caller())
+        {
+            EssICommonMethods essCommon = this.args().caller() as EssICommonMethods;
+
+            if (essCommon)
+            {
+                DirPersonRecId callerPerson = essCommon.getDirPersonCallerRecId();
+                locCallerWorker = HcmWorker::findByPerson(callerPerson);
+            }
+            else
+            {
+                Common record = this.args().record();
+
+                if (record && record.TableId == tableNum(HcmWorker))
+                {
+                    locCallerWorker = HcmWorker::find(record.RecId);
+                }
+            }
+        }
+        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initBalanceDetails</Name>
+				<Source><![CDATA[
+    public void initBalanceDetails()
+    {
+        LeaveTypeRecId currrentLeaveType = LeaveType.value();
+        real totalDays;
+        LeaveRequestDetailTmp_ds.observe();
+
+        LeaveRequestDetailTmp currentRow = LeaveRequestDetailTmp_ds.getFirst();
+        while (currentRow)
+        {
+            totalDays += currentRow.Amount - currentRow.ExistingAmount;
+
+            currentRow = LeaveRequestDetailTmp_ds.getNext();
+        }
+
+        NVLeaveBalanceDetailsTmp detailsTmp = NVLeaveBalanceDetailsTmp::balanceByLeaveType(locCallerWorker.RecId, EndDate.dateValue(), currrentLeaveType, StartDate.dateValue(), totalDays);
+   
+        NVLeaveBalanceDetailsTmp.setTmpData(detailsTmp);
+        NVLeaveBalanceDetailsTmp_ds.executeQuery();
+        NVLeaveBalanceDetailsTmp_ds.research(true);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

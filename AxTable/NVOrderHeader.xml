@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderHeader</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Table class for NVOrderHeader - Employment order header records.
+/// Contains order metadata and serves as the parent for NVOrderLine records.
+/// </summary>
+/// <remarks>
+/// Relationships:
+/// - One header can have multiple lines (NVOrderLine)
+/// - Header links to NVOrderTemplate for report configuration
+/// - IsConsolidated flag determines if order has multiple employees
+/// </remarks>
+public class NVOrderHeader extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>shouldThrowExceptionOnZeroDelete</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines if concurrent deletes should throw an exception.
+    /// </summary>
+    /// <returns>True if exception should be thrown on concurrent delete, otherwise false</returns>
+    public boolean shouldThrowExceptionOnZeroDelete()
+    {
+        boolean ret;
+    
+        ret = super();
+    
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>mapOrderGroupToWorkflowEnum</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Maps NVOrderTypeGroup RecId to NVOrderGroupWF enum value
+    /// for workflow condition routing.
+    /// Mapping is by GroupId (stable integer) not GroupName (display string).
+    /// GroupId values 1-12 are fixed at data setup time.
+    /// </summary>
+    /// <param name="_orderGroupRecId">RecId of NVOrderTypeGroup record</param>
+    /// <returns>NVOrderGroupWF enum value for workflow routing</returns>
+    public static NVOrderGroupWF mapOrderGroupToWorkflowEnum(RefRecId _orderGroupRecId)
+    {
+        NVOrderTypeGroup typeGroup;
+
+        if (!_orderGroupRecId)
+        {
+            return NVOrderGroupWF::Recruitment; // safe default
+        }
+
+        select firstonly GroupId from typeGroup
+        where typeGroup.RecId == _orderGroupRecId;
+
+        switch (typeGroup.GroupId)
+        {
+            case 1:  return NVOrderGroupWF::Recruitment;
+            case 2:  return NVOrderGroupWF::PositionSalary;
+            case 3:  return NVOrderGroupWF::Termination;
+            case 4:  return NVOrderGroupWF::AvgSalaryProtection;
+            case 5:  return NVOrderGroupWF::MaternityLeave;
+            case 6:  return NVOrderGroupWF::BusinessTrip;
+            case 7:  return NVOrderGroupWF::PaidLeave;
+            case 8:  return NVOrderGroupWF::SocialLeave;
+            case 9:  return NVOrderGroupWF::EducationLeave;
+            case 10: return NVOrderGroupWF::UnpaidLeave;
+            case 11: return NVOrderGroupWF::Overtime;
+            case 12: return NVOrderGroupWF::Others;
+            default: return NVOrderGroupWF::Recruitment;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insert</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Ensures WorkflowOrderGroup is always synchronized with OrderGroupRecId.
+    /// Called on insert and update to keep routing field current.
+    /// </summary>
+    public void insert()
+    {
+        if (this.OrderGroupRecId)
+        {
+            this.WorkflowOrderGroup =
+            NVOrderHeader::mapOrderGroupToWorkflowEnum(this.OrderGroupRecId);
+        }
+
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>update</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Ensures WorkflowOrderGroup stays synchronized when OrderGroupRecId changes.
+    /// </summary>
+    public void update()
+    {
+        if (this.OrderGroupRecId)
+        {
+            this.WorkflowOrderGroup =
+            NVOrderHeader::mapOrderGroupToWorkflowEnum(this.OrderGroupRecId);
+        }
+
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Finds an NVOrderHeader record by RecId.
+    /// </summary>
+    /// <param name="_recId">RecId of the order header to find</param>
+    /// <param name="_forUpdate">If true, selects the record for update</param>
+    /// <returns>NVOrderHeader record, or empty record if not found</returns>
+    public static NVOrderHeader find(RecId _recId, boolean _forUpdate = false)
+    {
+        NVOrderHeader header;
+    
+        if (!_recId)
+        {
+            return header;
+        }
+    
+        if (_forUpdate)
+        {
+            header.selectForUpdate(_forUpdate);
+        }
+    
+        select firstonly header
+            where header.RecId == _recId;
+    
+        return header;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>template</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the related NVOrderTemplate record.
+    /// Templates define report configuration and order type relationships.
+    /// </summary>
+    /// <returns>NVOrderTemplate record linked to this header</returns>
+    public NVOrderTemplate template()
+    {
+        return NVOrderTemplate::find(this.TemplateId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>orderType</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the NVOrderTypeTable record through the template relationship.
+    /// </summary>
+    /// <returns>NVOrderTypeTable record, or null if template not found</returns>
+    public NVOrderTypeTable orderType()
+    {
+        NVOrderTemplate template = this.template();
+        return template.RecId ? template.orderType() : null;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>group</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the NVOrderTypeGroup record through the template and order type relationships.
+    /// </summary>
+    /// <returns>NVOrderTypeGroup record, or null if template not found</returns>
+    public NVOrderTypeGroup group()
+    {
+        NVOrderTemplate template = this.template();
+        return template.RecId ? template.group() : null;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>reportName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the report name for printing from the linked template.
+    /// Used by report controllers to determine which SSRS report to execute.
+    /// </summary>
+    /// <returns>Report name string, or empty string if template not found</returns>
+    public str reportName()
+    {
+        NVOrderTemplate template = this.template();
+        return template.RecId ? template.ReportName : '';
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDelete</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates deletion — warns user that all lines will be removed with the header.
+    /// Called by framework before delete(), including from form DeleteRecord command.
+    /// </summary>
+    public boolean validateDelete()
+    {
+        boolean    ret = super();
+        NVOrderLine line;
+        int         lineCount;
+
+        if (!ret)
+            return false;
+
+        select count(RecId) from line
+            where line.OrderHeaderRecId == this.RecId;
+
+        lineCount = line.RecId;
+
+        if (lineCount > 0)
+        {
+            if (Box::yesNo(
+                strFmt("Order %1 has %2 line(s). Deleting this order will remove all lines. Continue?",
+                    this.OrderNumber, lineCount),
+                DialogButton::No) == DialogButton::No)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>delete</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Explicit cascade delete of all related lines before header deletion.
+    /// DeleteAction Cascade in AOT also handles this — kept as safety net.
+    /// set-based delete_from for performance, bypasses NVOrderLine.delete()
+    /// business logic intentionally (header removal is unconditional).
+    /// </summary>
+    public void delete()
+    {
+        NVOrderLine line;
+
+        ttsbegin;
+
+        // Set-based cascade delete — bypasses NVOrderLine.delete() intentionally.
+        // Last-line protection in NVOrderLine.delete() is UI-only guard,
+        // full order deletion from NVOrderHeader is always legitimate.
+        delete_from line
+            where line.OrderHeaderRecId == this.RecId;
+
+        super();
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canSubmitToWorkflow</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines whether the current record can be submitted to workflow.
+    /// Submission is allowed only in Draft or Rejected status.
+    /// Called by the workflow framework to enable/disable the Submit button.
+    /// </summary>
+    /// <param name="_workflowType">Workflow type name string</param>
+    /// <returns>True if submission is allowed</returns>
+    public boolean canSubmitToWorkflow(str _workflowType = '')
+    {
+        // Allow submit only from Draft (new order) or Rejected (resubmit after rejection)
+        return this.RecId != 0
+        && (   this.Status == NVOrderStatus::Draft
+            || this.Status == NVOrderStatus::Rejected);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateWorkflowStatus</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Updates the workflow status of an NVOrderHeader record.
+    /// Called by workflow event handlers on status transitions.
+    /// Uses select forupdate inside ttsbegin/ttscommit for data integrity.
+    /// </summary>
+    /// <param name="_recId">RecId of the NVOrderHeader to update</param>
+    /// <param name="_status">New NVOrderStatus value to set</param>
+    public static void updateWorkflowStatus(RefRecId _recId, NVOrderStatus _status)
+    {
+        NVOrderHeader header;
+
+        if (!_recId)
+        {
+            throw error("NVOrderHeader.updateWorkflowStatus: RecId is required.");
+        }
+
+        ttsbegin;
+
+        select forupdate header
+            where header.RecId == _recId;
+
+        if (!header.RecId)
+        {
+            ttsabort;
+            throw error(strFmt("NVOrderHeader.updateWorkflowStatus: Record %1 not found.", _recId));
+        }
+
+        header.Status = _status;
+        header.update();
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateFinalApprover</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Stores the final approver and approval date on the header.
+    /// Called by workflow event handler when the last approval stage completes.
+    /// </summary>
+    /// <param name="_recId">RecId of the NVOrderHeader</param>
+    /// <param name="_approverWorkerRecId">RecId of the HcmWorker who gave final approval</param>
+    /// <param name="_approvalDate">Date of final approval</param>
+    public static void updateFinalApprover(
+        RefRecId    _recId,
+        RefRecId    _approverWorkerRecId,
+        date        _approvalDate)
+    {
+        NVOrderHeader header;
+
+        if (!_recId)
+        {
+            throw error("NVOrderHeader.updateFinalApprover: RecId is required.");
+        }
+
+        ttsbegin;
+
+        select forupdate header
+            where header.RecId == _recId;
+
+        if (!header.RecId)
+        {
+            ttsabort;
+            throw error(strFmt("NVOrderHeader.updateFinalApprover: Record %1 not found.", _recId));
+        }
+
+        header.FinalApproverWorkerRecId = _approverWorkerRecId;
+        header.FinalApprovalDate        = _approvalDate;
+        header.update();
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>orderTypeDisplay</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Display method that returns the order type as a string for UI display.
+    /// Retrieves the OrderType from the first order line and converts enum to string.
+    /// </summary>
+    /// <returns>Order type as string, or empty string if no lines exist</returns>
+    /// <remarks>
+    /// This method is used in forms (e.g., NVOrderList, NVOrderDetails) to display
+    /// the order type in a human-readable format.
+    /// Note: Returns enum name, not localized label. For localized display,
+    /// use orderTypeDisplay() which fetches from NVOrderTypeTable.
+    /// </remarks>
+    [SysClientCacheDataMethodAttribute(true)]
+    display str orderTypeDisplay()
+    {
+        NVOrderLine line;
+    
+        select firstonly line
+            where line.OrderHeaderRecId == this.RecId;
+    
+        if (line.RecId && line.OrderType)
+        {
+            return enum2Str(line.OrderType);
+        }
+    
+        return '';
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<Label>Order Header</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<TableGroup>Transaction</TableGroup>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CreatedBy>Yes</CreatedBy>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<ModifiedBy>Yes</ModifiedBy>
+	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<DeleteActions>
+		<AxTableDeleteAction>
+			<Name>NVOrderLine</Name>
+			<DeleteAction>Cascade</DeleteAction>
+			<Relation></Relation>
+			<Table>NVOrderLine</Table>
+			<Tags></Tags>
+		</AxTableDeleteAction>
+	</DeleteActions>
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Workflow</Name>
+			<Label>Workflow</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>OrderNumber</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>OrderDate</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Status</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>WorkflowOrderGroup</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>OrderNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>NVOrderNumber</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Order Number</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>OrderDate</Name>
+			<ExtendedDataType>NVOrderDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Order Date</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>StartDate</Name>
+			<ExtendedDataType>NVStartDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Start Date</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>EndDate</Name>
+			<ExtendedDataType>NVEndDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>End Date</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>IsConsolidated</Name>
+			<AllowEdit>No</AllowEdit>
+			<Label>Is Consolidated</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Status</Name>
+			<Label>Status</Label>
+			<Mandatory>Yes</Mandatory>
+			<EnumType>NVOrderStatus</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>TemplateId</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>RecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Template</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>OrderGroupRecId</Name>
+			<ExtendedDataType>NVOrderTypeGroupRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Order Group</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>OrderType</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<Label>Order Type</Label>
+			<EnumType>NVOrderType</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>FinalApproverWorkerRecId</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>RefRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Final Approver</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>FinalApprovalDate</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>TransDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Final Approval Date</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>WorkflowOrderGroup</Name>
+			<Label>Workflow Order Group</Label>
+			<EnumType>NVOrderGroupWF</EnumType>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>OrderNumberIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>OrderNumber</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+		<AxTableIndex>
+			<Name>OrderDateIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>OrderDate</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation>
+			<Name>NVOrderTemplate</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>NVOrderTemplate</RelatedTable>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>TemplateId</Name>
+					<Field>TemplateId</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVOrderTypeGroup</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVOrderTypeGroup</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>OrderGroupRecId</Name>
+					<Field>OrderGroupRecId</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>HcmWorker</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>FinalApproverWorkerRecId</Name>
+					<Field>FinalApproverWorkerRecId</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

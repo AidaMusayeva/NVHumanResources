@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerExpenseReqWFTypeEventHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// The NVTrvWorkerExpenseReqWFTypeEventHandler workflow event handler.
+/// </summary>
+public class  NVTrvWorkerExpenseReqWFTypeEventHandler implements WorkflowCanceledEventHandler,  
+	WorkflowCompletedEventHandler,
+	WorkflowStartedEventHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>started</Name>
+				<Source><![CDATA[
+    public void started(WorkflowEventArgs _workflowEventArgs)
+    {
+        NVTrvWorkerExpenseRequest::updateWorkflowStatus(_workflowEventArgs.parmWorkflowContext().parmRecId(), NVTrvWorkerExpReqWFStatus::Submitted);
+	}
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canceled</Name>
+				<Source><![CDATA[
+    public void canceled(WorkflowEventArgs _workflowEventArgs)
+    {
+        NVTrvWorkerExpenseRequest::updateWorkflowStatus(_workflowEventArgs.parmWorkflowContext().parmRecId(), NVTrvWorkerExpReqWFStatus::Cancelled);
+	}
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>completed</Name>
+				<Source><![CDATA[
+    public void completed(WorkflowEventArgs _workflowEventArgs)
+    {
+        RecId                       trvExpenseRecId = _workflowEventArgs.parmWorkflowContext().parmRecId();
+        NVTrvWorkerExpenseRequest   trvExpense      = NVTrvWorkerExpenseRequest::find(trvExpenseRecId);
+
+        if(trvExpense)
+        {
+            NVTrvWorkerExpenseRequest::updateWorkflowStatus(trvExpense.RecId, NVTrvWorkerExpReqWFStatus::Approved);
+
+            NVTimesheetChangeHandler::insertNewRef(trvExpense.Worker, trvExpense.TableId, trvExpense.RecId);
+        }
+	}
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

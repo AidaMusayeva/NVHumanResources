@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVEssLeaveRequestEntry_Events</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVEssLeaveRequestEntry_Events
+{
+    
+    
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>EndDate_OnModified</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(EssLeaveRequestEntry, EndDate), FormControlEventType::Modified)]
+    public static void EndDate_OnModified(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+        FormDateControl workResumeDateControl = formRun.design(0).controlName(formControlStr(EssLeaveRequestEntry, NVWorkResumeDate));
+        FormDateControl endDateControl = sender as FormDateControl;
+
+        LeaveRequest leaveRequest = formRun.dataSource(formDataSourceStr(EssLeaveRequestEntry, LeaveRequest)).cursor();
+        HcmWorker worker = HcmWorker::find(leaveRequest.Worker);
+        if(workResumeDateControl.dateValue() <= endDateControl.dateValue())
+        {
+            workResumeDateControl.dateValue(worker.findNextWorkingDate(endDateControl.dateValue()));
+            leaveRequest.NVWorkResumeDate = workResumeDateControl.dateValue();
+        }
+
+        FormDateControl leaveAppliedDateControl = formRun.design(0).controlName(formControlStr(EssLeaveRequestEntry, NVLeaveAppliedDate));
+        if(leaveAppliedDateControl.dateValue() == dateNull())
+        {
+            leaveAppliedDateControl.dateValue(today());
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>StartDate_OnModified</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(EssLeaveRequestEntry, StartDate), FormControlEventType::Modified)]
+    public static void StartDate_OnModified(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+        FormDateControl workResumeDateControl   = formRun.design(0).controlName(formControlStr(EssLeaveRequestEntry, NVWorkResumeDate));
+        FormDateControl endDateControl          = formRun.design(0).controlName(formControlStr(EssLeaveRequestEntry, EndDate));
+        FormDateControl startDateControl        = sender as FormDateControl;
+
+        LeaveRequest leaveRequest = formRun.dataSource(formDataSourceStr(EssLeaveRequestEntry, LeaveRequest)).cursor();
+        HcmWorker worker = HcmWorker::find(leaveRequest.Worker);
+
+        date dateTocheck = endDateControl.dateValue();
+        if(startDateControl.dateValue() > dateTocheck)
+        {
+            dateTocheck = startDateControl.dateValue();
+        }
+
+        if(workResumeDateControl.dateValue() <= dateTocheck)
+        {
+            workResumeDateControl.dateValue(worker.findNextWorkingDate(dateTocheck));
+            leaveRequest.NVWorkResumeDate = workResumeDateControl.dateValue();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>EssLeaveRequestEntry_OnInitialized</Name>
+				<Source><![CDATA[
+    [FormEventHandler(formStr(EssLeaveRequestEntry), FormEventType::Initialized)]
+    public static void EssLeaveRequestEntry_OnInitialized(xFormRun sender, FormEventArgs e)
+    {
+        FormRun formRun = sender as FormRun;
+        FormDateControl workResumeDateControl   = formRun.design(0).controlName(formControlStr(EssLeaveRequestEntry, NVWorkResumeDate));
+        FormDateControl leaveAppliedDateControl = formRun.design(0).controlName(formControlStr(EssLeaveRequestEntry, NVLeaveAppliedDate));
+        FormDateControl endDateControl          = formRun.design(0).controlName(formControlStr(EssLeaveRequestEntry, EndDate));
+
+        if(formRun.args().record() is LeaveRequest)
+        {
+            LeaveRequest requestToEdit = formRun.args().record();
+            if(requestToEdit)
+            {
+                workResumeDateControl.dateValue(requestToEdit.NVWorkResumeDate);
+                if(requestToEdit.NVLeaveAppliedDate != dateNull())
+                {
+                    leaveAppliedDateControl.dateValue(requestToEdit.NVLeaveAppliedDate);
+                }
+            }
+        }
+
+        if(leaveAppliedDateControl.dateValue() == dateNull())
+        {
+            leaveAppliedDateControl.dateValue(today());
+            LeaveRequest leaveRequest       = formRun.dataSource(formDataSourceStr(EssLeaveRequestEntry, LeaveRequest)).cursor();
+            leaveRequest.NVLeaveAppliedDate = leaveAppliedDateControl.dateValue();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>NVNoOfDays_OnModified</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(EssLeaveRequestEntry, NVNoOfDays), FormControlEventType::Modified)]
+    public static void NVNoOfDays_OnModified(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun                 leaveRequestEntryForm   = sender.formRun();
+        FormDateControl         startDateControl        = leaveRequestEntryForm.design().controlName(formControlStr(EssLeaveRequestEntry, StartDate));
+        FormDateControl         endDateControl          = leaveRequestEntryForm.design().controlName(formControlStr(EssLeaveRequestEntry, EndDate));
+    
+        FormIntControl          noOfDaysControl         = sender as FormIntControl;
+        PositiveDays            noOfDays                = noOfDaysControl.value();
+        StartDate               startDate               = startDateControl.dateValue();
+        EndDate                 endDate                 = startDate + noOfDays - 1;
+        Common                  argsRecord              = leaveRequestEntryForm.args().record();
+        HcmWorker               worker;
+        if (argsRecord && argsRecord.TableId == tableNum(HcmWorker))
+        {
+            worker = argsRecord;
+        }
+
+        WorkCalendarEmployment  workCalendarEmployment  = WorkCalendarEmployment::findByWorkerRecId(worker.RecId, startDate);
+        WorkCalendarDate        calendarDate;
+
+        select count(RecId) from calendarDate
+            where calendarDate.CalendarId       == workCalendarEmployment.calendarId
+                && calendarDate.TransDate       >= startDate
+                && calendarDate.TransDate       <= endDate
+                && calendarDate.ClosedForPickup == NoYes::Yes;
+
+        endDate = endDate + calendarDate.RecId;
+
+        endDateControl.dateValue(endDate);
+        endDateControl.modified();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>LeaveRequestDetailTmp_OnQueryExecuted</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(EssLeaveRequestEntry, LeaveRequestDetailTmp), FormDataSourceEventType::QueryExecuted)]
+    public static void LeaveRequestDetailTmp_OnQueryExecuted(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+
+        formRun.initBalanceDetails();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

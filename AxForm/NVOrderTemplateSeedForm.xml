@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVOrderTemplateSeedForm</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+/// <summary>
+/// Developer form to seed NVOrderTemplate records (report-to-order-type mappings).
+/// Not added to navigation menus by default; intended to be opened via Menu Item.
+/// Safe to run multiple times — existing records are skipped (no duplicates).
+/// </summary>
+/// <remarks>
+/// Usage: Open form, review InfoText, click "Fill Templates" to seed data.
+/// Add new order types to NVOrderTemplateSeedData.run() and re-run as needed.
+/// </remarks>
+[Form]
+public class NVOrderTemplateSeedForm extends FormRun
+{
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the form.
+    /// </summary>
+    public void init()
+    {
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTemplatesCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns count of existing NVOrderTemplate records.
+    /// </summary>
+    private int getTemplatesCount()
+    {
+        return int642int((select count(RecId) from NVOrderTemplate).RecId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>confirmRun</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Shows a Yes/No confirmation dialog.
+    /// </summary>
+    private boolean confirmRun(str _title, str _message, DialogButton _defaultButton = DialogButton::No)
+    {
+        return Box::yesNo(_message, _defaultButton, _title) == DialogButton::Yes;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runFillTemplates</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Runs the seed data class with confirmation and error handling.
+    /// </summary>
+    private void runFillTemplates()
+    {
+        int existingCount = this.getTemplatesCount();
+
+        // Soft warning if data already exists — do not hard block
+        if (existingCount > 0)
+        {
+            if (!this.confirmRun(
+                    "Data already exists",
+                    strFmt("Table NVOrderTemplate already contains %1 record(s).\n\nExisting records will be skipped (no duplicates).\n\nDo you want to run the job anyway?",
+                        existingCount),
+                    DialogButton::No))
+            {
+                return;
+            }
+        }
+
+        if (!this.confirmRun(
+                "Confirm seed (Templates)",
+                strFmt("This will seed Order Template mappings.\n\nCompany: %1\n\nContinue?", curext()),
+                DialogButton::No))
+        {
+            return;
+        }
+
+        try
+        {
+            setPrefix("Seed Order Templates");
+
+            NVOrderTemplateSeedData seedData = new NVOrderTemplateSeedData();
+            seedData.run();
+
+            Box::info(
+                strFmt("Order Template seed finished. Current record count: %1.\n\nCheck Infolog for details.",
+                    this.getTemplatesCount()),
+                "Done");
+        }
+        catch (Exception::Error)
+        {
+            error("Order Template seed failed. Check Infolog for details.");
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="">
+			<Control>
+				<Name>FillTemplatesButton</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            super();
+            element.runFillTemplates();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>CloseButton</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            super();
+            element.close();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources />
+	<Design>
+		<Pattern xmlns="">Custom</Pattern>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormStaticTextControl">
+				<Name>InfoText</Name>
+				<Type>StaticText</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Text>Seeds NVOrderTemplate records. Safe to run multiple times</Text>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>FormButtonGroupControl1</Name>
+				<Type>ButtonGroup</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormButtonControl">
+						<Name>FillTemplatesButton</Name>
+						<Type>Button</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<NormalImage>Upload</NormalImage>
+						<Text>Fill Templates</Text>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormButtonControl">
+						<Name>CloseButton</Name>
+						<Type>Button</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<NormalImage>TakeBreak</NormalImage>
+						<Text>Close</Text>
+					</AxFormControl>
+				</Controls>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

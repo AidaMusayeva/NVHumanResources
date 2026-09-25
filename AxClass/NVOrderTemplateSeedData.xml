@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderTemplateSeedData</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Seed data class for NVOrderTemplate records.
+/// Populates template-to-report mappings for all implemented order types.
+/// Run once via NVOrderTemplateSeedForm after initial deployment.
+/// </summary>
+/// <remarks>
+/// Protection against duplicates: checks existing records by OrderTypeRecId before insert.
+/// Safe to run multiple times — will only insert missing records.
+///
+/// TemplateId field: sequential integer ID for human-readable identification in UI.
+/// Assigned explicitly per order type — stable across re-runs.
+///
+/// To run: Display Menu Item → NVOrderTemplateSeedFormMenuItem → Fill Templates button
+/// </remarks>
+public class NVOrderTemplateSeedData extends RunBase
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Main entry point. Called by NVOrderTemplateSeedForm or directly via Menu Item.
+    /// </summary>
+    public static void main(Args _args)
+    {
+        NVOrderTemplateSeedData seedData = new NVOrderTemplateSeedData();
+        seedData.run();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Executes seed data population.
+    /// Inserts NVOrderTemplate records for all implemented order types.
+    /// Skips existing records — safe for repeated execution.
+    /// </summary>
+    public void run()
+    {
+        int inserted = 0;
+        int skipped  = 0;
+
+        ttsbegin;
+
+        // ── Group 1: Recruitment (NVEmploymentOrderReport) ──────────────────
+        // TemplateId 1–4: Employment orders — all use the same report
+        if (this.insertTemplate(
+            1,
+            NVOrderType::EmpWithAllow,
+            'Employment with allowance',
+            'NVEmploymentOrderReport.ReportDesign'))
+            inserted++;
+        else
+            skipped++;
+
+        if (this.insertTemplate(
+            2,
+            NVOrderType::EmpWithAllowHarmful,
+            'Employment with allowance (harmful)',
+            'NVEmploymentOrderReport.ReportDesign'))
+            inserted++;
+        else
+            skipped++;
+
+        if (this.insertTemplate(
+            3,
+            NVOrderType::EmpWithoutAllow,
+            'Employment without allowance',
+            'NVEmploymentOrderReport.ReportDesign'))
+            inserted++;
+        else
+            skipped++;
+
+        if (this.insertTemplate(
+            4,
+            NVOrderType::EmpWithoutAllowHarmful,
+            'Employment without allowance (harmful)',
+            'NVEmploymentOrderReport.ReportDesign'))
+            inserted++;
+        else
+            skipped++;
+
+        // ── Group 2: Position Change (NVPositionChangeOrderReport) ───────────
+        // TemplateId 5–6: Position change orders — separate report
+        if (this.insertTemplate(
+            5,
+            NVOrderType::PosChange,
+            'Position change order',
+            'NVPositionChangeOrderReport.ReportDesign'))
+            inserted++;
+        else
+            skipped++;
+
+        if (this.insertTemplate(
+            6,
+            NVOrderType::PosChangeFlight,
+            'Position change (Flight and cabin crew)',
+            'NVPositionChangeOrderReport.ReportDesign'))
+            inserted++;
+        else
+            skipped++;
+
+        ttscommit;
+
+        info(strFmt("NVOrderTemplate seed completed. Inserted: %1, Skipped (already exist): %2",
+            inserted, skipped));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insertTemplate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Inserts a single NVOrderTemplate record if it does not already exist.
+    /// Duplicate check is based on OrderTypeRecId — one template per order type.
+    /// TemplateId is a stable sequential integer for UI identification.
+    /// </summary>
+    /// <param name="_templateId">Sequential integer ID for this template (stable, human-readable)</param>
+    /// <param name="_orderType">NVOrderType enum value</param>
+    /// <param name="_templateName">Human-readable template name</param>
+    /// <param name="_reportName">SSRS report name (format: ReportName.DesignName)</param>
+    /// <returns>True if record was inserted, false if skipped (already exists)</returns>
+    private boolean insertTemplate(
+        int         _templateId,
+        NVOrderType _orderType,
+        str         _templateName,
+        str         _reportName)
+    {
+        NVOrderTypeTable orderTypeTable;
+        NVOrderTemplate  template;
+
+        // Resolve OrderType enum → NVOrderTypeTable.RecId
+        select firstonly orderTypeTable
+            where orderTypeTable.OrderType == _orderType
+               && orderTypeTable.IsActive  == NoYes::Yes;
+
+        if (!orderTypeTable.RecId)
+        {
+            warning(strFmt("NVOrderTypeTable record not found for OrderType: %1. Skipping.",
+                enum2Str(_orderType)));
+            return false;
+        }
+
+        // Duplicate protection: skip if template already exists for this order type
+        select firstonly template
+            where template.OrderTypeRecId == orderTypeTable.RecId;
+
+        if (template.RecId)
+        {
+            return false;
+        }
+
+        // Insert new template record
+        template.clear();
+        template.TemplateId      = _templateId;
+        template.TemplateName    = _templateName;
+        template.OrderTypeRecId  = orderTypeTable.RecId;
+        template.ReportName      = _reportName;
+        template.IsActive        = NoYes::Yes;
+        template.Description     = strFmt('Auto-generated by NVOrderTemplateSeedData for %1',
+                                          enum2Str(_orderType));
+        template.insert();
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

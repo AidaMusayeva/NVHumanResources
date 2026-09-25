@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxWorkflowApproval xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V2">
+	<Name>NVOrderApproval</Name>
+	<CanceledEventHandler>NVOrderApprovalEventHandler</CanceledEventHandler>
+	<DelegateMenuItem>NVOrderApprovalDelegateMenuItem</DelegateMenuItem>
+	<Document>NVOrderHeaderWorkflowDocument</Document>
+	<DocumentMenuItem>NVOrderListMenuItem</DocumentMenuItem>
+	<HelpText>Help text for the NVOrderApproval approval element</HelpText>
+	<Label>NVOrderApproval Approval</Label>
+	<ResubmitMenuItem>NVOrderApprovalResubmitMenuItem</ResubmitMenuItem>
+	<StartedEventHandler>NVOrderApprovalEventHandler</StartedEventHandler>
+	<WorkItemsCreatedEventHandler>NVOrderApprovalEventHandler</WorkItemsCreatedEventHandler>
+	<Approve>
+		<Name xmlns="">Approve</Name>
+		<ActionMenuItem xmlns="">NVOrderApprovalApprove</ActionMenuItem>
+		<EventHandler xmlns="">NVOrderApprovalEventHandler</EventHandler>
+	</Approve>
+	<Deny>
+		<Name xmlns="">Deny</Name>
+		<Type xmlns="">Deny</Type>
+	</Deny>
+	<Reject>
+		<Name xmlns="">Reject</Name>
+		<ActionMenuItem xmlns="">NVOrderApprovalReject</ActionMenuItem>
+		<EventHandler xmlns="">NVOrderApprovalEventHandler</EventHandler>
+		<Type xmlns="">Return</Type>
+	</Reject>
+	<RequestChange>
+		<Name xmlns="">RequestChange</Name>
+		<ActionMenuItem xmlns="">NVOrderApprovalRequestChange</ActionMenuItem>
+		<EventHandler xmlns="">NVOrderApprovalEventHandler</EventHandler>
+		<Type xmlns="">RequestChange</Type>
+	</RequestChange>
+</AxWorkflowApproval>

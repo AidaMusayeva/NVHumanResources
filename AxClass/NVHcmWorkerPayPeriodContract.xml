@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerPayPeriodContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerPayPeriodContract
+{
+    str workerId;
+    str company;
+    str payPeriod;
+    date periodStartDate;
+    date periodEndDate;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmWorkerId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("WorkerId")]
+    public str parmWorkerId(str _parm = workerId)
+    {
+        workerId = _parm;
+        return workerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCompany</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Company")]
+    public str parmCompany(str _parm = company)
+    {
+        company = _parm;
+        return company;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPayPeriod</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PayPeriod")]
+    public str parmPayPeriod(str _parm = payPeriod)
+    {
+        payPeriod = _parm;
+        return payPeriod;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPeriodStartDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PeriodStartDate")]
+    public date parmPeriodStartDate(date _parm = periodStartDate)
+    {
+        periodStartDate = _parm;
+        return periodStartDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPeriodEndDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PeriodEndDate")]
+    public date parmPeriodEndDate(date _parm = periodEndDate)
+    {
+        periodEndDate = _parm;
+        return periodEndDate;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxMenuItemAction xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V1">
+	<Name>NVTimesheetUpdateBatch</Name>
+	<HelpText>Synchronize leaves data with timesheet</HelpText>
+	<Label>Synchronize timesheet</Label>
+	<Object>NVTimesheetUpdateBatch</Object>
+	<ObjectType>Class</ObjectType>
+	<SubscriberAccessLevel>
+		<Read xmlns="">Allow</Read>
+	</SubscriberAccessLevel>
+</AxMenuItemAction>

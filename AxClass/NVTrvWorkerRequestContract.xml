@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerRequestContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVTrvWorkerRequestContract  
+{
+    str                         essRequest;
+    str                         workerId;
+    str                         fromLocation;
+    str                         toLocation;
+    TransDate                   fromDate;
+    TransDate                   toDate;
+
+    boolean                     includeLastDayHotel;
+    boolean                     isBudgeted;
+
+    str                         orderNumber;
+    str                         documentNumber;
+    TransDate                   documentEntryDate;
+    str                         comment;
+    str                         managerComment;
+
+    TransDate                   requestCreatedDate;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmEssRequest</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("EssRequest")]
+    public str parmEssRequest(str _parm = essRequest)
+    {
+        essRequest = _parm;
+        return essRequest;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmWorkerId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("WorkerId")]
+    public str parmWorkerId(str _parm = workerId)
+    {
+        workerId = _parm;
+        return workerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFromLocation</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FromLocation")]
+    public str parmFromLocation(str _parm = fromLocation)
+    {
+        fromLocation = _parm;
+        return fromLocation;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmToLocation</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ToLocation")]
+    public str parmToLocation(str _parm = toLocation)
+    {
+        toLocation = _parm;
+        return toLocation;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFromDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FromDate")]
+    public TransDate parmFromDate(TransDate _parm = fromDate)
+    {
+        fromDate = _parm;
+        return fromDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmToDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ToDate")]
+    public TransDate parmToDate(TransDate _parm = toDate)
+    {
+        toDate = _parm;
+        return toDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmIncludeLastDayHotel</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("IncludeLastDayHotel")]
+    public boolean parmIncludeLastDayHotel(boolean _parm = includeLastDayHotel)
+    {
+        includeLastDayHotel = _parm;
+        return includeLastDayHotel;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmIsBudgeted</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("isBudgeted")]
+    public boolean parmIsBudgeted(boolean _parm = isBudgeted)
+    {
+        isBudgeted = _parm;
+        return isBudgeted;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmOrderNumber</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("OrderNumber")]
+    public str parmOrderNumber(str _parm = orderNumber)
+    {
+        orderNumber = _parm;
+        return orderNumber;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDocumentNumber</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("DocumentNumber")]
+    public str parmDocumentNumber(str _parm = documentNumber)
+    {
+        documentNumber = _parm;
+        return documentNumber;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDocumentEntryDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("DocumentEntryDate")]
+    public TransDate parmDocumentEntryDate(TransDate _parm = documentEntryDate)
+    {
+        documentEntryDate = _parm;
+        return documentEntryDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmComment</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Comment")]
+    public str parmComment(str _parm = comment)
+    {
+        comment = _parm;
+        return comment;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmManagerComment</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("managerComment")]
+    public str parmManagerComment(str _parm = managerComment)
+    {
+        managerComment = _parm;
+        return managerComment;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmRequestCreatedDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("RequestCreatedDate")]
+    public TransDate parmRequestCreatedDate(TransDate _parm = requestCreatedDate)
+    {
+        requestCreatedDate = _parm;
+        return requestCreatedDate;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

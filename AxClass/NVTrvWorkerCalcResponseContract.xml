@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerCalcResponseContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVTrvWorkerCalcResponseContract  
+{
+    str         ESSRequest;
+    int         totalDays;
+    real        perDiem;
+    str         currency;
+    real        hotelAllowancePerc;
+    real        otherAllowancePerc;
+    real        hotelAllowanceAmount;
+    real        otherAllowanceAmount;
+    real        totalValue;
+    real        exchangeRate;
+    real        totalValueReportingCurrency;
+    str         reportingCurrency;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmESSRequest</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ESSRequest")]
+    public str parmESSRequest(str _parm = ESSRequest)
+    {
+        ESSRequest = _parm;
+        return ESSRequest;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTotalDays</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("TotalDays")]
+    public int parmTotalDays(int _parm = totalDays)
+    {
+        totalDays = _parm;
+        return totalDays;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPerDiem</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PerDiem")]
+    public real parmPerDiem(real _parm = perDiem)
+    {
+        perDiem = _parm;
+        return perDiem;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCurrency</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Currency")]
+    public str parmCurrency(str _parm = currency)
+    {
+        currency = _parm;
+        return currency;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmHotelAllowancePerc</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("HotelAllowancePerc")]
+    public real parmHotelAllowancePerc(real _parm = hotelAllowancePerc)
+    {
+        hotelAllowancePerc = _parm;
+        return hotelAllowancePerc;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmOtherAllowancePerc</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("OtherAllowancePerc")]
+    public real parmOtherAllowancePerc(real _parm = otherAllowancePerc)
+    {
+        otherAllowancePerc = _parm;
+        return otherAllowancePerc;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmHotelAllowanceAmount</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("HotelAllowanceAmount")]
+    public real parmHotelAllowanceAmount(real _parm = hotelAllowanceAmount)
+    {
+        hotelAllowanceAmount = _parm;
+        return hotelAllowanceAmount;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmOtherAllowanceAmount</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("OtherAllowanceAmount")]
+    public real parmOtherAllowanceAmount(real _parm = otherAllowanceAmount)
+    {
+        otherAllowanceAmount = _parm;
+        return otherAllowanceAmount;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTotalValue</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("TotalValue")]
+    public real parmTotalValue(real _parm = totalValue)
+    {
+        totalValue = _parm;
+        return totalValue;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmExchangeRate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ExchangeRate")]
+    public real parmExchangeRate(real _parm = exchangeRate)
+    {
+        exchangeRate = _parm;
+        return exchangeRate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTotalValueReportingCurrency</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("TotalValueReportingCurrency")]
+    public real parmTotalValueReportingCurrency(real _parm = totalValueReportingCurrency)
+    {
+        totalValueReportingCurrency = _parm;
+        return totalValueReportingCurrency;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmReportingCurrency</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ReportingCurrency")]
+    public str parmReportingCurrency(str _parm = reportingCurrency)
+    {
+        reportingCurrency = _parm;
+        return reportingCurrency;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

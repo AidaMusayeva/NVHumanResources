@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTableExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>HcmPositionDetail.NVHumanResources</Name>
+	<FieldGroupExtensions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>NVMiscellaneous</Name>
+			<Label>Miscellaneous</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>NVHazardousWork</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>NVHcmHazardousAllowanceId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>NVHcmPositionRateId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>NVFlightCrewId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>NVRoleCriticality</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>NVLocation</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<FieldModifications>
+		<AxExtensionModification>
+			<Name>FullTimeEquivalency</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>Full time/Part time</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+		<AxExtensionModification>
+			<Name>PositionType</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>Position degree</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+		<AxExtensionModification>
+			<Name>Title</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>English version of position</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</FieldModifications>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>NVHazardousWork</Name>
+			<ExtendedDataType>HrmNoYesId</ExtendedDataType>
+			<HelpText>Specifies if position entails hazardous work</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Hazardous work</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVHcmPositionRateId</Name>
+			<ExtendedDataType>NVHcmPositionRateId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Monthly or hourly</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>NVRoleCriticality</Name>
+			<ExtendedDataType>HrmNoYesId</ExtendedDataType>
+			<HelpText>Specifies role criticality of position</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Role criticality</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVFlightCrewId</Name>
+			<ExtendedDataType>NVFlightCrewId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVDepartLegalEntity</Name>
+			<ExtendedDataType>OMDepartmentRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Legal entity</Label>
+			<Visible>No</Visible>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVDepartBusinessUnit</Name>
+			<ExtendedDataType>OMDepartmentRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Business unit</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVDepartDepartment</Name>
+			<ExtendedDataType>OMDepartmentRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Department</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVDepartDivision</Name>
+			<ExtendedDataType>OMDepartmentRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Unit</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVDepartGroup1</Name>
+			<ExtendedDataType>OMDepartmentRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Group 1</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVDepartGroup2</Name>
+			<ExtendedDataType>OMDepartmentRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Group 2</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVHcmHazardousAllowanceId</Name>
+			<ExtendedDataType>NVHcmHazardousAllowanceId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVLegalGrade</Name>
+			<ExtendedDataType>HcmCompensationLevelId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Legal (VTC)</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVInternalGrade</Name>
+			<ExtendedDataType>HcmCompensationLevelId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Internal (WTW)</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>NVLocation</Name>
+			<ExtendedDataType>NVPositionLocationsRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<PropertyModifications />
+	<RelationExtensions />
+	<RelationModifications />
+	<Relations>
+		<AxTableRelation>
+			<Name>NVFlightCrew</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>NVFlightCrew</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVFlightCrewId</Name>
+					<Field>NVFlightCrewId</Field>
+					<RelatedField>Id</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVHcmPositionRate</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>NVHcmPositionRate</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVHcmPositionRateId</Name>
+					<Field>NVHcmPositionRateId</Field>
+					<RelatedField>Id</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVDepartLegalEntity</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>OMOperatingUnit</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>NVDepartmentHierarchy</Name>
+					<RelatedField>NVDepartmentHierarchy</RelatedField>
+					<Value>1</Value>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVDepartLegalEntity</Name>
+					<Field>NVDepartLegalEntity</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVDepartBusinessUnit</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>OMOperatingUnit</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>NVDepartmentHierarchy</Name>
+					<RelatedField>NVDepartmentHierarchy</RelatedField>
+					<Value>2</Value>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVDepartBusinessUnit</Name>
+					<Field>NVDepartBusinessUnit</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVDepartDepartment</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>OMOperatingUnit</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>NVDepartmentHierarchy</Name>
+					<RelatedField>NVDepartmentHierarchy</RelatedField>
+					<Value>3</Value>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVDepartDepartment</Name>
+					<Field>NVDepartDepartment</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVDepartDivision</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>OMOperatingUnit</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>NVDepartmentHierarchy</Name>
+					<RelatedField>NVDepartmentHierarchy</RelatedField>
+					<Value>4</Value>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVDepartDivision</Name>
+					<Field>NVDepartDivision</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVDepartGroup1</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>OMOperatingUnit</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>NVDepartmentHierarchy</Name>
+					<RelatedField>NVDepartmentHierarchy</RelatedField>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVDepartGroup1</Name>
+					<Field>NVDepartGroup1</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVDepartGroup2</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>OMOperatingUnit</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>NVDepartmentHierarchy</Name>
+					<RelatedField>NVDepartmentHierarchy</RelatedField>
+					<Value>6</Value>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVDepartGroup2</Name>
+					<Field>NVDepartGroup2</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>NVHcmHazardousAllowance</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVHcmHazardousAllowance</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelatedTableRole>EarningCode</RelatedTableRole>
+			<RelationshipType>Association</RelationshipType>
+			<Role>NVHcmHazardousAllowance</Role>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVHcmHazardousAllowanceId</Name>
+					<Field>NVHcmHazardousAllowanceId</Field>
+					<RelatedField>Id</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>NVHcmCompensationLevel_Legal</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>HcmCompensationLevel</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelatedTableRole>EarningCode</RelatedTableRole>
+			<RelationshipType>Association</RelationshipType>
+			<Role>NVHcmCompensationLevel_Legal</Role>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVLegalGrade</Name>
+					<Field>NVLegalGrade</Field>
+					<RelatedField>CompensationLevelId</RelatedField>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>EnabledNVLegalGrade</Name>
+					<RelatedField>NVLegalGrade</RelatedField>
+					<ValueStr>NoYes::Yes</ValueStr>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>NVHcmCompensationLevel_Internal</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>HcmCompensationLevel</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelatedTableRole>EarningCode</RelatedTableRole>
+			<RelationshipType>Association</RelationshipType>
+			<Role>NVHcmCompensationLevel_Internal</Role>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVInternalGrade</Name>
+					<Field>NVInternalGrade</Field>
+					<RelatedField>CompensationLevelId</RelatedField>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>EnabledNVLegalGrade</Name>
+					<RelatedField>NVInternalGrade</RelatedField>
+					<ValueStr>NoYes::Yes</ValueStr>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>NVPositionLocations</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVPositionLocations</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>NVLocation</Name>
+					<Field>NVLocation</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+	</Relations>
+</AxTableExtension>

@@ -1,0 +1,897 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTimeSheetLines</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVTimeSheetLines extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>setValueToDayColumn</Name>
+				<Source><![CDATA[
+    public void setValueToDayColumn(TransDate _date, str _value)
+    {
+        str                                     fieldname;
+        int                                     fieldId;
+
+        fieldname = strFmt('%1%2','HoursDay',dayOfMth(_date));
+        fieldId = fieldName2Id(tableNum(NVTimeSheetLines),fieldname);
+        this.(fieldId) = _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getValueFromDate</Name>
+				<Source><![CDATA[
+    public str getValueFromDate(TransDate _date)
+    {
+        str                                     fieldname;
+        int                                     fieldId;
+
+        fieldname = strFmt('%1%2','HoursDay',dayOfMth(_date));
+        fieldId = fieldName2Id(tableNum(NVTimeSheetLines), fieldname);
+        return this.(fieldId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setValueToLeaveColumn</Name>
+				<Source><![CDATA[
+    public void setValueToLeaveColumn(int _id, int _value = 1)
+    {
+        str                                     fieldname;
+        int                                     fieldId;
+
+        fieldname = strFmt('%1%2','LeaveType',_id);
+        fieldId = fieldName2Id(tableNum(NVTimeSheetLines), fieldname);
+        this.(fieldId) = this.(fieldId) + _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dateToFieldId</Name>
+				<Source><![CDATA[
+    public static FieldId dateToFieldId(TransDate _date)
+    {
+        str                                     fieldname;
+        int                                     fieldId;
+
+        fieldname = strFmt('%1%2','HoursDay',dayOfMth(_date));
+        fieldId = fieldName2Id(tableNum(NVTimeSheetLines), fieldname);
+
+        return fieldId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    public static NVTimeSheetLines find(RefRecId _headerId, HcmPersonnelNumberId _empId, boolean _forUpdate = true)
+    {
+        NVTimeSheetLines    lines;
+
+        select firstonly lines
+            where lines.TimeSheetHeader == _headerId
+            && lines.EmpId == _empId;
+
+        if(_forUpdate)
+            lines.selectForUpdate(true);
+
+        return lines;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>findRecId</Name>
+				<Source><![CDATA[
+    public static NVTimeSheetLines findRecId(RefRecId _recId, boolean _forUpdate = true)
+    {
+        NVTimeSheetLines    lines;
+
+        select firstonly crosscompany lines
+            where lines.RecId == _recId;
+
+        if(_forUpdate)
+            lines.selectForUpdate(true);
+
+        return lines;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>update</Name>
+				<Source><![CDATA[
+    public void update()
+    {
+        this.ActualWorkingHours = this.getTotalActualHours();
+        this.CalcNightHours     = this.getTotalNightHours();
+
+        NVHcmESSChangeLog::insertRef(this.TableId, this.RecId);
+
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateSync</Name>
+				<Source><![CDATA[
+    public void updateSync()
+    {
+        this.update();
+
+        NVHcmESSChangeLog changeLog = NVHcmESSChangeLog::insertRef(this.TableId, this.RecId);
+        if(changeLog)
+        {
+            NVHcmProcessESSChangeLog processChangeLog = NVHcmProcessESSChangeLog::construct();
+
+            processChangeLog.parmChangeLogRecId(changeLog.RecId);
+            processChangeLog.run();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkedDays</Name>
+				<Source><![CDATA[
+    public int getWorkedDays()
+    {
+        int     totalWorkedDays = 0;
+        int     lastDayOFMonth = dayOfMth(this.timeSheetHeader().EndDate);
+        
+        for(int day = 1; day<=lastDayOFMonth; day++)
+        {
+            FieldName   fieldName = "HoursDay" + int2str(day);
+            int         fieldid = fieldName2Id(tableNum(NVTimeSheetLines), fieldName);
+
+            int totalHours = this.convertStringToInt(this.(fieldid));
+
+            if(totalHours > 0)
+                totalWorkedDays++;
+        }
+
+        return totalWorkedDays;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkedDaysDate</Name>
+				<Source><![CDATA[
+    public int getWorkedDaysDate(date _startDate, date _endDate)
+    {
+        NvTimeSheetHeader timesheet = this.timeSheetHeader();
+        int     totalWorkedDays = 0;
+        int     firstDay            = dayOfMth(_startDate);
+        int     lastDay             = dayOfMth(_endDate);
+
+        for(int day = firstDay; day <= lastDay; day++)
+        {
+            FieldName   fieldName = "HoursDay" + int2str(day);
+            int         fieldid = fieldName2Id(tableNum(NVTimeSheetLines), fieldName);
+
+            int totalHours = this.convertStringToInt(this.(fieldid));
+
+            if(totalHours > 0)
+                totalWorkedDays++;
+        }
+
+        return totalWorkedDays;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTotalActualHours</Name>
+				<Source><![CDATA[
+    private int getTotalActualHours()
+    {
+        int     lastDayOFMonth = dayOfMth(this.timeSheetHeader().EndDate);
+        int     totalHours = 0;
+
+        for(int day = 1; day<=lastDayOFMonth; day++)
+        {
+            FieldName   fieldName = "HoursDay" + int2str(day);
+            int         fieldid = fieldName2Id(tableNum(NVTimeSheetLines),fieldName);
+
+            totalHours += this.convertStringToInt(this.(fieldid));
+
+        }
+        return totalHours;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>convertStringToInt</Name>
+				<Source><![CDATA[
+    private int convertStringToInt(str _hours)
+    {
+        int num = 0;
+        try
+        {
+            num = str2Num(_hours);
+        }
+        catch
+        {
+            num = 0;
+        }
+        return num;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>timeSheetHeader</Name>
+				<Source><![CDATA[
+    public NvTimeSheetHeader timeSheetHeader()
+    {
+        NvTimeSheetHeader   header;
+
+        select firstonly crosscompany header
+            where header.RecId == this.TimeSheetHeader;
+
+        return header;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    public boolean validateWrite()
+    {
+        boolean ret;
+    
+        ret = super();
+        int lastDayOFMonth = dayOfMth(this.timeSheetHeader().EndDate);
+        for(int day = 1; day<=lastDayOFMonth; day++)
+        {
+            FieldName   fieldName = "HoursDay" + int2str(day);
+            int         fieldid = fieldName2Id(tableNum(NVTimeSheetLines),fieldName);
+            
+            if(this.orig().(fieldId) != this.(fieldId)
+                && (NVTimeSheetLinesNoOverwriteValues::isNoOverwriteValue(this.orig().(fieldId))
+                    || !NVTimeSheetLinesAllowedValues::isAllowedValue(this.(fieldId))))
+            {
+
+                ret = ret && checkFailed(strFmt('Date %1 : Old Value %2, New Invalid value %3 for employee %4 ', this.fieldNumToDate(fieldId), this.orig().(fieldId), this.(fieldId), this.EmpId));
+            }
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateAllColumnsAreFilled</Name>
+				<Source><![CDATA[
+    public boolean validateAllColumnsAreFilled()
+    {
+        int     lastDayOFMonth = dayOfMth(this.timeSheetHeader().EndDate);
+        
+        for(int day = 1; day<=lastDayOFMonth; day++)
+        {
+            FieldName   fieldName = "HoursDay" + int2str(day);
+            int         fieldid = fieldName2Id(tableNum(NVTimeSheetLines),fieldName);
+
+            if(this.(fieldid) == "" || this.(fieldid) == "0")
+                return false;
+        }
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initValue</Name>
+				<Source><![CDATA[
+    public void initValue()
+    {
+        super();
+        
+        int     lastDayOFMonth = dayOfMth(this.timeSheetHeader().EndDate);
+        
+        for(int day = 1; day<=lastDayOFMonth; day++)
+        {
+            FieldName   fieldName = "HoursDay" + int2str(day);
+            int         fieldid = fieldName2Id(tableNum(NVTimeSheetLines),fieldName);
+
+            this.(fieldid) = "0";
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>NvTimeSheetHeader</Name>
+				<Source><![CDATA[
+    NvTimeSheetHeader NvTimeSheetHeader()
+    {
+        NvTimeSheetHeader   timeSheetHeader;
+
+        select timeSheetHeader
+            where timeSheetHeader.RecId == this.TimeSheetHeader;
+
+        return timesheetHeader;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>fieldNumToDate</Name>
+				<Source><![CDATA[
+    public TransDate fieldNumToDate(FieldId _fieldId)
+    {
+        str fieldName = fieldId2Name(this.TableId, _fieldId);
+        int day = str2int(strRem(fieldName, "HoursDay"));
+        return this.TimeSheetHeader().StartDate + (day - 1);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTotalNightHours</Name>
+				<Source><![CDATA[
+    private int getTotalNightHours()
+    {
+        int totalNightHours = 0;
+        NvTimeSheetHeader timeSheet = this.timeSheetHeader();
+        WorkCalendarEmployment workCalendarEmployment = WorkCalendarEmployment::findByWorkerRecId(this.Worker, timeSheet.StartDate);
+
+        if (!workCalendarEmployment.CalendarId)
+            return totalNightHours;
+
+        WorkCalendarTable workCalendarTable = WorkCalendarTable::find(workCalendarEmployment.CalendarId);
+
+        int lastDayOfMonth  = dayOfMth(timeSheet.EndDate);
+        int nightFrom       = real2int(workCalendarTable.NVNightTimeFrom);
+        int nightTo         = real2int(workCalendarTable.NVNightTimeTo);
+
+        for (int day = 1; day <= lastDayOfMonth; day++)
+        {
+            FieldName fieldName = strFmt("HoursDay%1", day);
+            int fieldId = fieldName2Id(tableNum(NVTimeSheetLines), fieldName);
+
+            int workedHours = this.convertStringToInt(this.(fieldId));
+            if (workedHours <= 0)
+                continue;
+
+            TransDate transDate = timeSheet.StartDate + day - 1;
+            WorkCalendarDate workCalendarDate;
+            select firstOnly workCalendarDate
+                where workCalendarDate.CalendarId       == workCalendarEmployment.CalendarId
+                   && workCalendarDate.TransDate        == transDate
+                   && workCalendarDate.WorkTimeControl  == WorkTimeControl::Open;
+
+            if (!workCalendarDate)
+                continue;
+
+            int nightHours      = 0;
+            int remainingHours  = workedHours;
+
+            WorkCalendarDateLine workCalendarDateLine;
+            while select workCalendarDateLine
+                order by workCalendarDateLine.ModifiedDateTime asc
+                where workCalendarDateLine.CalendarId == workCalendarDate.CalendarId
+                    && workCalendarDateLine.TransDate == workCalendarDate.TransDate
+            {
+                if (remainingHours <= 0)
+                    break;                
+
+                int shiftStart = real2int(workCalendarDateLine.FromTime);
+                int shiftEnd   = real2int(workCalendarDateLine.ToTime);
+
+                int daySeconds = 24 * 60 * 60;
+                if (shiftEnd <= shiftStart)
+                    shiftEnd += daySeconds;
+
+                int shiftDurationHours = (shiftEnd - shiftStart) / 3600;
+
+                int actualWorkedHours = min(remainingHours, shiftDurationHours);
+
+                int workStart = shiftStart;
+                int workEnd   = workStart + (actualWorkedHours * 3600);
+
+                int overlapSeconds = NVTimeSheetLines::calculateNightOverlap(workStart, workEnd, nightFrom, nightTo);
+
+                nightHours += overlapSeconds / 3600;
+                remainingHours -= actualWorkedHours;
+            }
+
+            nightHours = min(nightHours, workCalendarTable.NVNightHoursCap);
+
+            totalNightHours += nightHours;
+        }
+
+        return totalNightHours;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>calculateNightOverlap</Name>
+				<Source><![CDATA[
+    public static int calculateNightOverlap(
+        int workFrom,
+        int workTo,
+        int nightFrom,
+        int nightTo)
+    {
+        int daySeconds = 24 * 60 * 60;
+
+        if (workTo <= workFrom)
+            workTo += daySeconds;
+
+        if (nightTo <= nightFrom)
+            nightTo += daySeconds;
+
+        int overlap1 = max(0, min(workTo, nightTo) - max(workFrom, nightFrom));
+
+        nightFrom -= daySeconds;
+        nightTo   -= daySeconds;
+
+        int overlap2 = max(0, min(workTo, nightTo) - max(workFrom, nightFrom));
+
+        return overlap1 + overlap2;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>totalNightHours</Name>
+				<Source><![CDATA[
+    public display int totalNightHours()
+    {
+        return this.CalcNightHours + this.NightHours;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insert</Name>
+				<Source><![CDATA[
+    public void insert()
+    {
+        super();
+
+        NVHcmESSChangeLog::insertRef(this.TableId, this.RecId);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<Label>Worker timesheet lines</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>TimeSheetHeader</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>EmpId</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>HcmPersonnelNumberId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>PositionId</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>HcmPositionId</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>ManagerPositionId</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>HcmPositionId</ExtendedDataType>
+			<Label>Manager Position</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>EmpName</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>Name</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay1</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay2</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay3</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay4</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay5</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay6</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay7</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay8</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay9</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay10</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay11</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay12</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay13</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay14</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay15</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay16</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay17</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay18</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay19</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay20</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay21</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay22</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay23</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay24</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay25</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay26</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay27</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay28</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay29</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay30</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>HoursDay31</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>TotalWorkingDays</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<Label>Total working days</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>TotalWorkingHours</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<Label>Total working hours</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>OvertimeHours</Name>
+			<Label>Overtime hours</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LateEarlyHours</Name>
+			<Label>Late early hours</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>Courses</Name>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType1</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType2</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType3</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType4</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType5</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType6</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType7</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType8</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType9</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType10</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>LeaveType11</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>MonthStartDate</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>ActualWorkingHours</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Status</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<EnumType>NVTimeSheetLineStatus</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Worker</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>NightHours</Name>
+			<Label>Night Hours</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>CalcNightHours</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<Label>Calculated night Hours</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>ManagerName</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>Name</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Manager name</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>CalendarId</Name>
+			<ExtendedDataType>CalendarId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>NvTimeSheetHeader</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Cascade</OnDelete>
+			<RelatedTable>NvTimeSheetHeader</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>TimeSheetHeader</Name>
+					<Field>TimeSheetHeader</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmWorker</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>EmpId</Name>
+					<Field>EmpId</Field>
+					<RelatedField>PersonnelNumber</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmPosition</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>HcmPosition</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>PositionId</Name>
+					<Field>PositionId</Field>
+					<RelatedField>PositionId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmPosition_Manager</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>HcmPosition</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>ManagerPositionId</Name>
+					<Field>ManagerPositionId</Field>
+					<RelatedField>PositionId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>WorkCalendarTable</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>WorkCalendarTable</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>CalendarId</Name>
+					<Field>CalendarId</Field>
+					<RelatedField>CalendarId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

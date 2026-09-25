@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderHeaderWorkflowDocument</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Workflow document class for NVOrderHeader.
+/// Provides the query that the workflow framework uses to retrieve
+/// the document record and evaluate workflow conditions.
+/// </summary>
+/// <remarks>
+/// This class is referenced by NVOrderHeaderWorkflow (Workflow Type).
+/// The query must include NVOrderHeader as the primary datasource
+/// with Dynamic Fields = Yes to expose all fields in the workflow designer.
+/// </remarks>
+public class NVOrderHeaderWorkflowDocument extends WorkflowDocument
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getQueryName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the AOT query name for this workflow document.
+    /// </summary>
+    /// <returns>AOT query name string</returns>
+    public queryName getQueryName()
+    {
+        return queryStr(NVOrderHeaderWorkflowQuery);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTitle</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns a user-friendly title for the workflow document instance.
+    /// Displayed in workflow history and approval notifications.
+    /// </summary>
+    /// <param name="_workflowContext">Current workflow execution context</param>
+    /// <returns>Document title string shown to approvers</returns>
+    public str getTitle(WorkflowContext _workflowContext)
+    {
+        NVOrderHeader header;
+
+        select firstonly OrderNumber, OrderDate from header
+            where header.RecId == _workflowContext.parmRecId();
+
+        if (header.RecId)
+        {
+            return strFmt("Employment Order %1 (%2)",
+                header.OrderNumber,
+                date2Str(header.OrderDate, 123, 2, 1, 2, 1, 4));
+        }
+
+        return "Employment Order";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

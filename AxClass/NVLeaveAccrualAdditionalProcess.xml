@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveAccrualAdditionalProcess</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal class NVLeaveAccrualAdditionalProcess
+{
+    boolean                 createAdjustment;
+    LeaveDate               transactionDate;
+    LeaveTypeRecId          leaveType;
+    HcmWorker               worker;
+    LeaveEnrollment         enrollment;
+    LeavePlanTier           tier;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmCreateAdjustment</Name>
+				<Source><![CDATA[
+    public boolean parmCreateAdjustment(boolean _createAdjustment = createAdjustment)
+    {
+        createAdjustment = _createAdjustment;
+
+        return createAdjustment;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static NVLeaveAccrualAdditionalProcess construct()
+    {
+        NVLeaveAccrualAdditionalProcess additionalProcess = new NVLeaveAccrualAdditionalProcess();
+
+        return additionalProcess;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initBankTransaction</Name>
+				<Source><![CDATA[
+    public void initBankTransaction(LeaveBankTransaction _baseBankTransaction)
+    {
+        leaveType           = _baseBankTransaction.LeaveType;
+        transactionDate     = _baseBankTransaction.TransactionDate;
+        worker              = HcmWorker::find(_baseBankTransaction.Worker);
+        enrollment          = LeaveEnrollment::findByWorkerPlan(_baseBankTransaction.Worker, _baseBankTransaction.LeavePlan);
+        tier                = this.getPlanTier(transactionDate);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initPlanTier</Name>
+				<Source><![CDATA[
+    public void initPlanTier(LeaveDate _transactionDate, 
+        LeaveTypeRecId _leaveType, 
+        HcmWorker _worker, 
+        LeaveEnrollment _enrollment,
+        LeavePlanTier _tier)
+    {
+        transactionDate     = _transactionDate;
+        leaveType           = _leaveType;
+        worker              = _worker;
+        enrollment          = _enrollment;
+        tier                = _tier;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>process</Name>
+				<Source><![CDATA[
+    public void process()
+    {      
+        this.accrueHazardousLeaves();
+        this.accrueDisabilityLeaves();
+        this.accrueChildrenCountLeaves();
+        this.accrueMOSLeaves();
+        this.accrueChildrenDisabilityLeaves();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrueHazardousLeaves</Name>
+				<Source><![CDATA[
+    private void accrueHazardousLeaves()
+    {
+        if(!worker.hasHazardousPosition())
+            return;
+
+        NVLeavePlanAdditionalTier additionalTier;
+        select firstonly additionalTier
+            where additionalTier.PlanTier       == tier.RecId
+                && additionalTier.Category      == NVLeaveCategory::Hazardous;
+
+        if(additionalTier.AccrualAmount)
+        {
+            NVLeaveAccrualAdditionalProcess::createBankTransaction(
+                        transactionDate,
+                        additionalTier.AccrualAmount,
+                        LeaveTransactionType::Accrual,
+                        worker.RecId,
+                        tier.Plan,
+                        tier.Type,
+                        NVLeaveCategory::Hazardous,
+                        additionalTier,
+                        createAdjustment);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrueDisabilityLeaves</Name>
+				<Source><![CDATA[
+    private void accrueDisabilityLeaves()
+    {
+        if(!worker.hasActiveDisabilityDate(transactionDate))
+            return;
+
+        NVLeavePlanAdditionalTier additionalTier;
+        select firstonly additionalTier
+            where additionalTier.PlanTier       == tier.RecId
+                && additionalTier.Category      == NVLeaveCategory::Disability;
+
+        if(additionalTier.AccrualAmount)
+        {
+            NVLeaveAccrualAdditionalProcess::createBankTransaction(
+                        transactionDate,
+                        additionalTier.AccrualAmount,
+                        LeaveTransactionType::Accrual,
+                        worker.RecId,
+                        tier.Plan,
+                        tier.Type,
+                        NVLeaveCategory::Disability,
+                        additionalTier,
+                        createAdjustment);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrueChildrenCountLeaves</Name>
+				<Source><![CDATA[
+    private void accrueChildrenCountLeaves()
+    {
+        real                        ageLimit        = LeavePlan::find(tier.Plan).NVAdditionalLeaveChildrenAge;
+        int                         childCount      = worker.numberChildrenAge(ageLimit);
+        HcmPersonPrivateDetails     privateDetails  = HcmPersonPrivateDetails::findByPerson(worker.Person);
+        HcmPersonDetails            personDetails   = HcmPersonDetails::findByPerson(worker.Person);
+        NVLeavePlanAdditionalTier   additionalTier;
+        select firstonly additionalTier
+            order by additionalTier.QualifyingAmount desc
+            where additionalTier.PlanTier                   == tier.RecId
+                && additionalTier.Category                  == NVLeaveCategory::Children
+                && additionalTier.EmployeeGender            == privateDetails.Gender
+                && (additionalTier.EmployeeMaritalStatus    == HcmPersonMaritalStatus::None
+                    || additionalTier.EmployeeMaritalStatus == personDetails.MaritalStatus)
+                && additionalTier.QualifyingAmount  <= childCount;
+
+        if(additionalTier.AccrualAmount)
+        {
+            NVLeaveAccrualAdditionalProcess::createBankTransaction(
+                        transactionDate,
+                        additionalTier.AccrualAmount,
+                        LeaveTransactionType::Accrual,
+                        worker.RecId,
+                        tier.Plan,
+                        tier.Type,
+                        NVLeaveCategory::Children,
+                        additionalTier,
+                        createAdjustment);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrueChildrenDisabilityLeaves</Name>
+				<Source><![CDATA[
+    private void accrueChildrenDisabilityLeaves()
+    {
+        real                    ageLimit        = LeavePlan::find(tier.Plan).NVAdditionalLeaveChildrenDisability;
+        int                     childCount      = worker.numberChildDisabilityAge(ageLimit);
+        HcmPersonPrivateDetails privateDetails  = HcmPersonPrivateDetails::findByPerson(worker.Person);
+        HcmPersonDetails        personDetails   = HcmPersonDetails::findByPerson(worker.Person);
+        NVLeavePlanAdditionalTier additionalTier;
+        select firstonly additionalTier
+            order by additionalTier.QualifyingAmount desc
+            where additionalTier.PlanTier                   == tier.RecId
+                && additionalTier.Category                  == NVLeaveCategory::ChildDisability
+                && additionalTier.EmployeeGender            == privateDetails.Gender
+                && (additionalTier.EmployeeMaritalStatus    == HcmPersonMaritalStatus::None
+                    || additionalTier.EmployeeMaritalStatus == personDetails.MaritalStatus)
+                && additionalTier.QualifyingAmount          <= childCount;
+
+        if(additionalTier.AccrualAmount)
+        {
+            NVLeaveAccrualAdditionalProcess::createBankTransaction(
+                        transactionDate,
+                        additionalTier.AccrualAmount,
+                        LeaveTransactionType::Accrual,
+                        worker.RecId,
+                        tier.Plan,
+                        tier.Type,
+                        NVLeaveCategory::ChildDisability,
+                        additionalTier,
+                        createAdjustment);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrueMOSLeaves</Name>
+				<Source><![CDATA[
+    private void accrueMOSLeaves()
+    {
+        LeaveAmountUnsigned     monthOfService          = this.getTotalMonthOfSerice();
+        LeaveAmountUnsigned     pastMonthOfService      = worker.totalPastExperience() * 12;
+        LeaveAmountUnsigned     totalMonthsOfService    = monthOfService + pastMonthOfService;
+
+        NVLeavePlanAdditionalTier additionalTier;
+        select firstonly additionalTier
+            order by additionalTier.QualifyingAmount desc
+            where additionalTier.PlanTier           == tier.RecId
+                && additionalTier.Category          == NVLeaveCategory::MOS
+                && additionalTier.QualifyingAmount  <= totalMonthsOfService;
+
+        if(additionalTier.AccrualAmount)
+        {
+            NVLeaveAccrualAdditionalProcess::createBankTransaction(
+                        transactionDate,
+                        additionalTier.AccrualAmount,
+                        LeaveTransactionType::Accrual,
+                        worker.RecId,
+                        tier.Plan,
+                        tier.Type,
+                        NVLeaveCategory::MOS,
+                        additionalTier,
+                        createAdjustment);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTotalMonthOfSerice</Name>
+				<Source><![CDATA[
+    private LeaveAmountUnsigned getTotalMonthOfSerice()
+    {
+        LeavePlan                       plan                    = LeavePlan::find(enrollment.Plan);
+        NVLeaveAccrualPeriodCalculator  accrualPeriodCalculator = NVLeaveAccrualPeriodCalculator::newForPlanEnrollment(
+                    plan,
+                    enrollment);
+        LeaveDate startDate = NVLeaveAccrualPeriodUtil::getLastAccrualDateRelativeTo(transactionDate, transactionDate, plan.AccrualFrequency);
+        LeaveDate endDate   = this.accrualPeriodEndDate(startDate, plan.AccrualFrequency);
+
+        LeaveAccrualPeriod  accrualPeriod   = LeaveAccrualPeriod::newPeriod(startDate, endDate);
+        LeaveDate           awardDate       = accrualPeriodCalculator.getAwardDate(accrualPeriod);
+        LeaveDate           tierBaseDate    = enrollment.getTierBasisDate(transactionDate, timeMax());
+
+        return this.calculateMonthsOfService(tierBaseDate, awardDate, LeaveType::find(leaveType).DataAreaId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>calculateMonthsOfService</Name>
+				<Source><![CDATA[
+    private LeaveAmountUnsigned calculateMonthsOfService(TransDate _tierBasisDate, TransDate _asOfDate, DataAreaId _leaveTypeCompany = curExt())
+    {
+        HRMParameters hrmParameters = (_leaveTypeCompany && _leaveTypeCompany != curExt())
+            ? HRMParameters::findByCompany(_leaveTypeCompany)
+            : HRMParameters::find();
+        LeaveMonthsOfServiceCalculationOption monthsOfServiceCalculationOption = hrmParameters.LeaveMonthsOfServiceCalculationOption;
+            
+        LeaveAmountUnsigned monthsOfService;
+        if (monthsOfServiceCalculationOption == LeaveMonthsOfServiceCalculationOption::StartOfNextMonth)
+        {
+            monthsOfService = HcmDateTimeUtil::monthDifference(_tierBasisDate, _asOfDate);
+        }
+        else
+        {
+            monthsOfService = HcmDateTimeUtil::monthDifferenceIncludeEndDay(_tierBasisDate, _asOfDate);
+        }
+
+        return monthsOfService;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrualPeriodEndDate</Name>
+				<Source><![CDATA[
+    private LeaveDate accrualPeriodEndDate(LeaveDate _startDate, LeavePlanAccrualFrequency _frequency)
+    {
+        LeaveDate endDate = _startDate == dateNull() ? dateNull() : this.nextAccrualDate(_startDate, _frequency) - 1;
+        
+        return endDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>nextAccrualDate</Name>
+				<Source><![CDATA[
+    private LeaveDate nextAccrualDate(LeaveDate _startDate, LeavePlanAccrualFrequency _frequency)
+    {
+        return _startDate == dateNull() ? dateNull() : NVLeaveAccrualPeriodUtil::getNextAccrualDate(_startDate, _frequency);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createBankTransaction</Name>
+				<Source><![CDATA[
+    private static void createBankTransaction(
+        LeaveDate _transactionDate,
+        LeaveAmountSigned _amount,
+        LeaveTransactionType _transactionType,
+        HcmWorkerRecId _workerRecId,
+        LeavePlanRecId _planRecId,
+        LeaveTypeRecId _typeRecId,
+        NVLeaveCategory _category,
+        NVLeavePlanAdditionalTier _additionalTier,
+        boolean _createAdjustment = false)
+    {
+        LeaveAmountUnsigned adjustment = 0;
+        if(_createAdjustment)
+        {
+            LeaveBankTransaction oldaccrual;
+            select sum(Amount) from oldaccrual
+                where oldaccrual.Worker             == _workerRecId
+                    && oldaccrual.LeaveType         == _typeRecId
+                    && oldaccrual.NVLeaveCategory   == _category
+                    && oldaccrual.NVTransactionYear == year(_transactionDate);
+
+            if(oldaccrual.Amount        != 0
+                && oldaccrual.Amount    < _amount)
+            {
+                adjustment = oldaccrual.Amount;
+            }
+            else if(oldaccrual.Amount   != 0
+                && oldaccrual.Amount    >= _amount)
+            {
+                return;
+            }
+        }
+        LeaveBankTransaction bankTransaction;
+
+        bankTransaction.Worker                  = _workerRecId;
+        bankTransaction.Amount                  = _amount - adjustment;
+        bankTransaction.LeavePlan               = _planRecId;
+        bankTransaction.LeaveType               = _typeRecId;
+        bankTransaction.TransactionDate         = _transactionDate;
+        bankTransaction.TransactionType         = _transactionType;
+        bankTransaction.NVLeaveCategory         = _category;
+
+        bankTransaction.insert();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPlanTier</Name>
+				<Source><![CDATA[
+    private LeavePlanTier getPlanTier(date _asOfDate)
+    {
+        utcdatetime asOfDateTime            = dateToEndUtcDateTime(_asOfDate, DateTimeUtil::getCompanyTimeZone());
+        utcdatetime lastEmploymentValidTo   = this.getLastEmploymentValidTo(enrollment.Worker, asOfDateTime);
+
+        utcdatetime boundaryEndDateTime = DateTimeUtil::applyTimeZoneOffset(
+            min(asOfDateTime, lastEmploymentValidTo),
+            DateTimeUtil::getCompanyTimeZone());
+
+        return enrollment.getPlanTier(
+            leaveType,
+            DateTimeUtil::date(boundaryEndDateTime),
+            DateTimeUtil::time(boundaryEndDateTime));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getLastEmploymentValidTo</Name>
+				<Source><![CDATA[
+    private ValidToDateTime getLastEmploymentValidTo(HcmWorkerRecId _worker, utcdatetime _asOfDateTime)
+    {
+        utcdatetime minUtc = DateTimeUtil::minValue();
+        HcmEmployment employment;
+
+        select firstonly validtimestate(minUtc, _asOfDateTime) ValidTo from employment
+            order by ValidTo desc
+            where employment.Worker == _worker
+                && employment.LegalEntity == CompanyInfo::current();
+
+        return employment.ValidTo;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

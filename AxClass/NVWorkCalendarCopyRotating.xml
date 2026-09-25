@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkCalendarCopyRotating</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class NVWorkCalendarCopyRotating extends RunBaseBatch implements BatchRetryable
+{
+    CalendarId      calendarId;
+    FromDate        fromDate;
+    Days            incDays;
+    
+    DialogField     dlgCalendarId;
+    DialogField     dlgFromDate;
+    DialogField     dlgDays;
+
+    #define.CurrentVersion(1)
+    #localmacro.CurrentList
+        calendarId,
+        fromDate,
+        incDays
+    #endmacro
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>setCalendarId</Name>
+				<Source><![CDATA[
+    public void setCalendarId(CalendarId _calendarId)
+    {
+        calendarId = _calendarId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canGoBatchJournal</Name>
+				<Source><![CDATA[
+    public boolean canGoBatchJournal()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialog</Name>
+				<Source><![CDATA[
+    public Object dialog()
+    {
+        DialogRunbase       dialog = super();
+        
+        dlgCalendarId   = dialog.addFieldValue(extendedTypeStr(CalendarId), calendarId);
+        dlgCalendarId.value(calendarId);
+        dlgCalendarId.enabled(false);
+
+        dlgFromDate     = dialog.addFieldValue(extendedTypeStr(FromDate), fromDate);
+        dlgDays         = dialog.addFieldValue(extendedTypeStr(Days), incDays);
+        dlgDays.label("Days to copy");
+
+        return dialog;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogPostRun</Name>
+				<Source><![CDATA[
+    public void dialogPostRun(DialogRunbase dialog)
+    {
+        super(dialog);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFromDialog</Name>
+				<Source><![CDATA[
+    public boolean getFromDialog()
+    {
+        fromDate    = dlgFromDate.value();
+        incDays     = dlgDays.value();
+        calendarId  = dlgCalendarId.value();
+
+        return super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public boolean init()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new()
+    {
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pack</Name>
+				<Source><![CDATA[
+    public container pack()
+    {
+        return [#CurrentVersion, #CurrentList];
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        #OCCRetryCount
+        try
+        {
+            ttsbegin;
+            int startIndex = incDays;
+            int incIndex = 0;
+            
+            while(true)
+            {
+                WorkCalendarDate toCalendarDate;
+                select firstonly toCalendarDate
+                    where toCalendarDate.CalendarId == calendarId
+                        && toCalendarDate.TransDate == (fromDate + startIndex);
+                
+                if(toCalendarDate.RecId == 0)
+                    break;
+
+                WorkCalendarDate calendarDate;
+                select firstonly calendarDate
+                    where calendarDate.CalendarId   == calendarId
+                        && calendarDate.TransDate   == (fromDate + incIndex);
+                
+                toCalendarDate.selectForUpdate(true);
+
+                toCalendarDate.ClosedForPickup  = calendarDate.ClosedForPickup;
+                toCalendarDate.WorkTimeControl  = calendarDate.WorkTimeControl;
+
+                toCalendarDate.update();
+
+                WorkCalendarDateLine fromCalendarDateLine;
+                WorkCalendarDateLine toCalendarDateLine;
+                
+                delete_from toCalendarDateLine
+                    where toCalendarDateLine.CalendarId       == toCalendarDate.CalendarId
+                        && toCalendarDateLine.TransDate       == toCalendarDate.TransDate;
+                while select fromCalendarDateLine
+                    where fromCalendarDateLine.CalendarId       == calendarDate.CalendarId
+                        && fromCalendarDateLine.TransDate       == calendarDate.TransDate
+                {
+                    toCalendarDateLine.data(fromCalendarDateLine);
+
+                    toCalendarDateLine.TransDate = toCalendarDate.TransDate;
+
+                    toCalendarDateLine.insert();
+                }
+
+                startIndex++;
+                incIndex = incIndex >= incDays? 1: incIndex + 1;
+            }
+            ttscommit;
+
+            Info("Operation completed");
+        }
+        catch (Exception::Deadlock)
+        {
+            retry;
+        }
+        catch (Exception::UpdateConflict)
+        {
+            if (appl.ttsLevel() == 0)
+            {
+                if (xSession::currentRetryCount() >= #RetryNum)
+                {
+                    throw Exception::UpdateConflictNotRecovered;
+                }
+                else
+                {
+                    retry;
+                }
+            }
+            else
+            {
+                throw Exception::UpdateConflict;
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runsImpersonated</Name>
+				<Source><![CDATA[
+    public boolean runsImpersonated()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>unpack</Name>
+				<Source><![CDATA[
+    public boolean unpack(container packedClass)
+    {
+        Version version = RunBase::getVersion(packedClass);
+        ;
+        switch (version)
+        {
+            case #CurrentVersion:
+                [version,#CurrentList] = packedClass;
+                break;
+            default:
+                return false;
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>allowSaveLast</Name>
+				<Source><![CDATA[
+    public boolean allowSaveLast()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    public boolean validate(Object _calledFrom = null)
+    {
+        if (false)
+            return checkFailed("");
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    static NVWorkCalendarCopyRotating construct()
+    {
+        return new NVWorkCalendarCopyRotating();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    static ClassDescription description()
+    {
+        return "Copy rotating shift";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    static void main(Args args)
+    {
+        WorkCalendarTable workCalendarTable = args.record() as WorkCalendarTable;
+
+        NVWorkCalendarCopyRotating copyRotating = NVWorkCalendarCopyRotating::construct();
+        
+        copyRotating.setCalendarId(workCalendarTable.CalendarId);
+        if (copyRotating.prompt())
+        {
+            copyRotating.runOperation();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>isRetryable</Name>
+				<Source><![CDATA[
+    [Hookable(false)]
+    public final boolean isRetryable()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canRunInNewSession</Name>
+				<Source><![CDATA[
+    protected boolean canRunInNewSession()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

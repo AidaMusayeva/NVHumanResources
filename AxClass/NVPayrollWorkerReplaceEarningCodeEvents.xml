@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVPayrollWorkerReplaceEarningCodeEvents</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVPayrollWorkerReplaceEarningCodeEvents
+{
+    
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>Replacement_ReplacedWorker_OnLookup</Name>
+				<Source><![CDATA[
+    [
+        FormControlEventHandler(formControlStr(HcmWorkerPayroll, Replacement_ReplacedWorker), FormControlEventType::Lookup),
+        FormControlEventHandler(formControlStr(NVPayrollWorkerReplaceEarningCode, Grid_ReplacedWorker), FormControlEventType::Lookup)
+    ]
+    public static void Replacement_ReplacedWorker_OnLookup(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun                             formRun                 = sender.formRun();
+        FormDataSource                      replaceEarningCodeDS    = formRun.dataSource(formDataSourceStr(HcmWorkerPayroll, NVPayrollWorkerReplaceEarningCode));
+        NVPayrollWorkerReplaceEarningCode   replaceEarningCode      = replaceEarningCodeDS.cursor();
+
+        if(replaceEarningCode.ReplacedPosition != 0)
+        {
+            SysReferenceTableLookup lookup = SysReferenceTableLookup::newParameters(tableNum(HcmWorker), sender);
+
+            Query query = new Query();
+            query.validTimeStateDateTimeRange(DateTimeUtil::minValue(), DateTimeUtil::maxValue());
+            QueryBuildDataSource qbdsWorker = query.addDataSource(tableNum(HcmWorker));
+            QueryBuildDataSource qbdsAssignment = qbdsWorker.addDataSource(tableNum(HcmPositionWorkerAssignment));
+
+            qbdsAssignment.joinMode(JoinMode::ExistsJoin);
+
+            qbdsAssignment.addLink(fieldNum(HcmWorker, RecId), fieldNum(HcmPositionWorkerAssignment, Worker));
+            qbdsAssignment.addRange(fieldNum(HcmPositionWorkerAssignment, Position)).value(queryValue(replaceEarningCode.ReplacedPosition));
+            qbdsAssignment.addSortField(fieldNum(HcmPositionWorkerAssignment, ValidTo), SortOrder::Descending);
+
+            lookup.addLookupfield(fieldNum(HcmWorker, PersonnelNumber));
+            lookup.addLookupfield(fieldNum(HcmWorker, Person));
+
+            lookup.parmQuery(query);
+            lookup.performFormLookup();
+
+            FormControlCancelableSuperEventArgs cancelableArgs = e as FormControlCancelableSuperEventArgs;
+            cancelableArgs.cancelSuperCall();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>Replacement_ReplacedPosition_OnLookup</Name>
+				<Source><![CDATA[
+    [
+        FormControlEventHandler(formControlStr(HcmWorkerPayroll, Replacement_ReplacedPosition), FormControlEventType::Lookup),
+        FormControlEventHandler(formControlStr(NVPayrollWorkerReplaceEarningCode, Grid_ReplacedPosition), FormControlEventType::Lookup)
+    ]
+    public static void Replacement_ReplacedPosition_OnLookup(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun                           formRun              = sender.formRun();
+        FormDataSource                    replaceEarningCodeDS = formRun.dataSource(formDataSourceStr(HcmWorkerPayroll, NVPayrollWorkerReplaceEarningCode));
+        NVPayrollWorkerReplaceEarningCode replaceEarningCode   = replaceEarningCodeDS.cursor();
+        if(replaceEarningCode.ReplacedWorker != 0)
+        {
+            SysReferenceTableLookup lookup = SysReferenceTableLookup::newParameters(tableNum(HcmPosition), sender);
+
+            Query query = new Query();
+            query.validTimeStateDateTimeRange(DateTimeUtil::minValue(), DateTimeUtil::maxValue());
+
+            QueryBuildDataSource qbdsPosition   = query.addDataSource(tableNum(HcmPosition));
+            QueryBuildDataSource qbdsAssignment = qbdsPosition.addDataSource(tableNum(HcmPositionWorkerAssignment));
+
+            qbdsAssignment.joinMode(JoinMode::ExistsJoin);
+            qbdsAssignment.addLink(fieldNum(HcmPosition, RecId), fieldNum(HcmPositionWorkerAssignment, Position));
+
+            qbdsAssignment.addRange(fieldNum(HcmPositionWorkerAssignment, Worker)).value(queryValue(replaceEarningCode.ReplacedWorker));
+
+            qbdsAssignment.addSortField(fieldNum(HcmPositionWorkerAssignment, ValidTo), SortOrder::Descending);
+        
+            lookup.addLookupfield(fieldNum(HcmPosition, PositionId));
+            lookup.addLookupMethod(tableMethodStr(HcmPosition, description));
+
+            lookup.parmQuery(query);
+            lookup.performFormLookup();
+
+            FormControlCancelableSuperEventArgs cancelableArgs = e as FormControlCancelableSuperEventArgs;
+            cancelableArgs.cancelSuperCall();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>Grid_Position_OnLookup</Name>
+				<Source><![CDATA[
+    [
+        FormControlEventHandler(formControlStr(NVPayrollWorkerReplaceEarningCode, Grid_Position), FormControlEventType::Lookup),
+        FormControlEventHandler(formControlStr(HcmWorkerPayroll, Replacement_Position), FormControlEventType::Lookup)
+    ]
+    public static void Grid_Position_OnLookup(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun                 formRun;
+        HcmWorker               hcmWorker;
+        HcmPositionLookup       positionLookup;
+
+        formRun = sender.formRun();
+
+        if(formRun.name() == formStr(HcmWorkerPayroll))
+        {
+            FormDataSource hcmWorkerDs = formRun.dataSource(formDataSourceStr(HcmWorkerPayroll, HcmWorker));
+            hcmWorker = hcmWorkerDs.cursor();
+        }
+        else if(formRun.name() == formStr(NVPayrollWorkerReplaceEarningCode))
+        {
+            FormDataSource replaceEarningCodeDS = formRun.dataSource(formDataSourceStr(NVPayrollWorkerReplaceEarningCode, NVPayrollWorkerReplaceEarningCode));
+            NVPayrollWorkerReplaceEarningCode replaceEarningCode = replaceEarningCodeDS.cursor();
+            hcmWorker = HcmWorker::find(replaceEarningCode.Worker);
+        }
+
+        if(hcmWorker)
+        {
+            positionLookup = HcmPositionLookup::newAllPositions();
+            positionLookup.lookupPosition(sender, hcmWorker.RecId, 0, 0, true, true, true);
+        }
+
+        FormControlCancelableSuperEventArgs cancelableArgs = e as FormControlCancelableSuperEventArgs;
+        if (cancelableArgs)
+        {
+            cancelableArgs.cancelSuperCall();
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

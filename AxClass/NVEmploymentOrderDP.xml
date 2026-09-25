@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVEmploymentOrderDP</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Report Data Provider for Employment Order Report.
+/// Populates employee and order data from NVOrderHeader and NVOrderLine into a temporary table for SSRS consumption.
+/// </summary>
+/// <remarks>
+/// Supports two modes:
+/// - Consolidated: Multiple employees in one order (multiple lines)
+/// - Individual: One employee per order (single line)
+///
+/// Data flow: Controller → Contract → DP (processReport) → reportTmp → SSRS Report
+/// </remarks>
+[SRSReportParameterAttribute(classStr(NVEmploymentOrderContract))]
+class NVEmploymentOrderDP extends SRSReportDataProviderBase
+{
+    /// <summary>
+    /// Temporary table holding report data for SSRS.
+    /// </summary>
+    NVEmploymentOrderTmp reportTmp;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getTmp</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the temporary table populated with employee order data.
+    /// This method is called by SSRS to retrieve the dataset.
+    /// </summary>
+    /// <returns>Populated NVEmploymentOrderTmp table</returns>
+    [SRSReportDataSetAttribute(tableStr(NVEmploymentOrderTmp))]
+    public NVEmploymentOrderTmp getTmp()
+    {
+        select reportTmp;
+        return reportTmp;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processReport</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Main processing method that populates the temporary table with employee and order data.
+    /// Handles both consolidated (multiple employees) and individual (single employee) orders.
+    /// </summary>
+    public void processReport()
+    {
+        NVOrderHeader header;
+        NVOrderLine line;
+        HcmWorker worker;
+        DirPerson person;
+        HcmEmployment employment;
+        HcmPosition position;
+        HcmPositionDetail positionDetail;
+        HcmTitle title;
+
+        NVEmploymentOrderContract contract = this.parmDataContract() as NVEmploymentOrderContract;
+        RecId orderHeaderRecId = contract.parmOrderHeaderRecId();
+
+        // Validate input
+        if (!orderHeaderRecId)
+        {
+            error("Order Header RecId is required");
+            return;
+        }
+
+        // Fetch order header
+        header = NVOrderHeader::find(orderHeaderRecId);
+        if (!header.RecId)
+        {
+            error(strFmt("Order not found: %1", orderHeaderRecId));
+            return;
+        }
+
+        // Clear previous data
+        delete_from reportTmp;
+
+        // Process based on order type
+        if (header.IsConsolidated == NoYes::Yes)
+        {
+            this.processConsolidatedOrder(header);
+        }
+        else
+        {
+            this.processIndividualOrder(header);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processConsolidatedOrder</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes a consolidated order with multiple employee lines.
+    /// Creates one report record per employee line.
+    /// </summary>
+    /// <param name="_header">Order header record</param>
+    private void processConsolidatedOrder(NVOrderHeader _header)
+    {
+        NVOrderLine line;
+        
+        while select line where line.OrderHeaderRecId == _header.RecId
+        {
+            this.populateReportRecord(_header, line);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processIndividualOrder</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes an individual order with a single employee line.
+    /// Creates one report record for the single employee.
+    /// </summary>
+    /// <param name="_header">Order header record</param>
+    private void processIndividualOrder(NVOrderHeader _header)
+    {
+        NVOrderLine line;
+        
+        select firstonly line where line.OrderHeaderRecId == _header.RecId;
+        
+        if (!line.RecId)
+        {
+            error(strFmt("No order lines found for order: %1", _header.OrderNumber));
+            return;
+        }
+        
+        this.populateReportRecord(_header, line);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>populateReportRecord</Name>
+				<Source><![CDATA[
+    private void populateReportRecord(NVOrderHeader _header, NVOrderLine _line)
+    {
+        HcmWorker worker;
+        DirPerson person;
+
+        worker = HcmWorker::find(_line.WorkerRecId);
+        if (!worker.RecId)
+        {
+            warning(strFmt("Worker not found: RecId %1", _line.WorkerRecId));
+            return;
+        }
+
+        person = DirPerson::find(worker.Person);
+        if (!person.RecId)
+        {
+            warning(strFmt("Person not found for worker: %1", worker.PersonnelNumber));
+            return;
+        }
+
+        reportTmp.clear();
+
+        // Employee information
+        reportTmp.EmployeeName = person.Name ? person.Name : '';
+        reportTmp.EmployeeCode = worker.PersonnelNumber ? worker.PersonnelNumber : '';
+
+        // Order information
+        reportTmp.OrderNumber     = _header.OrderNumber;
+        reportTmp.OrderType       = _line.OrderType;
+        reportTmp.OrderTypeNameAz = this.getOrderTypeNameAz(_line.OrderType);
+        reportTmp.OrderDate       = _header.OrderDate;
+
+        // Dates
+        reportTmp.HiringDate      = _line.StartDate;
+        reportTmp.ContractEndDate = _line.EndDate;
+        reportTmp.ContractDate    = this.getContractDate(_line);
+
+        // Position — StaffUnit = current position description
+        reportTmp.Position = this.getPositionName(_line.PositionRecId);
+
+        // FIX 2: Department hierarchy — direct read from denormalized NVOrderLine fields
+        this.populateDepartmentHierarchy(_line);
+
+        // Build StaffUnitFull — clean concatenation of BU + Group1 + Group2
+        // Excludes placeholder values — result is ready for SSRS without IIf logic
+        str buPart     = (reportTmp.BU             && reportTmp.BU             != '[BU]')     ? reportTmp.BU             : '';
+        str group1Part = (reportTmp.StructureUnit1 && reportTmp.StructureUnit1 != '[Group1]') ? reportTmp.StructureUnit1 : '';
+        str group2Part = (reportTmp.StructureUnit2 && reportTmp.StructureUnit2 != '[Group2]') ? reportTmp.StructureUnit2 : '';
+
+        // Concatenate non-empty parts with single space separator
+        str staffUnitFull = '';
+        if (buPart)
+            staffUnitFull = buPart;
+        if (group1Part)
+            staffUnitFull = staffUnitFull ? staffUnitFull + ' ' + group1Part : group1Part;
+        if (group2Part)
+            staffUnitFull = staffUnitFull ? staffUnitFull + ' ' + group2Part : group2Part;
+
+        reportTmp.StaffUnitFull = staffUnitFull ? staffUnitFull : '[StaffUnitFull]';
+
+        // Salary and employment details
+        reportTmp.ProbationPeriod            = _line.ProbationPeriod;
+        reportTmp.GovernmentGrade            = _line.GovernmentGrade ? _line.GovernmentGrade : '[GovernmentGrade]';
+        reportTmp.BaseSalary                 = _line.BaseSalary;
+        reportTmp.AdditionalSalary           = _line.AdditionalSalary;
+        reportTmp.HazardousConditionsPercent = _line.HazardousConditionsPercent;
+
+        // ============================================================================
+        // Position Change fields
+        // ============================================================================
+        reportTmp.PreviousDepartmentRecId = _line.PreviousDepartmentRecId;
+        reportTmp.ChangeDate              = _line.ChangeDate;
+
+        // FIX 3: StaffUnitBefore = previous position description (denormalized in staging)
+        reportTmp.StaffUnitBefore = _line.StaffUnitBefore ? _line.StaffUnitBefore : '[StaffUnitBefore]';
+
+        // Format ChangeDate DD.MM.YYYY
+        reportTmp.ChangeDateAz = _line.ChangeDate
+            ? date2Str(_line.ChangeDate, 321,
+                       DateDay::Digits2,   DateSeparator::Dot,
+                       DateMonth::Digits2, DateSeparator::Dot,
+                       DateYear::Digits4)
+            : '';
+
+        // Work Schedule
+        reportTmp.WorkSchedule = _line.WorkSchedule ? _line.WorkSchedule : '[WorkSchedule]';
+
+        // Previous additional salary
+        reportTmp.AdditionalSalaryBefore = _line.AdditionalSalaryBefore;
+
+        // ============================================================================
+        // Step 1: Universal StartDateAz from ChangeDate
+        // Excludes: Maternity14Days, AvgSalMilitary, EducationLeave, TripDomestic
+        // — these handle StartDateAz themselves in Steps 2 and 3
+        // ============================================================================
+        boolean isLeaveBasedOrder =
+            _line.OrderType == NVOrderType::Maternity14Days  ||
+            _line.OrderType == NVOrderType::Maternity126Days ||
+            _line.OrderType == NVOrderType::AvgSalMilitary   ||
+            _line.OrderType == NVOrderType::AvgSalSports     ||
+            _line.OrderType == NVOrderType::EducationLeave   ||
+            _line.OrderType == NVOrderType::MilitaryReturn   ||
+            _line.OrderType == NVOrderType::SportsRecall;
+
+        boolean isTripOrder = 
+            _line.OrderType == NVOrderType::TripDomestic  ||
+            _line.OrderType == NVOrderType::TripCancel    ||
+            _line.OrderType == NVOrderType::TripChange    ||
+            _line.OrderType == NVOrderType::TripExtension ||
+            _line.OrderType == NVOrderType::TripForeign;
+
+        if (!isLeaveBasedOrder && !isTripOrder)
+        {
+            reportTmp.StartDateAz = _line.ChangeDate && _line.ChangeDate != dateNull()
+            ? date2Str(_line.ChangeDate, 321,
+                DateDay::Digits2,   DateSeparator::Dot,
+                DateMonth::Digits2, DateSeparator::Dot,
+                DateYear::Digits4)
+            : '';
+        }
+
+        // ============================================================================
+        // Step 2: Leave-based orders — read from LeaveRequest
+        // Covers: AZAL-34 (Maternity14Days), AZAL-37 (AvgSalMilitary), AZAL-51 (EducationLeave)
+        // Mapping:
+        //   StartDateAz           → LeaveRequest.getStartDate()  → LeaveRequestDetail.LeaveDate (min)
+        //   EndDateAz             → LeaveRequest.getEndDate()    → LeaveRequestDetail.LeaveDate (max)
+        //   StartDateAfterLeaveAz → LeaveRequest.NVWorkResumeDate (custom field on LeaveRequest)
+        //   CalendarDays          → LeaveRequest.getTotalAmount() → sum(LeaveRequestDetail.Amount)
+        // ============================================================================
+        if (isLeaveBasedOrder)
+        {
+            LeaveRequest leaveReq;
+
+            // Get latest LeaveRequest for this worker
+            // Filter by worker — takes most recent request (order by RecId desc)
+            // Note: LeaveType filter deferred until SandBox data available for validation
+            select firstonly leaveReq
+            order by leaveReq.RecId desc
+            where leaveReq.Worker == worker.RecId;
+
+            if (leaveReq.RecId)
+            {
+                // StartDateAz — earliest LeaveRequestDetail.LeaveDate via getStartDate()
+                date startDate = leaveReq.getStartDate();
+                reportTmp.StartDateAz = startDate && startDate != dateNull()
+                    ? date2Str(startDate, 321,
+                        DateDay::Digits2,   DateSeparator::Dot,
+                        DateMonth::Digits2, DateSeparator::Dot,
+                        DateYear::Digits4)
+                    : '[StartDateAz]';
+
+                // EndDateAz — latest LeaveRequestDetail.LeaveDate via getEndDate()
+                date endDate = leaveReq.getEndDate();
+                reportTmp.EndDateAz = endDate && endDate != dateNull()
+                    ? date2Str(endDate, 321,
+                        DateDay::Digits2,   DateSeparator::Dot,
+                        DateMonth::Digits2, DateSeparator::Dot,
+                        DateYear::Digits4)
+                    : '[EndDateAz]';
+
+                // StartDateAfterLeaveAz — LeaveRequest.NVWorkResumeDate (custom field)
+                date resumeDate = leaveReq.NVWorkResumeDate;
+                reportTmp.StartDateAfterLeaveAz = resumeDate && resumeDate != dateNull()
+                    ? date2Str(resumeDate, 321,
+                        DateDay::Digits2,   DateSeparator::Dot,
+                        DateMonth::Digits2, DateSeparator::Dot,
+                        DateYear::Digits4)
+                    : '[StartDateAfterLeaveAz]';
+
+                // CalendarDays — sum of LeaveRequestDetail.Amount via getTotalAmount()
+                real totalDays = leaveReq.getTotalAmount();
+                reportTmp.CalendarDays = real2int(totalDays) > 0
+                    ? real2int(totalDays)
+                    : 0;
+            }
+            else
+            {
+                // No LeaveRequest found — placeholders for all fields
+                reportTmp.StartDateAz           = '[StartDateAz]';
+                reportTmp.EndDateAz             = '[EndDateAz]';
+                reportTmp.StartDateAfterLeaveAz = '[StartDateAfterLeaveAz]';
+                reportTmp.CalendarDays          = 0;
+            }
+        }
+
+        // ============================================================================
+        // Step 3: Business Trip — NVTrvWorkerExpenseRequest
+        // Covers: AZAL-57 (TripDomestic)
+        // Mapping:
+        //   StartDateAz  → NVTrvWorkerExpenseRequest.FromDate
+        //   EndDateAz    → NVTrvWorkerExpenseRequest.ToDate
+        //   CalendarDays → ToDate - FromDate + 1 (same as totalDays() display method)
+        //   PlaceOfBT    → NVTrvWorkerExpenseRequest.ToLocation
+        // ============================================================================
+        if (isTripOrder)
+        {
+            NVTrvWorkerExpenseRequest trvRequest;
+
+            select firstonly trvRequest
+            order by trvRequest.RecId desc
+            where trvRequest.Worker == worker.RecId;
+
+            if (trvRequest.RecId)
+            {
+                // StartDateAz — FromDate
+                reportTmp.StartDateAz = trvRequest.FromDate && trvRequest.FromDate != dateNull()
+                    ? date2Str(trvRequest.FromDate, 123,
+                        DateDay::Digits2,   DateSeparator::Dot,
+                        DateMonth::Digits2, DateSeparator::Dot,
+                        DateYear::Digits4)
+                    : '[StartDateAz]';
+
+                // EndDateAz — ToDate
+                reportTmp.EndDateAz = trvRequest.ToDate && trvRequest.ToDate != dateNull()
+                    ? date2Str(trvRequest.ToDate, 123,
+                        DateDay::Digits2,   DateSeparator::Dot,
+                        DateMonth::Digits2, DateSeparator::Dot,
+                        DateYear::Digits4)
+                    : '[EndDateAz]';
+
+                // CalendarDays — ToDate - FromDate + 1 (mirrors totalDays() display method)
+                reportTmp.CalendarDays =
+                    (trvRequest.FromDate != dateNull() && trvRequest.ToDate != dateNull())
+                    ? trvRequest.ToDate - trvRequest.FromDate + 1
+                    : 0;
+
+                // PlaceOfBT — ToLocation
+                reportTmp.PlaceOfBT = trvRequest.ToLocation
+                    ? trvRequest.ToLocation
+                    : '[PlaceOfBT]';
+            }
+            else
+            {
+                // No trip request found — placeholders
+                reportTmp.StartDateAz  = '[StartDateAz]';
+                reportTmp.EndDateAz    = '[EndDateAz]';
+                reportTmp.CalendarDays = 0;
+                reportTmp.PlaceOfBT    = '[PlaceOfBT]';
+            }
+        }
+
+        // ============================================================================
+        // TerminateDateAz — all Termination order types
+        // Mapping: HR → Past Workers → Termination Date
+        //          HcmWorker.displayTerminationDate() → HcmEmploymentDetail.TransitionDate
+        // ============================================================================
+        if (_line.OrderType == NVOrderType::Term68_2a  ||
+                _line.OrderType == NVOrderType::Term68_2b  ||
+                _line.OrderType == NVOrderType::Term68_2e  ||
+                _line.OrderType == NVOrderType::Term69_3   ||
+                _line.OrderType == NVOrderType::Term70_b   ||
+                _line.OrderType == NVOrderType::Term70_c   ||
+                _line.OrderType == NVOrderType::Term70_d   ||
+                _line.OrderType == NVOrderType::Term74_1a  ||
+                _line.OrderType == NVOrderType::Term74_1c  ||
+                _line.OrderType == NVOrderType::Term74_1ch ||
+                _line.OrderType == NVOrderType::Term74_1e)
+        {
+            HcmEmploymentDetail empDetail;
+            empDetail = HcmWorkerHelper::getLatestPastEmploymentDetail(worker.RecId);
+
+            if (empDetail.RecId
+            && empDetail.TransitionDate != DateTimeUtil::maxValue()
+            && empDetail.TransitionDate != DateTimeUtil::minValue())
+            {
+                date terminateDate = DateTimeUtil::date(
+                DateTimeUtil::applyTimeZoneOffset(
+                    empDetail.TransitionDate,
+                    Timezone::GMTPLUS0400BAKU));
+
+                reportTmp.TerminateDateAz = date2Str(terminateDate, 321,
+                DateDay::Digits2,   DateSeparator::Dot,
+                DateMonth::Digits2, DateSeparator::Dot,
+                DateYear::Digits4);
+            }
+            else
+            {
+                reportTmp.TerminateDateAz = '[TerminateDateAz]';
+            }
+        }
+
+        // ============================================================================
+        // Final Approver
+        // ============================================================================
+        if (_header.FinalApproverWorkerRecId)
+        {
+            HcmWorker finalWorker;
+            DirPerson finalPerson;
+
+            finalWorker = HcmWorker::find(_header.FinalApproverWorkerRecId);
+            if (finalWorker.RecId)
+            {
+                finalPerson = DirPerson::find(finalWorker.Person);
+                if (finalPerson.RecId)
+                {
+                    reportTmp.FinalApproverName = finalPerson.Name;
+                }
+            }
+
+            if (_header.FinalApprovalDate && _header.FinalApprovalDate != dateNull())
+            {
+                reportTmp.FinalApprovalDate = _header.FinalApprovalDate;
+            }
+        }
+
+        // CalendarDaysStr — string representation for SSRS with placeholder
+        // Avoids IIf logic inside SSRS expression
+        reportTmp.CalendarDaysStr = reportTmp.CalendarDays > 0
+            ? int2Str(reportTmp.CalendarDays)
+            : '[CalendarDays]';
+
+        reportTmp.insert();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getContractDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the contract date with fallback logic.
+    /// Priority: Employment.ValidFrom → Line.ContractDate → Line.StartDate
+    /// </summary>
+    /// <param name="_line">Order line record</param>
+    /// <returns>Contract date</returns>
+    private TransDate getContractDate(NVOrderLine _line)
+    {
+        HcmEmployment employment;
+        
+        if (_line.EmploymentRecId)
+        {
+            employment = HcmEmployment::find(_line.EmploymentRecId);
+            if (employment.RecId && employment.ValidFrom)
+            {
+                return DateTimeUtil::date(employment.ValidFrom);
+            }
+        }
+        
+        return _line.ContractDate ? _line.ContractDate : _line.StartDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPositionName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the position name with fallback priority.
+    /// Priority: PositionDetail.Description → Title.TitleId → Position.PositionId → 'N/A'
+    /// </summary>
+    /// <param name="_positionRecId">Position RecId</param>
+    /// <returns>Position name or 'N/A' if not found</returns>
+    private str getPositionName(RecId _positionRecId)
+    {
+        HcmPosition position;
+        HcmPositionDetail positionDetail;
+        HcmTitle title;
+        
+        if (!_positionRecId)
+        {
+            return '[Position]';
+        }
+        
+        position = HcmPosition::find(_positionRecId);
+        if (!position.RecId)
+        {
+            return '[Position]';
+        }
+        
+        positionDetail = HcmPositionDetail::findByPosition(_positionRecId);
+        
+        // Priority 1: Use localized Description
+        if (positionDetail.RecId && positionDetail.Description)
+        {
+            return positionDetail.Description;
+        }
+        
+        // Priority 2: Use Title
+        if (positionDetail.RecId && positionDetail.Title)
+        {
+            title = HcmTitle::find(positionDetail.Title);
+            if (title.RecId && title.TitleId)
+            {
+                return title.TitleId;
+            }
+        }
+        
+        // Priority 3: Use Position ID
+        return position.PositionId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>populateDepartmentHierarchy</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Populates department hierarchy fields (BU, StructureUnit1, StructureUnit2) in reportTmp.
+    /// Reads directly from NVOrderLine.NVDepartBU, NVDepartGroup1, NVDepartGroup2 —
+    /// denormalized at staging time from HcmPositionDetail custom fields.
+    /// </summary>
+    /// <param name="_line">Order line record containing denormalized BU/Group fields</param>
+    /// <remarks>
+    /// FIX 2: Replaced recursive NVDepartmentHierarchy traversal with direct field reads.
+    /// BU/Group1/Group2 RecIds are stored on HcmPositionDetail.NVDepartBusinessUnit/Group1/Group2
+    /// and their names are denormalized into NVOrderLine at order generation time.
+    /// Empty fields get placeholder '[BU]', '[Group1]', '[Group2]' for visual clarity during testing.
+    /// </remarks>
+    private void populateDepartmentHierarchy(NVOrderLine _line)
+    {
+        // FIX 2: Names denormalized from HcmPositionDetail.NVDepartBusinessUnit/Group1/Group2
+        // at staging time — assign directly, no additional lookup required
+        reportTmp.BU             = _line.NVDepartBU     ? _line.NVDepartBU     : '[BU]';
+        reportTmp.StructureUnit1 = _line.NVDepartGroup1 ? _line.NVDepartGroup1 : '[Group1]';
+        reportTmp.StructureUnit2 = _line.NVDepartGroup2 ? _line.NVDepartGroup2 : '[Group2]';
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getOrderTypeNameAz</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the localized (Azerbaijani) order type name from NVOrderTypeTable.
+    /// Falls back to enum name if not found.
+    /// </summary>
+    /// <param name="_orderTypeEnum">Order type enum value</param>
+    /// <returns>Localized order type name or enum name as fallback</returns>
+    private str getOrderTypeNameAz(NVOrderType _orderTypeEnum)
+    {
+        NVOrderTypeTable orderTypeTable;
+    
+        select firstonly orderTypeTable
+            where orderTypeTable.OrderType == _orderTypeEnum
+               && orderTypeTable.IsActive == NoYes::Yes;
+    
+        if (orderTypeTable.RecId && orderTypeTable.TypeName)
+        {
+            return orderTypeTable.TypeName;
+        }
+
+        return enum2Str(_orderTypeEnum);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

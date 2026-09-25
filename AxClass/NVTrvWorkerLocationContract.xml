@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerLocationContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVTrvWorkerLocationContract
+{
+    str locationId;
+    str description;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmLocationId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("LocationId")]
+    public str parmLocationId(str _parm = locationId)
+    {
+        locationId = _parm;
+        return locationId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDescription</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Description")]
+    public str parmDescription(str _parm = description)
+    {
+        description = _parm;
+        return description;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

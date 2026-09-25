@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkerHireContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContract]
+class NVWorkerHireContract
+{
+    str requestIdentifier;
+
+    NVWorkerHireStatus status;
+
+    NVWorkerHireResponse response;
+
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmRequestIdentifier</Name>
+				<Source><![CDATA[
+    [DataMember("RequestIdentifier")]
+    public str parmRequestIdentifier(
+    str _requestIdentifier = requestIdentifier)
+    {
+        requestIdentifier = _requestIdentifier;
+        return requestIdentifier;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmStatus</Name>
+				<Source><![CDATA[
+    [DataMember("Status")]
+    public NVWorkerHireStatus parmStatus(
+    NVWorkerHireStatus _status = status)
+    {
+        status = _status;
+        return status;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmResponse</Name>
+				<Source><![CDATA[
+    [DataMember("Response")]
+    public NVWorkerHireResponse parmResponse(
+    NVWorkerHireResponse _response = response)
+    {
+        response = _response;
+        return response;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

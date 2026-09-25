@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxDataEntityViewExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>HcmPositionDetailEntity.NVHumanResources</Name>
+	<DataSources />
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartBusinessUnit</Name>
+			<DataField>NVDepartBusinessUnit</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartDepartment</Name>
+			<DataField>NVDepartDepartment</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartDivision</Name>
+			<DataField>NVDepartDivision</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartGroup1</Name>
+			<DataField>NVDepartGroup1</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartGroup2</Name>
+			<DataField>NVDepartGroup2</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartLegalEntity</Name>
+			<DataField>NVDepartLegalEntity</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVFlightCrewId</Name>
+			<DataField>NVFlightCrewId</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHazardousWork</Name>
+			<DataField>NVHazardousWork</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmHazardousAllowanceId</Name>
+			<DataField>NVHcmHazardousAllowanceId</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmPositionRateId</Name>
+			<DataField>NVHcmPositionRateId</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVInternalGrade</Name>
+			<DataField>NVInternalGrade</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVLegalGrade</Name>
+			<DataField>NVLegalGrade</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVRoleCriticality</Name>
+			<DataField>NVRoleCriticality</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVLocation</Name>
+			<DataField>NVLocation</DataField>
+			<DataSource>HcmPositionDetail</DataSource>
+		</AxDataEntityViewField>
+	</Fields>
+	<Mappings />
+	<PropertyModifications />
+	<Relations />
+</AxDataEntityViewExtension>

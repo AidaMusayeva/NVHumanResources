@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEdt xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
+	i:type="AxEdtInt">
+	<Name>NVCalendarDays</Name>
+	<Extends>Days</Extends>
+	<HelpText>Number of calendar days for leave orders</HelpText>
+	<Label>Calendar Days</Label>
+	<ArrayElements />
+	<Relations />
+	<TableReferences />
+</AxEdt>

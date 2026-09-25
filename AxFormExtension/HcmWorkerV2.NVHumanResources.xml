@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerV2.NVHumanResources</Name>
+	<ControlModifications>
+		<AxExtensionModification xmlns="">
+			<Name>Name_MiddleName</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>Father name</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</ControlModifications>
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyslkqz5sw1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>NVEmployeeReferral</Name>
+				<Type>ButtonGroup</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormMenuFunctionButtonControl">
+						<Name>NVHcmWorkerReferral</Name>
+						<Type>MenuFunctionButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataSource>HcmWorker</DataSource>
+						<MenuItemName>NVHcmWorkerReferral</MenuItemName>
+						<NeedsRecord>Yes</NeedsRecord>
+						<Text>Referral details</Text>
+					</AxFormControl>
+				</Controls>
+				<Caption>Employee referral</Caption>
+			</FormControl>
+			<Parent>WorkerTab</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyzhiksd121</Name>
+			<FormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>NVContract</Name>
+				<Type>ButtonGroup</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormMenuFunctionButtonControl">
+						<Name>NVHcmWorkerContractDetails</Name>
+						<Type>MenuFunctionButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataSource>HcmWorker</DataSource>
+						<MenuItemName>NVHcmWorkerContractDetails</MenuItemName>
+						<NeedsRecord>Yes</NeedsRecord>
+					</AxFormControl>
+				</Controls>
+				<Caption>Contract</Caption>
+			</FormControl>
+			<Parent>WorkerTab</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyxgfkuum11</Name>
+			<FormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>NVSocialStatus</Name>
+				<Type>ButtonGroup</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormMenuFunctionButtonControl">
+						<Name>NVHcmWorkerSocialStatus</Name>
+						<Type>MenuFunctionButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataSource>HcmWorker</DataSource>
+						<MenuItemName>NVHcmWorkerSocialStatus</MenuItemName>
+						<NeedsRecord>Yes</NeedsRecord>
+					</AxFormControl>
+				</Controls>
+				<Caption>Social status</Caption>
+			</FormControl>
+			<Parent>WorkerTab</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyn2znm0hj1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmRealTermReasonCode</Name>
+				<AllowEdit>No</AllowEdit>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>String</Type>
+				<Visible>No</Visible>
+				<FormControlExtension
+					i:nil="true" />
+				<CacheDataMethod>Yes</CacheDataMethod>
+				<DataMethod>NVHcmWorkerV2_HcmWorker_Extension.displayRealTermination</DataMethod>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>MainGrid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlfzsvcan11</Name>
+			<FormControl xmlns=""
+				i:type="AxFormComboBoxControl">
+				<Name>NVHcmTerminationClassification</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>ComboBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmWorkerV2_HcmWorker_Extension.displayTerminationClassification</DataMethod>
+				<DataSource>HcmWorker</DataSource>
+				<Items />
+			</FormControl>
+			<Parent>MainGrid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyqzenpxbt1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVTerminationNotes</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>String</Type>
+				<Visible>No</Visible>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmWorkerV2_HcmWorker_Extension.displayTerminationNotes</DataMethod>
+				<DataSource>HcmWorker</DataSource>
+				<Label>Termination notes</Label>
+			</FormControl>
+			<Parent>MainGrid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copykqognj2a1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerHireReasonId</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHcmWorkerHireReasonId</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>AddressBookGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyt5ioyqw01</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerRehireReasonId</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHcmWorkerRehireReasonId</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>AddressBookGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy1q2bm2mi1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>HcmWorker_NVHcmLeaveGroupId</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHcmLeaveGroupId</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>AddressBookGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControl0jmypnwo1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuFunctionButtonControl">
+				<Name>NVHcmTotalExperience</Name>
+				<Type>MenuFunctionButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataSource>HcmWorker</DataSource>
+				<MenuItemName>NVHcmTotalExperience</MenuItemName>
+				<NeedsRecord>Yes</NeedsRecord>
+			</FormControl>
+			<Parent>CompetenciesButtonGroup</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>ActionPane_ProfessionalExperience</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyosotz1ng1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerPID_List</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHcmWorkerPID</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>MainGrid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copywpffg14z1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerPID</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHcmWorkerPID</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>WorkerSummaryFields</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copywjnd0erh1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVPersonEnglishNameGroup</Name>
+				<ElementPosition>1116691494</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>Group</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVPersonEnglishNameGroup_NVEngFirstName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVEngFirstName</DataField>
+						<DataSource>DirPersonName</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVPersonEnglishNameGroup_NVEngMiddleName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVEngMiddleName</DataField>
+						<DataSource>DirPersonName</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVPersonEnglishNameGroup_NVEngLastName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVEngLastName</DataField>
+						<DataSource>DirPersonName</DataSource>
+					</AxFormControl>
+				</Controls>
+				<DataGroup>NVEnglishName</DataGroup>
+				<DataSource>DirPersonName</DataSource>
+			</FormControl>
+			<Parent>NameFields</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>PersonNameGroup</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyjqp0fskn1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerEducationTypeId</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHcmWorkerEducationTypeId</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>AddressBookGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControl54ikgfhv1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuFunctionButtonControl">
+				<Name>NVHcmWorkerDisability</Name>
+				<Type>MenuFunctionButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataSource>HcmWorker</DataSource>
+				<MenuItemName>NVHcmWorkerDisability</MenuItemName>
+			</FormControl>
+			<Parent>RelatedInformationButtonGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copypambds2x1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerLastDisability</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmWorker_Extension.lastDisability</DataMethod>
+				<DataSource>HcmWorker</DataSource>
+				<Label>Last disability</Label>
+			</FormControl>
+			<Parent>AddressBookGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy5dmdaheh1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCheckBoxControl">
+				<Name>NVIsExpatriate</Name>
+				<Type>CheckBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVIsExpatriate</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>WorkerSummaryFields</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy2wr1op251</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCheckBoxControl">
+				<Name>NVIsExpatriate_List</Name>
+				<Type>CheckBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVIsExpatriate</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>MainGrid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyzkqvu0wo1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormRealControl">
+				<Name>NVCivilAviationExperience</Name>
+				<EnableFormRef>No</EnableFormRef>
+				<Skip>Yes</Skip>
+				<Type>Real</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmWorker_Extension.civilAviationExperience</DataMethod>
+				<DataSource>HcmWorker</DataSource>
+				<Label>Civil aviation experience</Label>
+				<NoOfDecimals>1</NoOfDecimals>
+				<NoOfDecimalsMode>Fixed</NoOfDecimalsMode>
+				<ShowZero>Yes</ShowZero>
+				<Style>SimpleReadOnly</Style>
+			</FormControl>
+			<Parent>Spotlight</Parent>
+			<PositionType>Begin</PositionType>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyfn2yngq31</Name>
+			<FormControl xmlns=""
+				i:type="AxFormRealControl">
+				<Name>NVPastTotalExperience</Name>
+				<EnableFormRef>No</EnableFormRef>
+				<Skip>Yes</Skip>
+				<Type>Real</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmWorker_Extension.totalPastExperience</DataMethod>
+				<DataSource>HcmWorker</DataSource>
+				<Label>Past total experience</Label>
+				<NoOfDecimals>1</NoOfDecimals>
+				<NoOfDecimalsMode>Fixed</NoOfDecimalsMode>
+				<ShowZero>Yes</ShowZero>
+				<Style>SimpleReadOnly</Style>
+			</FormControl>
+			<Parent>Spotlight</Parent>
+			<PositionType>Begin</PositionType>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy5lwfu1mp1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCheckBoxControl">
+				<Name>NVHasCivilAviationExperience</Name>
+				<Type>CheckBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmWorker_Extension.hasCivilAviationExperience</DataMethod>
+				<DataSource>HcmWorker</DataSource>
+				<Label>Has civil aviation experience</Label>
+			</FormControl>
+			<Parent>MainGrid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copytfb4oavu1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormTabPageControl">
+				<Name>NVTabHcmWorkerResidence</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>2069189969</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<HeightMode>Auto</HeightMode>
+				<Pattern>ToolbarList</Pattern>
+				<PatternVersion>1.2</PatternVersion>
+				<Type>TabPage</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<WidthMode>Auto</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormActionPaneControl">
+						<Name>NVHcmWorkerResidenceAction</Name>
+						<ElementPosition>1288490187</ElementPosition>
+						<FilterExpression>%1</FilterExpression>
+						<Type>ActionPane</Type>
+						<VerticalSpacing>-1</VerticalSpacing>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormActionPaneTabControl">
+								<Name>NVHcmWorkerResidenceActionPaneTab</Name>
+								<ElementPosition>1431655764</ElementPosition>
+								<FilterExpression>%1</FilterExpression>
+								<HeightMode>Auto</HeightMode>
+								<Type>ActionPaneTab</Type>
+								<VerticalSpacing>-1</VerticalSpacing>
+								<WidthMode>Auto</WidthMode>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls>
+									<AxFormControl xmlns=""
+										i:type="AxFormButtonGroupControl">
+										<Name>NVHcmWorkerResidenceButtonGroup</Name>
+										<ElementPosition>1431655764</ElementPosition>
+										<FilterExpression>%1</FilterExpression>
+										<HeightMode>Auto</HeightMode>
+										<Left>0</Left>
+										<Type>ButtonGroup</Type>
+										<VerticalSpacing>-1</VerticalSpacing>
+										<WidthMode>Auto</WidthMode>
+										<FormControlExtension
+											i:nil="true" />
+										<Controls>
+											<AxFormControl xmlns=""
+												i:type="AxFormCommandButtonControl">
+												<Name>LineStripNew</Name>
+												<ElementPosition>596523234</ElementPosition>
+												<FilterExpression>%1</FilterExpression>
+												<HeightMode>Auto</HeightMode>
+												<Type>CommandButton</Type>
+												<VerticalSpacing>-1</VerticalSpacing>
+												<WidthMode>Auto</WidthMode>
+												<FormControlExtension
+													i:nil="true" />
+												<ButtonDisplay>TextWithImageLeft</ButtonDisplay>
+												<Command>New</Command>
+												<MultiSelect>Yes</MultiSelect>
+												<NormalImage>Add</NormalImage>
+												<Primary>Yes</Primary>
+												<ShowShortCut>No</ShowShortCut>
+												<Text>@SYS319116</Text>
+											</AxFormControl>
+											<AxFormControl xmlns=""
+												i:type="AxFormCommandButtonControl">
+												<Name>LineStripDelete</Name>
+												<AutoDeclaration>Yes</AutoDeclaration>
+												<ElementPosition>1491308086</ElementPosition>
+												<FilterExpression>%1</FilterExpression>
+												<HeightMode>Auto</HeightMode>
+												<Type>CommandButton</Type>
+												<VerticalSpacing>-1</VerticalSpacing>
+												<WidthMode>Auto</WidthMode>
+												<FormControlExtension
+													i:nil="true" />
+												<ButtonDisplay>TextWithImageLeft</ButtonDisplay>
+												<Command>DeleteRecord</Command>
+												<MultiSelect>Yes</MultiSelect>
+												<NormalImage>Delete</NormalImage>
+												<Primary>Yes</Primary>
+												<SaveRecord>No</SaveRecord>
+												<ShowShortCut>No</ShowShortCut>
+												<Text>@SYS135131</Text>
+											</AxFormControl>
+										</Controls>
+										<ArrangeMethod>Vertical</ArrangeMethod>
+									</AxFormControl>
+								</Controls>
+								<AlignChild>No</AlignChild>
+								<AlignChildren>No</AlignChildren>
+								<ArrangeMethod>Vertical</ArrangeMethod>
+								<DataSource>NVHcmWorkerResidence</DataSource>
+							</AxFormControl>
+						</Controls>
+						<AlignChild>No</AlignChild>
+						<AlignChildren>No</AlignChildren>
+						<ArrangeMethod>Vertical</ArrangeMethod>
+						<Style>Strip</Style>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormGridControl">
+						<Name>NVTabHcmWorkerResidenceGrid</Name>
+						<ElementPosition>1717986916</ElementPosition>
+						<FilterExpression>%1</FilterExpression>
+						<Type>Grid</Type>
+						<VerticalSpacing>-1</VerticalSpacing>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormComboBoxControl">
+								<Name>NVHcmWorkerResidence_Type</Name>
+								<Type>ComboBox</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>Type</DataField>
+								<DataSource>NVHcmWorkerResidence</DataSource>
+								<Items />
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>NVHcmWorkerResidence_Residence</Name>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>Residence</DataField>
+								<DataSource>NVHcmWorkerResidence</DataSource>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormDateControl">
+								<Name>NVHcmWorkerResidence_FromDate</Name>
+								<Type>Date</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>FromDate</DataField>
+								<DataSource>NVHcmWorkerResidence</DataSource>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormDateControl">
+								<Name>NVHcmWorkerResidence_ToDate</Name>
+								<Type>Date</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>ToDate</DataField>
+								<DataSource>NVHcmWorkerResidence</DataSource>
+							</AxFormControl>
+						</Controls>
+						<DataSource>NVHcmWorkerResidence</DataSource>
+						<DefaultAction>EditMandate</DefaultAction>
+						<MultiSelect>No</MultiSelect>
+					</AxFormControl>
+				</Controls>
+				<Caption>Work permit/Residence</Caption>
+				<Scrollbars>Auto</Scrollbars>
+			</FormControl>
+			<Parent>ProfileTab</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>AddressTabPage</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyetmonxhu1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCheckBoxControl">
+				<Name>NVSelfEditTimesheet</Name>
+				<Type>CheckBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVSelfEditTimesheet</DataField>
+				<DataSource>HcmWorker</DataSource>
+			</FormControl>
+			<Parent>WorkerSummaryFields</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControltmz5dnqv1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuFunctionButtonControl">
+				<Name>NVPilotAdditionalLeaveTransaction</Name>
+				<Type>MenuFunctionButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataSource>HcmWorker</DataSource>
+				<MenuItemName>NVPilotAdditionalLeaveTransaction</MenuItemName>
+			</FormControl>
+			<Parent>LeaveManageButtonGroup</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources>
+		<AxFormDataSource xmlns="">
+			<Name>NVHcmWorkerResidence</Name>
+			<Table>NVHcmWorkerResidence</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>CreatedBy</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>CreatedDateTime</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>FromDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ModifiedBy</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ModifiedDateTime</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Residence</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ResidenceType</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>SysRowVersionNumber</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ToDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Worker</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<JoinSource>HcmWorker</JoinSource>
+			<InsertAtEnd>No</InsertAtEnd>
+			<InsertIfEmpty>No</InsertIfEmpty>
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+	</DataSources>
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVEmpOvertimeImport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using System.IO;
+using OfficeOpenXml;
+class NVEmpOvertimeImport
+{
+    NVEmpOvertimeHeader     overtimeHeader;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NVEmpOvertimeImport     overtimeImport;
+        NVEmpOvertimeHeader     overtimeHeaderLocal;
+        NVEmpOvertimeLine       overtimeLine;
+        overtimeImport = new NVEmpOvertimeImport();
+
+        if(_args.record() ==null)
+        {
+            throw error('Function was called without active buffer');
+        }
+        
+        overtimeHeaderLocal = _args.record() as NVEmpOvertimeHeader;
+        
+        select firstonly RecId from overtimeLine
+            where overtimeLine.OvertimeId == overtimeHeaderLocal.OvertimeId;
+
+        if(overtimeLine.RecId)
+        {
+            
+            DialogButton dialogBtn  = Box::yesNo("There are lines already imported. Proceeding will delete existing data. Do you want to continue?", DialogButton::No);
+
+            if(dialogBtn == dialogButton::Yes)
+            {
+                delete_from overtimeLine
+                    where overtimeLine.OvertimeId == overtimeHeaderLocal.OvertimeId;
+            }
+            else
+            {
+                info("Action cancelled.");
+                return;
+            }
+        }
+        
+        overtimeImport.setOvertimeHeader(overtimeHeaderLocal);
+        overtimeImport.importData();
+        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setOvertimeHeader</Name>
+				<Source><![CDATA[
+    void setOvertimeHeader(NVEmpOvertimeHeader  _overtimeHeader)
+    {
+        overtimeHeader = _overtimeHeader;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>importData</Name>
+				<Source><![CDATA[
+    void importData()
+    {
+        Stream                              stream;
+        ExcelWorksheet                      worksheet;
+        ExcelRange                          range;
+        FileUploadTemporaryStorageResult    fileUploadResult;
+        FileUploadBuild                     fileUpload;
+        DialogGroup                         dlgUploadGroup;
+        FileUpload                          fileUploadControl;
+        FileUploadBuild                     fileUploadBuild;
+        FormBuildControl                    formBuildControl;
+        ExcelSpreadsheetName                sheeet;
+        int                                 i, excelRowCount;
+        Dialog                              dialog = new Dialog("Upload cabin crew flight hours");
+
+        dlgUploadGroup = dialog.addGroup("Upload file");
+        formBuildControl = dialog.formBuildDesign().control(dlgUploadGroup.name());
+        fileUploadBuild = formBuildControl.addControlEx(classstr(FileUpload), 'Upload');
+        fileUploadBuild.fileTypesAccepted('.xlsx');
+        fileUploadBuild.style(FileUploadStyle::MinimalWithFilename);
+        if (dialog.run() && dialog.closedOk())
+        {
+            fileUploadControl = dialog.formRun().control(dialog.formRun().controlId('Upload'));
+            fileUploadResult  = fileUploadControl.getFileUploadResult();
+
+
+            if (fileUploadResult != null && fileUploadResult.getUploadStatus())
+            {
+                stream = fileUploadResult.openResult();
+                using (OfficeOpenXml.ExcelPackage package = new OfficeOpenXml.ExcelPackage(stream))
+                {
+                    Package.Load(stream);
+                    worksheet = package.get_Workbook().get_Worksheets().get_Item(1);
+                    range     = worksheet.Cells;
+                    excelRowCount = worksheet.Dimension.End.Row - worksheet.Dimension.Start.Row + 1;
+                    try
+                    {
+                        str                         prevEmployeeId, prevFlight, prevAircraftType;
+                        HcmPosition                 hcmPosition;
+                        NVPositionOvertimeGroup     positionOvertimeGroup;
+                        NVOvertimeRate          overtimeRate;
+                        ttsbegin;
+                        for (i = 2; i<= excelRowCount; i++)
+                        {
+                            NVEmpOvertimeLine       overtimeLine;
+                            NVOvertimeWorkState     workState;
+
+                            overtimeLine.clear();
+                            overtimeLine.OvertimeId = overtimeHeader.OvertimeId;
+                            overtimeLine.empID = range.get_Item(i, 1).value;
+                            overtimeLine.TransDate = range.get_Item(i, 3).Value;
+                            
+                            if(!overtimeLine.empID)
+                            {
+                                overtimeLine.empID = prevEmployeeId;
+                            }
+                            if(overtimeLine.empId != prevEmployeeId)
+                            {
+                                hcmPosition = this.getWorkerPosition(overtimeLine.empId);
+                                positionOvertimeGroup = NVPositionOvertimeGroup::findByPosition(hcmPosition.RecId, overtimeLine.TransDate);
+                                overtimeRate = NVOvertimeRate::find(positionOvertimeGroup.OvertimeGroup);
+                            }
+
+                            if(!this.dataWithinPeriod(overtimeLine.TransDate))
+                            {
+                                warning(strFmt('Skipping line %1 as the date %2 is not within pay period', i, overtimeLine.TransDate));
+                                continue;
+                            }
+                            if(!this.validPayCycle(hcmPosition.RecId))
+                            {
+                                warning(strFmt('Skipping line %1 as the employee %2 is not within pay cycle %3', i, overtimeLine.empId, overtimeHeader.PayCycleId));
+                                continue;
+                            }
+                            
+                            workState = str2Enum(workState, range.get_Item(i, 6).Value);
+                            overtimeLine.State = workState;
+                            
+                            overtimeLine.Name = range.get_Item(i, 2).Value;
+                            overtimeLine.FlightId = range.get_Item(i, 4).Value;
+                            overtimeLine.AircraftType = range.get_Item(i, 5).Value;
+                            
+                            if(!overtimeLine.FlightId)
+                            {
+                                overtimeLine.flightid = prevFlight;
+                            }
+                            if(!overtimeLine.AircraftTYpe)
+                            {
+                                overtimeLine.AircraftType = prevAircraftType;
+                            }
+                            
+                            
+                            overtimeLine.PositionId = HcmPosition.positionId;
+                            
+                            overtimeLine.DayTimeHours = any2Str(range.get_Item(i, 7).Value);
+                            overtimeLine.NightTimeHours = any2Str(range.get_Item(i, 8).Value);
+                            overtimeLine.HolidayHours = any2Str(range.get_Item(i, 9).Value);
+                            overtimeLine.TestingHours = any2Str(range.get_Item(i, 10).Value);
+                            overtimeLine.SpecialHours = any2Str(range.get_Item(i, 11).Value);
+                            overtimeLine.CadetHours = any2Str(range.get_Item(i, 12).Value);
+                            if(overtimeLine.state == NVOvertimeWorkState::Flight)
+                            {
+                                overtimeLine.DayRate = overtimeRate.FlightHoursFeeDay;
+                                overtimeLine.NightRate = overtimeRate.FlightHoursNightRate;
+                            }
+                            else
+                            {
+                                overtimeLine.DayRate = overtimeRate.GroundHoursFeeDay;
+                                overtimeLine.NightRate = overtimeRate.GroundHoursNightRate;
+                            }
+                            overtimeLine.FlightHoursLimit = overtimeRate.FlightHoursLimit;
+                            overtimeLine.write();
+
+                            prevEmployeeId = overtimeLine.empID;
+                            prevFlight = overtimeLine.flightid;
+                            prevAircraftType = overtimeLine.AircraftType;
+                        }
+                        ttscommit;
+                        info("Data imported succesfully");
+                    }
+                    catch (Exception::Error)
+                    {
+                        ttsabort;
+                        throw error("error during upload");
+                    }
+                }
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dataWithinPeriod</Name>
+				<Source><![CDATA[
+    private boolean dataWithinPeriod(TransDate _date)
+    {
+        PayrollPayPeriod    payPeriod;
+
+        select firstonly payPeriod
+            where payPeriod.RecId == overtimeHeader.PayPeriod;
+
+        return (_date >= payPeriod.PeriodStartDate && _date <= payPeriod.PeriodEndDate);
+        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validPayCycle</Name>
+				<Source><![CDATA[
+    private boolean validPayCycle(RefRecId _positionRecId)
+    {
+        PayrollPositionDetails positionDetails;
+        PayrollPayCycle         payrollPayCycle;
+
+        select firstonly payrollPayCycle
+            where payrollPayCycle.PayCycleId == overtimeHeader.PayCycleId;
+        
+        select positionDetails
+            where positionDetails.Position == _positionRecId;
+
+        return positionDetails.PayCycle == payrollPayCycle.RecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkerPosition</Name>
+				<Source><![CDATA[
+    HcmPosition getWorkerPosition(HcmPersonnelNumberId _personnelNum)
+    {
+        utcdatetime                 validFrom = DateTimeUtil::utcNow();
+        HcmWorker                   hcmWorker;
+        HcmPositionWorkerAssignment hcmPositionWorkerAssignment;
+        HcmPosition                 hcmPosition;
+
+        HcmWorker = HcmWorker::findByPersonnelNumber(_personnelNum);
+
+        select firstonly ValidTimeState(validFrom) hcmPositionWorkerAssignment
+            where hcmPositionWorkerAssignment.Worker == HcmWorker.RecID
+            join hcmPosition
+            where hcmPositionWorkerAssignment.Position == hcmPosition.RecId;
+
+        return hcmPosition;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

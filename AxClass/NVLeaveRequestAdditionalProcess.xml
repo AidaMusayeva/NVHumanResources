@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveRequestAdditionalProcess</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal class NVLeaveRequestAdditionalProcess
+{
+    LeaveBankTransaction    leaveBankTransaction;
+    LeaveDate               transactionDate;
+    LeaveTypeRecId          leaveType;
+    HcmWorker               worker;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static NVLeaveRequestAdditionalProcess construct()
+    {
+        return new NVLeaveRequestAdditionalProcess();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initBankTransaction</Name>
+				<Source><![CDATA[
+    public void initBankTransaction(LeaveBankTransaction _leaveBankTransaction)
+    {
+        leaveBankTransaction    = _leaveBankTransaction;
+        leaveType               = _leaveBankTransaction.LeaveType;
+        transactionDate         = _leaveBankTransaction.TransactionDate;
+        worker                  = HcmWorker::find(_leaveBankTransaction.Worker);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>process</Name>
+				<Source><![CDATA[
+    public void process()
+    {      
+        NVLeaveBalanceDetailsTmp detailsTmp = NVLeaveBalanceDetailsTmp::balanceByLeaveType(worker.RecId, transactionDate, leaveType);
+   
+        /// Request transaction only have one Amount
+        /// We will check only first from deduct top with positive balance
+        select firstonly detailsTmp
+            order by detailsTmp.DeductPriority asc
+            where detailsTmp.Balance > 0;
+
+        ttsbegin;
+        LeaveBankTransaction updateLeaveBankTransaction = LeaveBankTransaction::find(leaveBankTransaction.RecId, true);
+
+        updateLeaveBankTransaction.NVLeaveCategory      = detailsTmp.Category;
+        updateLeaveBankTransaction.NVTransactionYear    = detailsTmp.TransactionYear;
+
+        updateLeaveBankTransaction.doUpdate();
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVEmpOvertimeSummary</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Form]
+public class NVEmpOvertimeSummary extends FormRun
+{
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///
+    /// </summary>
+    public void init()
+    {
+        super();
+        NVEmpOvertimeHeader     header = this.args().record();
+        NVEmpOvertimeLine       overTimeLine, overtimeLineEachType, overtimeLineDeduction, flightRate, groundRate;
+        NVPositionOvertimeGroup positionOVertimeGroup;
+        int                     hoursToDeduct, remainingFlightDay, remainingFlightNight, remainingGroundDay, remainingGroundNight;
+        TransDate               overtimeDate;
+
+        while select EmpId,PositionId from overTimeLine
+            group by overTimeLine.EmpId, overTimeLine.PositionId
+            where overTimeLine.OvertimeId == header.OvertimeId
+        {
+            remainingFlightDay = 0;
+            remainingFlightNight = 0;
+            remainingGroundDay = 0;
+            remainingGroundNight = 0;
+
+            NVEmpOvertimeSummary.clear();
+            NVEmpOvertimeSummary.EmpId = overTimeLine.EmpId;
+            NVEmpOvertimeSummary.Name = HcmWorker::findByPersonnelNumber(overTimeLine.EmpId).name();
+            NVEmpOvertimeSummary.PositionId = overTimeLine.PositionId;
+            positionOVertimeGroup = NVPositionOvertimeGroup::findByPosition(HcmPosition::findByPosition(NVEmpOvertimeSummary.PositionId).RecId);
+            
+            select firstonly DayRate, NightRate, FlightHoursLimit from flightRate
+                where flightRate.OvertimeId == header.OvertimeId
+                && flightRate.EmpId == overTimeLine.EmpId
+                && flightRate.State == NVOvertimeWorkState::Flight;
+
+            select firstonly DayRate, NightRate, FlightHoursLimit from groundRate
+                where groundRate.OvertimeId ==  header.OvertimeId
+                && groundRate.EmpId == overTimeLine.EmpId
+                && groundRate.State == NVOvertimeWorkState::Ground;
+            
+                hoursToDeduct = flightRate.FlightHoursLimit * 60;
+            NVOvertimeWorkState     lastRecordState;
+            while select DayMinutes, NightMinutes, TransDate, State from overtimeLineDeduction
+                order by TransDate, State asc
+                where (overtimeLineDeduction.OvertimeId == header.OvertimeId
+                && overtimeLineDeduction.EmpId == overTimeLine.EmpId)
+            {
+                if(hoursToDeduct <= 0)
+                    break;
+                lastRecordState = overtimeLineDeduction.State;
+                overtimeDate = overtimeLineDeduction.TransDate;
+                if(hoursToDeduct - overtimeLineDeduction.DayMinutes >= 0)
+                {
+                    hoursToDeduct = hoursToDeduct - overtimeLineDeduction.DayMinutes;
+                }
+                else
+                {
+                    if(overtimeLineDeduction.State == NVOvertimeWorkState::Flight)
+                    {
+                        remainingFlightDay = overtimeLineDeduction.DayMinutes - hoursToDeduct;
+                    }
+                    else
+                    {
+                        remainingGroundDay = overtimeLineDeduction.DayMinutes - hoursToDeduct;
+                    }
+                    hoursToDeduct = 0;
+                }
+                if(hoursToDeduct - overtimeLineDeduction.NightMinutes >= 0)
+                {
+                    hoursToDeduct = hoursToDeduct - overtimeLineDeduction.NightMinutes;
+                }
+                else
+                {
+                    if(overtimeLineDeduction.State == NVOvertimeWorkState::Flight)
+                    {
+                        remainingFlightNight = overtimeLineDeduction.NightMinutes - hoursToDeduct;
+                    }
+                    else
+                    {
+                        remainingGroundNight = overtimeLineDeduction.NightMinutes - hoursToDeduct;
+                    }
+                    hoursToDeduct = 0;
+                    break;
+                }
+            }
+
+            if(lastRecordState == NVOvertimeWorkState::Flight)
+            {
+                select DayMinutes, NightMinutes from overtimeLineEachType
+                where overtimeLineEachType.OvertimeId == header.OvertimeId
+                && overtimeLineEachType.EmpId == NVEmpOvertimeSummary.EmpId
+                && overtimeLineEachType.TransDate == overtimeDate
+                    && overtimeLineEachType.State == NVOvertimeWorkState::Ground;
+
+                remainingGroundDay = overtimeLineEachType.DayMinutes;
+                remainingGroundNight = overtimeLineEachType.NightMinutes;
+            }
+
+            select sum(DayMinutes), sum(NightMinutes) from overtimeLineEachType
+                where overtimeLineEachType.OvertimeId == header.OvertimeId
+                && overtimeLineEachType.EmpId == NVEmpOvertimeSummary.EmpId
+                && overtimeLineEachType.TransDate > overtimeDate
+                && overtimeLineEachType.State == NVOvertimeWorkState::Flight;
+            
+            NVEmpOvertimeSummary.FlightDayHours = (overtimeLineEachType.DayMinutes + remainingFlightDay) / 60;
+            NVEmpOvertimeSummary.FlightDayRate = flightRate.DayRate;
+            NVEmpOvertimeSummary.FlightNightHours = (overtimeLineEachType.NightMinutes + remainingFlightNight) / 60;
+            NVEmpOvertimeSummary.FlightNightRate = flightRate.NightRate;
+
+            select sum(DayMinutes), sum(NightMinutes) from overtimeLineEachType
+                where overtimeLineEachType.OvertimeId == header.OvertimeId
+                && overtimeLineEachType.EmpId == NVEmpOvertimeSummary.EmpId
+                && overtimeLineEachType.TransDate > overtimeDate
+                && overtimeLineEachType.State == NVOvertimeWorkState::Ground;
+
+
+            NVEmpOvertimeSummary.GroundDayHours = (overtimeLineEachType.DayMinutes + remainingGroundDay) / 60;
+            NVEmpOvertimeSummary.GroundDayRate = groundRate.DayRate;
+            NVEmpOvertimeSummary.GroundNightHours = (overtimeLineEachType.NightMinutes + remainingGroundNight) / 60;
+            NVEmpOvertimeSummary.GroundNightRate = groundRate.NightRate;
+
+            NVEmpOvertimeSummary.TotalOvertimeAmount = (NVEmpOvertimeSummary.FlightDayHours * NVEmpOvertimeSummary.FlightDayRate) +
+                                                        (NVEmpOvertimeSummary.FlightNightHours * NVEmpOvertimeSummary.FlightNightRate) +
+                                                        (NVEmpOvertimeSummary.GroundDayHours * NVEmpOvertimeSummary.GroundDayRate) +
+                                                        (NVEmpOvertimeSummary.GroundNightHours * NVEmpOvertimeSummary.GroundNightRate);
+
+            NVEmpOvertimeSummary.insert();
+
+            //flightDay = overtimeLineEachType.DayMinutes;
+            //flightNight = overtimeLineEachType.NightMinutes;
+
+
+            //hoursToDeduct = overtimeRate.FlightHoursLimit * 60;
+            //if(hoursToDeduct > flightDay)
+            //{
+            //    hoursToDeduct = hoursToDeduct - flightDay;
+            //    flightDay = 0;
+            //}
+            //else
+            //{
+            //    flightDay = flightDay - hoursToDeduct;
+            //    hoursToDeduct = 0;
+            //}
+
+            //if(hoursToDeduct && hoursToDeduct > flightNight)
+            //{
+            //    hoursToDeduct = hoursToDeduct - flightNight;
+            //    flightNight = 0;
+            //}
+            //else
+            //{
+            //    flightNight = flightNight - hoursToDeduct;
+            //    hoursToDeduct = 0;
+            //}
+
+            
+            //groundDay = overtimeLineEachType.DayMinutes;
+            //groundNight = overtimeLineEachType.NightMinutes;
+
+            //if(hoursToDeduct > groundDay)
+            //{
+            //    hoursToDeduct = hoursToDeduct - groundDay;
+            //    groundDay = 0;
+            //}
+            //else
+            //{
+            //    groundDay = groundDay - hoursToDeduct;
+            //    hoursToDeduct = 0;
+            //}
+
+            //if(hoursToDeduct && hoursToDeduct > groundNight)
+            //{
+            //    hoursToDeduct = hoursToDeduct - groundNight;
+            //    groundNight = 0;
+            //}
+            //else
+            //{
+            //    groundNight = groundNight - hoursToDeduct;
+            //    hoursToDeduct = 0;
+            //}
+            
+            
+            
+
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="" />
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources>
+		<AxFormDataSource xmlns="">
+			<Name>NVEmpOvertimeSummary</Name>
+			<Table>NVEmpOvertimeSummary</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>DataAreaId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>DayRate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmpId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>FlightDayHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>FlightDayRate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>FlightNightHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>FlightNightRate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>GroundDayHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>GroundDayRate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>GroundNightHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>GroundNightRate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Name</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PositionId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TotalOvertimeAmount</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<AllowCreate>No</AllowCreate>
+			<AllowDelete>No</AllowDelete>
+			<AllowEdit>No</AllowEdit>
+			<InsertIfEmpty>No</InsertIfEmpty>
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+	</DataSources>
+	<Design>
+		<Caption xmlns="">Cabin crew flight hours summary</Caption>
+		<Pattern xmlns="">SimpleList</Pattern>
+		<PatternVersion xmlns="">1.1</PatternVersion>
+		<Style xmlns="">SimpleList</Style>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormActionPaneControl">
+				<Name>ActionPane</Name>
+				<Type>ActionPane</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls />
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>CustomFilterGroup</Name>
+				<Pattern>CustomAndQuickFilters</Pattern>
+				<PatternVersion>1.1</PatternVersion>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl>
+						<Name>QuickFilter</Name>
+						<FormControlExtension>
+							<Name>QuickFilterControl</Name>
+							<ExtensionComponents />
+							<ExtensionProperties>
+								<AxFormControlExtensionProperty>
+									<Name>targetControlName</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+								<AxFormControlExtensionProperty>
+									<Name>placeholderText</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+								<AxFormControlExtensionProperty>
+									<Name>defaultColumnName</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+							</ExtensionProperties>
+						</FormControlExtension>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>HorizontalLeft</ArrangeMethod>
+				<FrameType>None</FrameType>
+				<Style>CustomFilter</Style>
+				<ViewEditMode>Edit</ViewEditMode>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormGridControl">
+				<Name>FormGridControl1</Name>
+				<Type>Grid</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEmpOvertimeSummary_EmpId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>EmpId</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEmpOvertimeSummary_Name</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>Name</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEmpOvertimeSummary_PositionId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>PositionId</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_FlightDayHours</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>FlightDayHours</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_FlightNightHours</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>FlightNightHours</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_GroundDayHours</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>GroundDayHours</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_GroundNightHours</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>GroundNightHours</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_FlightDayRate</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>FlightDayRate</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_FlightNightRate</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>FlightNightRate</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_GroundDayRate</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>GroundDayRate</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_GroundNightRate</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>GroundNightRate</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVEmpOvertimeSummary_TotalOvertimeAmount</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>TotalOvertimeAmount</DataField>
+						<DataSource>NVEmpOvertimeSummary</DataSource>
+					</AxFormControl>
+				</Controls>
+				<Style>Tabular</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

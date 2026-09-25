@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPositionWorkerAssignmentDialog_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(HcmPositionWorkerAssignmentDialog))]
+internal final class NVHcmPositionWorkerAssignmentDialog_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>updateDesignTemporary</Name>
+				<Source><![CDATA[
+    public void updateDesignTemporary()
+    {
+        boolean tempControl = NVTemporaryCheckbox.value();
+
+        TempPosition_Control.visible(tempControl);
+        TempPosition_Control.allowEdit(positionWorkerAssignmentActionState == HcmPositionWorkerAssignmentAction::Create);
+        TempWorkerAssignmentOk.visible(tempControl);
+        TempWorkerAssignmentOk.enabled(tempControl && TempPosition_Control.value() != 0);
+
+        Position_Control.visible(!tempControl);
+        PrimaryPositionCheckbox.visible(!tempControl);
+        WorkerAssignmentOk.visible(!tempControl);
+
+        if(Position_Control.value() != 0)
+            TempPosition_Control.value(Position_Control.value());
+
+        this.setTemporaryFormText();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setTemporaryFormText</Name>
+				<Source><![CDATA[
+    private void setTemporaryFormText()
+    {
+        if(positionWorkerAssignmentActionState == HcmPositionWorkerAssignmentAction::Edit)
+        {
+            TempWorkerAssignmentOk.text("@SYS320907");
+        }
+        
+        else if(positionWorkerAssignmentActionState == HcmPositionWorkerAssignmentAction::End)
+        {
+            TempWorkerAssignmentOk.text("@SYS320908");
+        }
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>performTemporaryAssignment</Name>
+				<Source><![CDATA[
+    public void performTemporaryAssignment()
+    {
+        ttsbegin;
+        HcmPositionWorkerAssignmentStartDate    validFrom   = DateTimeUtil::removeTimeZoneOffset(ValidFrom_Control.dateTimeValue(), userTimeZone);
+        HcmPositionWorkerAssignmentEndDate      validTo     = DateTimeUtil::removeTimeZoneOffset(ValidTo_Control.dateTimeValue(), userTimeZone);
+
+        HcmPositionWorkerAssignment temporaryWorkerAssignment;
+
+        if(hcmPositionWorkerAssignment)
+        {
+            temporaryWorkerAssignment = HcmPositionWorkerAssignment::find(hcmPositionWorkerAssignment.RecId);
+            temporaryWorkerAssignment.selectForUpdate(true);
+            temporaryWorkerAssignment.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+        }
+
+        temporaryWorkerAssignment.ValidFrom             = validFrom;
+        temporaryWorkerAssignment.ValidTo               = validTo;
+        temporaryWorkerAssignment.Worker                = Worker_Control.value();
+        temporaryWorkerAssignment.Position              = TempPosition_Control.value();
+        temporaryWorkerAssignment.AssignmentReasonCode  = ReasonCode_Control.value();
+        temporaryWorkerAssignment.NVTempPosition        = NoYes::Yes;
+
+        temporaryWorkerAssignment.write();
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        next init();
+
+        if (this.args().caller())
+        {
+            switch (this.args().dataset())
+            {
+                case tableNum(HcmPositionWorkerAssignment):
+                    this.updateTemporaryPostionControl();
+                    break;
+            }
+        }
+        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateTemporaryPostionControl</Name>
+				<Source><![CDATA[
+    public void updateTemporaryPostionControl()
+    {
+        NVTemporaryCheckbox.value(hcmPositionWorkerAssignment.NVTempPosition);
+        TempPosition_Control.value(hcmPositionWorkerAssignment.Position);
+
+        this.updateDesignTemporary();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createWorkerAssignmentOk</Name>
+				<Source><![CDATA[
+    public HcmPositionWorkerAssignmentRecId createWorkerAssignmentOk()
+    {
+        HcmPositionWorkerAssignmentRecId newWorkerAssignmentRecId = next createWorkerAssignmentOk();
+        
+        this.updateTemporaryPostion();
+
+        NVPayrollWorkerReplaceEarningCode::existPosition(hcmPositionWorkerAssignment.Position, DateTimeUtil::date(hcmPositionWorkerAssignment.ValidFrom));
+
+        return newWorkerAssignmentRecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>editWorkerAssignmentOk</Name>
+				<Source><![CDATA[
+    public boolean editWorkerAssignmentOk()
+    {
+        boolean isEditWorkerAssignmentSuccessful = next editWorkerAssignmentOk();
+
+        this.updateTemporaryPostion();
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateTemporaryPostion</Name>
+				<Source><![CDATA[
+    private void updateTemporaryPostion()
+    {
+        ttsbegin;
+        HcmPositionWorkerAssignment updPositionWorkerAssignment = HcmPositionWorkerAssignment::find(hcmPositionWorkerAssignment.RecId);
+        updPositionWorkerAssignment.selectForUpdate(true);
+        updPositionWorkerAssignment.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+        updPositionWorkerAssignment.NVTempPosition = NVTemporaryCheckbox.value();
+        updPositionWorkerAssignment.doUpdate();
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

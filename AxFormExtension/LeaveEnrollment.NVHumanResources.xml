@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>LeaveEnrollment.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlfs4asmj21</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuFunctionButtonControl">
+				<Name>NVLeaveAdjustmentImport</Name>
+				<Type>MenuFunctionButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<AutoRefreshData>Yes</AutoRefreshData>
+				<DataSource>LeaveEnrollment</DataSource>
+				<MenuItemName>NVLeaveAdjustmentImport</MenuItemName>
+				<MenuItemType>Action</MenuItemType>
+				<NeedsRecord>Yes</NeedsRecord>
+			</FormControl>
+			<Parent>ManualAdjustment</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkerHireResponse</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContract]
+class NVWorkerHireResponse
+{
+    str PIN;
+    str DocumentSeria;
+    str DocumentNumber;
+    str Name;
+    str Surname;
+    str NameEn;
+    str SurnameEn;
+    str Patronymic;
+    str BirthDate;
+    str BirthAddress;
+    str BirthCity;
+    str PersonBirthCountryRegion;
+    str Gender;
+    str RegistrationAddress;
+    str UrisAddress;
+    str GivenDate;
+    str ActivationDate;
+    str ExpireDate;
+    str MaritalStatus;
+    str GivenOrganization;
+    str Citizenship;
+    str Image;
+    str MilitaryStatus;
+    str BloodType;
+    str EyeColor;
+    str Sign;
+    int Height;
+    boolean Status;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmPIN</Name>
+				<Source><![CDATA[
+    [DataMember("PIN")]
+    public str parmPIN(str _value = PIN)
+    {
+        PIN = _value;
+        return PIN;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDocumentSeria</Name>
+				<Source><![CDATA[
+    [DataMember("DocumentSeria")]
+    public str parmDocumentSeria(str _value = DocumentSeria)
+    {
+        DocumentSeria = _value;
+        return DocumentSeria;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDocumentNumber</Name>
+				<Source><![CDATA[
+    [DataMember("DocumentNumber")]
+    public str parmDocumentNumber(str _value = DocumentNumber)
+    {
+        DocumentNumber = _value;
+        return DocumentNumber;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmName</Name>
+				<Source><![CDATA[
+    [DataMember("Name")]
+    public str parmName(str _value = Name)
+    {
+        Name = _value;
+        return Name;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSurname</Name>
+				<Source><![CDATA[
+    [DataMember("Surname")]
+    public str parmSurname(str _value = Surname)
+    {
+        Surname = _value;
+        return Surname;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmNameEn</Name>
+				<Source><![CDATA[
+    [DataMember("NameEn")]
+    public str parmNameEn(str _value = NameEn)
+    {
+        NameEn = _value;
+        return NameEn;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSurnameEn</Name>
+				<Source><![CDATA[
+    [DataMember("SurnameEn")]
+    public str parmSurnameEn(str _value = SurnameEn)
+    {
+        SurnameEn = _value;
+        return SurnameEn;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPatronymic</Name>
+				<Source><![CDATA[
+    [DataMember("Patronymic")]
+    public str parmPatronymic(str _value = Patronymic)
+    {
+        Patronymic = _value;
+        return Patronymic;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBirthDate</Name>
+				<Source><![CDATA[
+    [DataMember("BirthDate")]
+    public str parmBirthDate(str _value = BirthDate)
+    {
+        BirthDate = _value;
+        return BirthDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBirthAddress</Name>
+				<Source><![CDATA[
+    [DataMember("BirthAddress")]
+    public str parmBirthAddress(str _value = BirthAddress)
+    {
+        BirthAddress = _value;
+        return BirthAddress;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBirthCity</Name>
+				<Source><![CDATA[
+    [DataMember("BirthCity")]
+    public str parmBirthCity(str _value = BirthCity)
+    {
+        BirthCity = _value;
+        return BirthCity;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPersonBirthCountryRegion</Name>
+				<Source><![CDATA[
+    [DataMember("PersonBirthCountryRegion")]
+    public str parmPersonBirthCountryRegion(
+    str _value = PersonBirthCountryRegion)
+    {
+        PersonBirthCountryRegion = _value;
+        return PersonBirthCountryRegion;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmGender</Name>
+				<Source><![CDATA[
+    [DataMember("Gender")]
+    public str parmGender(str _value = Gender)
+    {
+        Gender = _value;
+        return Gender;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmRegistrationAddress</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute('RegistrationAddress')]
+    public str parmRegistrationAddress(str _value = registrationAddress)
+    {
+        registrationAddress = _value;
+        return registrationAddress;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUrisAddress</Name>
+				<Source><![CDATA[
+    [DataMember("UrisAddress")]
+    public str parmUrisAddress(str _value = UrisAddress)
+    {
+        UrisAddress = _value;
+        return UrisAddress;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmGivenDate</Name>
+				<Source><![CDATA[
+    [DataMember("GivenDate")]
+    public str parmGivenDate(str _value = GivenDate)
+    {
+        GivenDate = _value;
+        return GivenDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmActivationDate</Name>
+				<Source><![CDATA[
+    [DataMember("ActivationDate")]
+    public str parmActivationDate(str _value = ActivationDate)
+    {
+        ActivationDate = _value;
+        return ActivationDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmExpireDate</Name>
+				<Source><![CDATA[
+    [DataMember("ExpireDate")]
+    public str parmExpireDate(str _value = ExpireDate)
+    {
+        ExpireDate = _value;
+        return ExpireDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMaritalStatus</Name>
+				<Source><![CDATA[
+    [DataMember("MaritalStatus")]
+    public str parmMaritalStatus(str _value = MaritalStatus)
+    {
+        MaritalStatus = _value;
+        return MaritalStatus;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmGivenOrganization</Name>
+				<Source><![CDATA[
+    [DataMember("GivenOrganization")]
+    public str parmGivenOrganization(str _value = GivenOrganization)
+    {
+        GivenOrganization = _value;
+        return GivenOrganization;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCitizenship</Name>
+				<Source><![CDATA[
+    [DataMember("Citizenship")]
+    public str parmCitizenship(str _value = Citizenship)
+    {
+        Citizenship = _value;
+        return Citizenship;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmImage</Name>
+				<Source><![CDATA[
+    [DataMember("Image")]
+    public str parmImage(str _value = Image)
+    {
+        Image = _value;
+        return Image;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMilitaryStatus</Name>
+				<Source><![CDATA[
+    [DataMember("MilitaryStatus")]
+    public str parmMilitaryStatus(str _value = MilitaryStatus)
+    {
+        MilitaryStatus = _value;
+        return MilitaryStatus;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBloodType</Name>
+				<Source><![CDATA[
+    [DataMember("BloodType")]
+    public str parmBloodType(str _value = BloodType)
+    {
+        BloodType = _value;
+        return BloodType;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmEyeColor</Name>
+				<Source><![CDATA[
+    [DataMember("EyeColor")]
+    public str parmEyeColor(str _value = EyeColor)
+    {
+        EyeColor = _value;
+        return EyeColor;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSign</Name>
+				<Source><![CDATA[
+    [DataMember("Sign")]
+    public str parmSign(str _value = Sign)
+    {
+        Sign = _value;
+        return Sign;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmHeight</Name>
+				<Source><![CDATA[
+    [DataMember("Height")]
+    public int parmHeight(int _value = Height)
+    {
+        Height = _value;
+        return Height;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmStatus</Name>
+				<Source><![CDATA[
+    [DataMember("Status")]
+    public boolean parmStatus(boolean _value = Status)
+    {
+        Status = _value;
+        return Status;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

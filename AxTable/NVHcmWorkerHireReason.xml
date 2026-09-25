@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerHireReason</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerHireReason extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>workerHireReasonLookup</Name>
+				<Source><![CDATA[
+    public static void workerHireReasonLookup(FormControl sender, NoYes _hire, NoYes _rehire)
+    {
+        Query query = new Query();
+        QueryBuildDataSource qbds = query.addDataSource(tableNum(NVHcmWorkerHireReason));
+                
+        if(_hire)
+        {
+            QueryBuildRange qbr = qbds.addRange(fieldNum(NVHcmWorkerHireReason, Hire));
+            qbr.value(SysQueryRangeUtil::value(_hire));
+            qbr.status(RangeStatus::Locked);
+        }
+
+        if(_rehire)
+        {
+            QueryBuildRange qbr = qbds.addRange(fieldNum(NVHcmWorkerHireReason, Rehire));
+            qbr.value(SysQueryRangeUtil::value(_rehire));
+            qbr.status(RangeStatus::Locked);
+        }
+
+        SysTableLookup  sysTableLookup = SysTableLookup::newParameters(tableNum(NVHcmWorkerHireReason), sender);
+        
+        sysTableLookup.addLookupField(fieldNum(NVHcmWorkerHireReason, Id));
+        sysTableLookup.addLookupField(fieldNum(NVHcmWorkerHireReason, Name));
+
+        sysTableLookup.parmQuery(query);
+        sysTableLookup.performFormLookup();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<FormRef>NVHcmWorkerHireReason</FormRef>
+	<Label>Worker hiring reason</Label>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>Id</TitleField1>
+	<TitleField2>Name</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>EntireTable</CacheLookup>
+	<ClusteredIndex>Idx</ClusteredIndex>
+	<Modules>HumanResource</Modules>
+	<PrimaryIndex>Idx</PrimaryIndex>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<TableContents>DefaultData</TableContents>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Id</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Name</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Administration</Name>
+			<Label>@SYS9853</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Id</Name>
+			<AllowEdit>No</AllowEdit>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>NVHcmWorkerHireReasonId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Name</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>Description</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>SysRowVersionNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>SysRowVersionNumber</ExtendedDataType>
+			<Null>Yes</Null>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Hire</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Hire</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Rehire</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Rehire</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>Idx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>Id</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations />
+	<StateMachines />
+</AxTable>

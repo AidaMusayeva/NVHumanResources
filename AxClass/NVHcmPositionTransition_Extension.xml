@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPositionTransition_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(classStr(HcmPositionTransition))]
+internal final class NVHcmPositionTransition_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateWorkerAssignmentOverlap</Name>
+				<Source><![CDATA[
+    public static boolean validateWorkerAssignmentOverlap(
+        HcmPositionWorkerAssignment          _hcmPositionWorkerAssignment,
+        HcmPositionWorkerAssignmentStartDate _newValidFrom,
+        HcmPositionWorkerAssignmentEndDate   _newValidTo)
+    {
+        boolean ret;
+
+        ret = next validateWorkerAssignmentOverlap(
+            _hcmPositionWorkerAssignment,
+            _newValidFrom,
+            _newValidTo);
+
+        if (!ret)
+        {
+            if (HcmPositionTransition::nvAllowWorkerAssignmentOverlap(
+                    _hcmPositionWorkerAssignment,
+                    _newValidFrom,
+                    _newValidTo))
+            {
+                ret = true;
+            }
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>nvAllowWorkerAssignmentOverlap</Name>
+				<Source><![CDATA[
+    private static boolean nvAllowWorkerAssignmentOverlap(
+        HcmPositionWorkerAssignment          _hcmPositionWorkerAssignment,
+        HcmPositionWorkerAssignmentStartDate _newValidFrom,
+        HcmPositionWorkerAssignmentEndDate   _newValidTo)
+    {
+        HcmPositionRecId positionRecId = _hcmPositionWorkerAssignment.Position;
+
+        if (!positionRecId)
+        {
+            return false;
+        }
+
+        if (!HcmPosition::isActiveAtTime(positionRecId, _newValidFrom))
+        {
+            return false;
+        }
+
+        if(_newValidTo == DateTimeUtil::maxValue())
+        {
+            return false;
+        }
+        return true;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

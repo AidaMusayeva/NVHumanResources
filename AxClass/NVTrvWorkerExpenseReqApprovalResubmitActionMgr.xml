@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerExpenseReqApprovalResubmitActionMgr</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// The NVTrvWorkerExpenseReqApprovalResubmitActionMgr menu item action event handler.
+/// </summary>
+public class NVTrvWorkerExpenseReqApprovalResubmitActionMgr 
+{
+    Args args;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmArgs</Name>
+				<Source><![CDATA[
+    protected Args parmArgs(Args _args = args)
+    {
+        args = _args;
+        return args;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    protected void run()
+    {
+        RecId                           recID               = args.record().RecId;
+        tableId                         tableId             = args.record().TableId;
+        NVTrvWorkerExpenseRequest       requestTable        = args.record();
+        WorkflowWorkItemTable           workItem            = args.caller().getActiveWorkflowWorkItem();
+        WorkflowWorkItemActionDialog    workflowWorkItemActionDialog;
+
+        if (tableId != tablenum(NVTrvWorkerExpenseRequest) ||
+            recId == 0)
+        {
+            throw error(strfmt("@SYS19306", funcname()));
+        }
+
+        if (workItem.RecId > 0)
+        {
+            workflowWorkItemActionDialog = WorkflowWorkItemActionDialog::construct( workItem,
+                                                                                    WorkflowWorkItemActionType::Resubmit,
+                                                                                    new MenuFunction(args.menuItemName(), args.menuItemType()));
+            workflowWorkItemActionDialog.run();
+
+            if (workflowWorkItemActionDialog.parmIsClosedOK())
+            {
+                workItem    = args.caller().getActiveWorkflowWorkItem();
+                WorkflowWorkItemActionManager::dispatchWorkItemAction(workItem,
+                                                    workflowWorkItemActionDialog.parmWorkflowComment(),
+                                                    workflowWorkItemActionDialog.parmTargetUser(),
+                                                    WorkflowWorkItemActionType::Resubmit,
+                                                    args.menuItemName());
+
+                NVTrvWorkerExpenseRequest::updateWorkflowStatus(recID, NVTrvWorkerExpReqWFStatus::Submitted);
+            }
+        }
+        // Make the form refresh its common workflow UI controls.
+        args.caller().updateWorkflowControls();
+        
+        Object callerForm = args.caller();
+        FormDataSource fds = args.record().datasource();
+        if(callerForm)
+        {
+            fds.refresh();
+            fds.research(true);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NVTrvWorkerExpenseReqApprovalResubmitActionMgr resubmit = new NVTrvWorkerExpenseReqApprovalResubmitActionMgr();
+        resubmit.parmArgs(_args);
+        resubmit.run();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

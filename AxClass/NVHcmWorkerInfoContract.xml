@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerInfoContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContractAttribute]
+public class NVHcmWorkerInfoContract  
+{
+    str workerId;
+    str fullName;
+    str firstName;
+    str middleName;
+    str lastName;
+    str finId;
+    date dateOfBirth;
+    int age;
+    str maritalStatus;
+
+    str company;
+    str position;
+    str department;
+    str jobTitle;
+
+    List education;
+    str email;
+    str phone;
+
+    str profileImage;
+    str profileImageExtension;
+
+    real experience;
+    str experienceString;
+
+    str managerId;
+    str managerName;
+    str managerEmail;
+
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmWorkerId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("WorkerId")]
+    public str parmWorkerId(str _parm = workerId)
+    {
+        workerId = _parm;
+        return workerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFullName</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FullName")]
+    public str parmFullName(str _parm = fullName)
+    {
+        fullName = _parm;
+        return fullName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFirstName</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FirstName")]
+    public str parmFirstName(str _parm = firstName)
+    {
+        firstName = _parm;
+        return firstName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMiddleName</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("MiddleName")]
+    public str parmMiddleName(str _parm = middleName)
+    {
+        middleName = _parm;
+        return middleName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLastName</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("LastName")]
+    public str parmLastName(str _parm = lastName)
+    {
+        lastName = _parm;
+        return lastName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmfinId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FIN")]
+    public str parmfinId(str _parm = finId)
+    {
+        finId = _parm;
+        return finId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDateOfBirth</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("DOB")]
+    public date parmDateOfBirth(date _parm = dateOfBirth)
+    {
+        dateOfBirth = _parm;
+        return dateOfBirth;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAge</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Age")]
+    public int parmAge(int _parm = age)
+    {
+        age = _parm;
+        return age;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMaritalStatus</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("MaritalStatus")]
+    public str parmMaritalStatus(str _parm = maritalStatus)
+    {
+        maritalStatus = _parm;
+        return maritalStatus;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCompany</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Company")]
+    public str parmCompany(str _parm = company)
+    {
+        company = _parm;
+        return company;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPosition</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Position")]
+    public str parmPosition(str _parm = position)
+    {
+        position = _parm;
+        return position;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDepartment</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Department")]
+    public str parmDepartment(str _parm = department)
+    {
+        department = _parm;
+        return department;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmJobTitle</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("JobTitle")]
+    public str parmJobTitle(str _parm = jobTitle)
+    {
+        jobTitle = _parm;
+        return jobTitle;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmEducation</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Education"), AifCollectionTypeAttribute("Education", Types::String)]
+    public List parmEducation(List _parm = education)
+    {
+        education = _parm;
+        return education;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmEmail</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Email")]
+    public str parmEmail(str _parm = email)
+    {
+        email = _parm;
+        return email;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPhone</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Phone")]
+    public str parmPhone(str _parm = phone)
+    {
+        phone = _parm;
+        return phone;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmProfileImage</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ProfileImage")]
+    public str parmProfileImage(str _parm = profileImage)
+    {
+        profileImage = _parm;
+        return profileImage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmProfileImageExtension</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ProfileImageExtension")]
+    public str parmProfileImageExtension(str _parm = profileImageExtension)
+    {
+        profileImageExtension = _parm;
+        return profileImageExtension;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmExperience</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Experience")]
+    public real parmExperience(real _parm = experience)
+    {
+        experience = _parm;
+        return experience;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmExperienceString</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ExperienceString")]
+    public str parmExperienceString(str _parm = experienceString)
+    {
+        experienceString = _parm;
+        return experienceString;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmManagerId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ManagerId")]
+    public str parmManagerId(str _parm = managerId)
+    {
+        managerId = _parm;
+        return managerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmManagerName</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ManagerName")]
+    public str parmManagerName(str _parm = managerName)
+    {
+        managerName = _parm;
+        return managerName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmManagerEmail</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ManagerEmail")]
+    public str parmManagerEmail(str _parm = managerEmail)
+    {
+        managerEmail = _parm;
+        return managerEmail;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

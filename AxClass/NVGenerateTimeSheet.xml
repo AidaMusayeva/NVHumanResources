@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVGenerateTimeSheet</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class NVGenerateTimeSheet extends RunBaseBatch
+{
+    #Define.BusinessTrip('BT')
+    #Define.NonWorkingDay('Non-WD')
+    #DEFINE.CurrentVersion(1)
+    #LOCALMACRO.CurrentList
+        payPeriodRecId
+    #ENDMACRO
+    QueryRun                queryRun;
+    QueryRun                queryRunPositionDetails;
+    Map                     leaveTypeMap, leaveDaysMap;
+
+    DialogRunbase           dialog;
+    container               payPeriodList;
+    PayrollPayCycleRecId    payCycleRecId;
+    PayrollPayPeriodRecId   payPeriodRecId;
+
+    FormBuildComboBoxControl            payPeriodBuildComboBox;
+    FormComboBoxControl                 payPeriodComboBox;
+    FormReferenceGroupControl           payCycleReferenceControl;
+    FormBuildReferenceGroupControl      payCycleBuildReferenceControl;
+    NVTimeSheetLines                    lines;
+
+
+    private const str payPeriodListControl = 'PayPeriodListControl';
+    private const str payCycleControl = 'PayCycleControl';
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dialog</Name>
+				<Source><![CDATA[
+    public Object dialog()
+    {
+        dialog = super();
+
+        dialog.caption(this.dialogCaption());
+
+        payCycleBuildReferenceControl = dialog.curFormBuildGroup().addControl(FormControlType::ReferenceGroup, payCycleControl);
+        payCycleBuildReferenceControl.extendedDataType(extendedTypeNum(PayrollPayCycleRecId));
+        payCycleBuildReferenceControl.mandatory(NoYes::Yes);
+        payCycleBuildReferenceControl.helpText(this.payCycleHelpText());
+
+        payPeriodBuildComboBox = dialog.curFormBuildGroup().addControl(FormControlType::ComboBox, payPeriodListControl);
+        payPeriodBuildComboBox.label("@Payroll:PayPeriod");
+        payPeriodBuildComboBox.helpText(this.payPeriodHelpText());
+        payPeriodBuildComboBox.comboType(1);
+
+        return dialog;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>payCycleHelpText</Name>
+				<Source><![CDATA[
+    protected str payCycleHelpText()
+    {
+        return "The pay cycle used to generate the timesheet";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>payPeriodHelpText</Name>
+				<Source><![CDATA[
+    protected str payPeriodHelpText()
+    {
+        return "The pay period used to generate the timesheet";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogCaption</Name>
+				<Source><![CDATA[
+    protected str dialogCaption()
+    {
+        return "Generate employee timesheet";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    public static ClassDescription description()
+    {
+        return "Generate employee timesheet";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canRunInNewSession</Name>
+				<Source><![CDATA[
+    protected boolean canRunInNewSession()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogPostRun</Name>
+				<Source><![CDATA[
+    public void dialogPostRun(DialogRunbase _dialog)
+    {
+        super(_dialog);
+
+        payPeriodComboBox = _dialog.dialogForm().formRun().control(payPeriodBuildComboBox.id());
+        payCycleReferenceControl = _dialog.dialogForm().formRun().control(payCycleBuildReferenceControl.id());
+        payCycleReferenceControl.registerOverrideMethod(methodStr(FormStringControl, modified),
+            methodStr(NVGenerateTimeSheet, payCycleControl_modified), this);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>payCycleControl_modified</Name>
+				<Source><![CDATA[
+    protected boolean payCycleControl_modified(FormControl _formControl)
+    {
+        boolean ret;
+
+        ret = payCycleReferenceControl.modified();
+        if (ret)
+        {
+            payCycleRecId = payCycleReferenceControl.value();
+            this.createPeriodList();
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createPeriodList</Name>
+				<Source><![CDATA[
+    protected void createPeriodList()
+    {
+        PayrollPayPeriod    selectedPayPeriod;
+
+        payPeriodList = conNull();
+        payPeriodComboBox.clear();
+
+        while select PeriodStartDate, PeriodEndDate from selectedPayPeriod
+            order by PeriodEndDate
+            where selectedPayPeriod.PayCycle == payCycleRecId
+            &&    selectedPayPeriod.PeriodStatus == PayrollPeriodStatus::Open
+        {
+            payPeriodComboBox.add(date2StrUsr(selectedPayPeriod.PeriodStartDate, DateFlags::FormatAll) + ' - ' + date2StrUsr(selectedPayPeriod.PeriodEndDate, DateFlags::FormatAll));
+
+            payPeriodList += selectedPayPeriod.RecId;
+        }
+
+        payPeriodComboBox.selection(0);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFromDialog</Name>
+				<Source><![CDATA[
+    public boolean getFromDialog()
+    {
+        boolean ret = super();
+
+        payCycleRecId   = payCycleReferenceControl.value();
+        payPeriodRecId  = conPeek(payPeriodList, payPeriodComboBox.selection() + 1);
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initQuery</Name>
+				<Source><![CDATA[
+    void initQuery()
+    {
+        queryRun = new QueryRun(queryStr(NVTimesheetGenerationQuery));
+        queryRun.query().title(this.dialogCaption());
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>queryRun</Name>
+				<Source><![CDATA[
+    public QueryRun queryRun()
+    {
+        return queryRun;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setRangeFromDialog</Name>
+				<Source><![CDATA[
+    protected void setRangeFromDialog()
+    {
+        QueryBuildDataSource    qbdsStatementGenerationView, qbdsPositionDetail;
+        TransDate               toDate;
+        LegalEntityRecId        legalEntityRecId;
+
+        if (legalEntityRecId == 0)
+        {
+            legalEntityRecId = CompanyInfo::current();
+        }
+
+        if (payPeriodRecId != 0)
+        {
+            toDate = PayrollPayPeriod::find(payPeriodRecId).PeriodEndDate;
+            payCycleRecId = PayrollPayPeriod::find(payPeriodRecId).PayCycle;
+            qbdsStatementGenerationView = queryRun.query().dataSourceTable(tableNum(PayrollStatementGenerationView));
+            qbdsStatementGenerationView.addOrderByField(fieldNum(PayrollStatementGenerationView, Worker));
+
+            queryRun.query().validTimeStateAsOfDateTime(toDate);
+
+            qbdsPositionDetail = qbdsStatementGenerationView.addDataSource(tableNum(PayrollPositionDetails));
+            qbdsPositionDetail.addLink(fieldNum(PayrollStatementGenerationView, Position), fieldNum(PayrollPositionDetails, Position));
+            qbdsPositionDetail.joinMode(JoinMode::ExistsJoin);
+            qbdsPositionDetail.addRange(fieldNum(PayrollPositionDetails, PayCycle)).value(queryValue(payCycleRecId));
+            qbdsPositionDetail.addRange(fieldNum(PayrollPositionDetails, PaidByLegalEntity)).value(queryValue(legalEntityRecId));
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pack</Name>
+				<Source><![CDATA[
+    container pack()
+    {
+        // If the query has yet to be initialized at this point, we need to do so
+        // so that the pack won't fail.
+        if (queryRun == null)
+        {
+            this.initQuery();
+        }
+
+        return [#CurrentVersion, #CurrentList, queryRun.pack()];
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPayPeriodRecId</Name>
+				<Source><![CDATA[
+    public PayrollPayPeriodRecId parmPayPeriodRecId(PayrollPayPeriodRecId _payPeriodRecId = payPeriodRecId)
+    {
+        payPeriodRecId = _payPeriodRecId;
+
+        return payPeriodRecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>unpack</Name>
+				<Source><![CDATA[
+    public boolean unpack(container packedClass)
+    {
+        Version     version = RunBase::getVersion(packedClass);
+        container   queryCon;
+        PayrollPayPeriodRecId payPeriodRecIdLast;
+
+        #LOCALMACRO.SaveLastList
+            payPeriodRecIdLast
+        #ENDMACRO
+
+            switch (version)
+            {
+                case #CurrentVersion:
+                    if (this.inGetSaveLast())
+                    {
+                        // Only want the query from the save last values.
+                        [version, #SaveLastList, queryCon] = packedClass;
+                    }
+                    else
+                    {
+                        [version, #CurrentList, queryCon] = packedClass;
+                    }
+
+                    if (SysQuery::isPackedOk(queryCon))
+                    {
+                        queryRun = new QueryRun(queryCon);
+                    }
+                    else
+                    {
+                        this.initQuery();
+                    }
+                    break;
+                default:
+                    return false;
+            }
+
+            return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        PayrollStatementGenerationView          statementGenerationView;
+        int                                     fieldId;
+        NvTimeSheetHeader                       header;
+        HcmWorker                               hcmWorker;
+        HcmPosition                             hcmPosition;
+        PayrollPayPeriod                        payrollPayPeriod;
+        TransDate                               leaveStartDate, leaveEndDate, employmentStartDate;
+        int                                     totalLeaveDays;
+        int                                     counter = 0;
+
+        leaveTypeMap = new Map(Types::String, Types::Integer);
+        this.setRangeFromDialog();
+
+        if(!payPeriodRecId || ! payCycleRecId)
+        {
+            throw error('Pay Cycle and Pay Period both must be selected');
+        }
+        payrollPayPeriod = PayrollPayPeriod::find(payPeriodRecId);
+        header = NvTimeSheetHeader::find(PayrollPayCycle::find(payCycleRecId).PayCycleId, payPeriodRecId);
+
+        if(!header.RecId)
+        {
+            header.clear();
+            header.PayCycleId = PayrollPayCycle::find(payCycleRecId).PayCycleId;
+            header.PayPeriod = payPeriodRecId;
+            header.LastDateOfMonth = payrollPayPeriod.PeriodEndDate;
+            header.StartDate = payrollPayPeriod.PeriodStartDate;
+            header.EndDate = payrollPayPeriod.PeriodEndDate;
+
+            header.insert();
+        }
+
+        while (queryRun.next())
+        {
+            leaveDaysMap = new Map(Types::String, Types::Integer);
+            statementGenerationView = queryRun.get(tableNum(PayrollStatementGenerationView));
+            hcmWorker = queryRun.get(tableNum(HcmWorker));
+            if(hcmWorker.RecId)
+                hcmWorker = hcmWorker::find(hcmWorker.RecId);
+            if(NVTimeSheetLines::find(header.RecId, hcmWorker.PersonnelNumber).RecId)
+            {
+                continue;
+            }
+
+            hcmPosition = queryRun.get(tableNum(HcmPosition));
+            employmentStartDate = DateTimeUtil::date(this.findWorkerEmployment(hcmWorker.RecId).ValidFrom);
+
+            lines.clear();
+            lines.TimeSheetHeader = header.RecId;
+            lines.initValue();
+            lines.EmpId = hcmWorker.PersonnelNumber;
+            lines.Worker = hcmWorker.RecId;
+            lines.EmpName = hcmWorker.name();
+            lines.PositionId            = hcmPosition.PositionId;
+            lines.ManagerPositionId     = hcmPosition.reportsToPosition();
+            lines.ManagerName           = HcmPosition::findByPosition(lines.ManagerPositionId).worker();
+            lines.CalendarId            = this.getCalendarId(hcmWorker, payrollPayPeriod);
+
+            this.setLeaveInitials(hcmWorker, payrollPayPeriod);
+            this.setTripsInitials(hcmWorker, payrollPayPeriod);
+            lines.TotalWorkingHours = this.syncWorkingHours(payrollPayPeriod, lines.CalendarId, lines);
+            lines.TotalWorkingDays  = this.getTotalWorkingDays(payrollPayPeriod, lines.CalendarId);
+            this.setHolidays(payrollPayPeriod, lines.CalendarId);
+
+            TransDate current = header.StartDate;
+            while(current < employmentStartDate)
+            {
+                lines.setValueToDayColumn(current, 'NA');
+                current++;
+            }
+            
+            lines.insert();
+            counter++;
+        }
+        ttsbegin;
+        if(header.RecId && leaveTypeMap.elements())
+        {
+            header.selectForUpdate(true);
+            header.serializeLeaveTypeMap(leaveTypeMap);
+            header.update();
+        }
+        ttscommit;
+
+        /// Sync after generating
+        NVTimesheetUpdateBatch::construct().run();
+        Info(strFmt('%1 employees were added to the timesheet', counter));
+
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getCalendarId</Name>
+				<Source><![CDATA[
+    CalendarId getCalendarId(HcmWorker _worker, PayrollPayPeriod _payPeriod)
+    {
+        return WorkCalendarEmployment::findByWorkerRecId(_worker.RecId, _payPeriod.PeriodStartDate).CalendarId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>syncWorkingHours</Name>
+				<Source><![CDATA[
+    Hours syncWorkingHours(PayrollPayPeriod _payPeriod, CalendarId _calendarId, NVTimesheetLines _line)
+    {
+        WorkCalendarDateLine    calendarLine;
+        Seconds                 seconds = 0;
+
+        while select calendarLine
+            where calendarLine.CalendarId == _calendarId
+                && calendarLine.TransDate >= _payPeriod.PeriodStartDate
+                && calendarLine.TransDate <= _payPeriod.PeriodEndDate
+        {
+            Seconds currentDateDuration = calendarLine.duration();
+            seconds += currentDateDuration;
+
+            currentDateDuration = currentDateDuration/3600;
+
+            _line.setValueToDayColumn(calendarLine.TransDate, int2Str(currentDateDuration));
+        }
+        return seconds / 3600;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTotalWorkingDays</Name>
+				<Source><![CDATA[
+    int getTotalWorkingDays(PayrollPayPeriod _payPeriod, CalendarId _calendarId)
+    {
+        WorkCalendarDate    workCalendarDate;
+        WorkCalendarEmployment  workCalendarEmployment;
+
+        select count(RecId) from workCalendarDate
+                where workCalendarDate.CalendarId       ==  _calendarId
+                    && workCalendarDate.TransDate       >= _payPeriod.PeriodStartDate
+                    && workCalendarDate.TransDate       <= _payPeriod.PeriodEndDate
+                    && workCalendarDate.WorkTimeControl == WorkTimeControl::Open;
+         
+        return workCalendarDate.RecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setHolidays</Name>
+				<Source><![CDATA[
+    void setHolidays(PayrollPayPeriod _payPeriod, CalendarId _calendarId)
+    {
+        HcmWorkCalendarGenerationDetail calendarGenerationDetail = HcmWorkCalendarGenerationDetail::findByCalendarId(_calendarId);
+
+        WorkCalendarDate workCalendarDate;
+        while select TransDate, WorkTimeControl from workCalendarDate
+            where workCalendarDate.CalendarId ==  _calendarId
+                && workCalendarDate.TransDate >= _payPeriod.PeriodStartDate
+                && workCalendarDate.TransDate <= _payPeriod.PeriodEndDate
+                && (workCalendarDate.WorkTimeControl == WorkTimeControl::Holiday
+                    || workCalendarDate.WorkTimeControl == WorkTimeControl::Closed)
+
+        {
+            HcmWorkCalendarHolidayLine workCalendarHolidayLine;
+            select workCalendarHolidayLine
+                where workCalendarHolidayLine.HcmWorkCalendarHolidayId == calendarGenerationDetail.WorkCalendarHoliday
+                    && workCalendarHolidayLine.HolidayDate == workCalendarDate.TransDate
+                    && workCalendarHolidayLine.NVNonWorkingDay == NoYes::Yes;
+            if(workCalendarHolidayLine)
+            {
+                lines.setValueToDayColumn(workCalendarDate.TransDate, #NonWorkingDay);
+            }
+            else
+            {
+                lines.setValueToDayColumn(workCalendarDate.TransDate, enum2Str(workCalendarDate.WorkTimeControl));
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setLeaveInitials</Name>
+				<Source><![CDATA[
+    void setLeaveInitials(hcmWorker _worker, PayrollPayPeriod _payPeriod)
+    {
+        LeaveRequest                            leaveRequest;
+        LeaveRequestDetail                      leaveRequestDetail;
+        LeaveType                               LeaveType;
+        while select RecId from leaveRequest
+            where leaveRequest.Worker == _worker.RecId
+                && leaveRequest.Status == LeaveRequestApprovalStatus::Completed
+            join LeaveDate from leaveRequestDetail
+            where leaveRequestDetail.Request == leaveRequest.RecId
+                && (leaveRequestDetail.LeaveDate >= _payPeriod.PeriodStartDate
+                && leaveRequestDetail.LeaveDate <= _payPeriod.PeriodEndDate)
+            join leaveType
+                where leaveType.RecId == leaveRequestDetail.LeaveType
+        {
+            str leaveInitials = leaveType.NVLeaveInitials != '' ? leaveType.NVLeaveInitials : LeaveType.Type;
+            str existingValue = lines.getValueFromDate(leaveRequestDetail.LeaveDate);
+             
+            if(existingValue && existingValue == enum2Str(WorkTimeControl::Holiday))
+            {
+                FieldId fieldId = fieldName2Id(tableNum(LeaveType), "IncludeHolidays");
+                if(fieldId != 0 && leaveType.(fieldId) == NoYes::No)
+                    continue;
+            }
+            if(existingValue && existingValue == enum2Str(WorkTimeControl::Closed))
+            {
+                FieldId fieldId = fieldName2Id(tableNum(LeaveType), "IncludeClosedDays");
+                if(fieldId != 0 && leaveType.(fieldId) == NoYes::No)
+                    continue;
+            }
+                    
+            lines.setValueToDayColumn(leaveRequestDetail.LeaveDate, leaveInitials);
+            //getting id to set data in field e.g. LeaveType1..LeaveTypeN
+            int leaveId = this.getOrCreateTypeId(leaveInitials);
+            lines.setValueToLeaveColumn(leaveId);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setTripsInitials</Name>
+				<Source><![CDATA[
+    void setTripsInitials(hcmWorker _worker, PayrollPayPeriod _payPeriod)
+    {
+        NVTrvWorkerExpenseRequest trvExpenseRequest;
+
+        while select trvExpenseRequest
+            where trvExpenseRequest.Worker  == _worker.RecId
+                && trvExpenseRequest.Status == NVTrvWorkerExpReqWFStatus::Approved
+                && ((trvExpenseRequest.FromDate >= _payPeriod.PeriodStartDate     && trvExpenseRequest.FromDate <= _payPeriod.PeriodEndDate)
+                    || (trvExpenseRequest.ToDate >= _payPeriod.PeriodStartDate    && trvExpenseRequest.ToDate <= _payPeriod.PeriodEndDate))
+        {
+            NVTrvWorkerLocationPerDiem  locationPerDiem = NVTrvWorkerLocationPerDiem::findPerDiem(trvExpenseRequest.FromLocation, trvExpenseRequest.ToLocation);
+        
+            date currentDate = trvExpenseRequest.FromDate;
+            while (currentDate <= trvExpenseRequest.ToDate)
+            {
+                if(currentDate >= _payPeriod.PeriodStartDate && currentDate <= _payPeriod.PeriodEndDate)
+                {
+                    str abbreviation = locationPerDiem.Abbreviation != '' ? locationPerDiem.Abbreviation: #BusinessTrip;
+                    str existingValue = lines.getValueFromDate(currentDate);
+                    lines.setValueToDayColumn(currentDate, abbreviation);
+
+                    int nextTypeId = this.getOrCreateTypeId(abbreviation);
+                
+                    lines.setValueToLeaveColumn(nextTypeId);
+                }
+                currentDate++;
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getOrCreateTypeId</Name>
+				<Source><![CDATA[
+    int getOrCreateTypeId(str _abbreviation)
+    {
+        
+        if(leaveTypeMap.exists(_abbreviation))
+        {
+            return leaveTypeMap.lookup(_abbreviation);
+        }
+        else
+        {
+            int nextID = leaveTypeMap.elements() + 1;
+            leaveTypeMap.insert(_abbreviation, nextID);
+            return nextID;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>saveOrUpdateLeaveDaysForiId</Name>
+				<Source><![CDATA[
+    void saveOrUpdateLeaveDaysForiId(int _leaveType, int _days)
+    {
+        int oldLeaves = 0;
+        if(leaveDaysMap.exists(_leaveType))
+        {
+            oldLeaves = leaveDaysMap.lookup(_leaveType);
+        }
+        
+        leaveDaysMap.insert(_leaveType, _days + oldLeaves);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>findWorkerEmployment</Name>
+				<Source><![CDATA[
+    public HcmEmployment findWorkerEmployment(
+    HcmworkerRecId      _recId,
+    boolean             _forUpdate = false,
+    ConcurrencyModel    _concurrencyModel = ConcurrencyModel::Auto)
+    {
+        HcmEmployment hcmEmployment;
+        utcdatetime validFrom, validTo;
+        validFrom = DateTimeUtil::minValue();
+        validTo   = DateTimeUtil::maxValue();
+
+        hcmEmployment.selectForUpdate(_forUpdate );
+        if (_forUpdate && _concurrencyModel != ConcurrencyModel::Auto)
+        {
+            hcmEmployment.concurrencyModel(_concurrencyModel);
+        }
+
+        select firstonly ValidTimeState(validFrom, validTo) hcmEmployment
+             where hcmEmployment.Worker == _recId;
+
+
+        return hcmEmployment;
+    }
+
+    //void setLeaveValueInRelevantField()
+    //{
+    //    MapEnumerator enumerator = leaveDaysMap.getEnumerator();
+    //    while (enumerator.moveNext())
+    //    {
+    //        info(strFmt("%1 = %2", enumerator.currentKey(), enumerator.currentValue()));
+    //    }
+    //}
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

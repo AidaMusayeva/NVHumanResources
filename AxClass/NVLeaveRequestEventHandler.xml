@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveRequestEventHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVLeaveRequestEventHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>LeaveRequestEventHandler_Post_completed</Name>
+				<Source><![CDATA[
+    [PostHandlerFor(classStr(LeaveRequestEventHandler), methodStr(LeaveRequestEventHandler, completed))]
+    public static void LeaveRequestEventHandler_Post_completed(XppPrePostArgs args)
+    {
+        WorkflowEventArgs _workflowEventArgs = args.getArg('_workflowEventArgs');
+        if (_workflowEventArgs && _workflowEventArgs.parmWorkflowContext())
+        {
+            LeaveRequestRecId   leaveRequestRecId   = _workflowEventArgs.parmWorkflowContext().parmRecId();
+            LeaveRequest        leaveRequest        = LeaveRequest::find(leaveRequestRecId);
+
+            if(leaveRequest)
+            {
+                NVTimesheetChangeHandler::insertNewRef(leaveRequest.Worker, leaveRequest.TableId, leaveRequest.RecId);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

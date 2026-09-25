@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerNewWorker.NVHumanResources</Name>
+	<ControlModifications>
+		<AxExtensionModification xmlns="">
+			<Name>MiddleName</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>Father name</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</ControlModifications>
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyohmxbswx1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerHireReasonId</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>1879048190</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>String</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<BackStyle>Transparent</BackStyle>
+				<ExtendedDataType>NVHcmWorkerHireReasonId</ExtendedDataType>
+				<Label>Hire reason</Label>
+			</FormControl>
+			<Parent>DetailsTab</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>TerminationReasonCode</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyejhs35qk1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerPID</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>1879048190</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>String</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<BackStyle>Transparent</BackStyle>
+				<ExtendedDataType>NVHcmWorkerPID</ExtendedDataType>
+				<Label>FIN</Label>
+			</FormControl>
+			<Parent>DetailsTab</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>TerminationReasonCode</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyqev1l4kt1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVPersonEnglishNameGroup</Name>
+				<ElementPosition>1073741823</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>Group</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEnglishFirstName</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<ElementPosition>1073741823</ElementPosition>
+						<FilterExpression>%1</FilterExpression>
+						<Type>String</Type>
+						<VerticalSpacing>-1</VerticalSpacing>
+						<FormControlExtension
+							i:nil="true" />
+						<BackStyle>Transparent</BackStyle>
+						<ExtendedDataType>FirstName</ExtendedDataType>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEnglishMiddleName</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<ElementPosition>1610612734</ElementPosition>
+						<FilterExpression>%1</FilterExpression>
+						<Type>String</Type>
+						<VerticalSpacing>-1</VerticalSpacing>
+						<FormControlExtension
+							i:nil="true" />
+						<BackStyle>Transparent</BackStyle>
+						<ExtendedDataType>MiddleName</ExtendedDataType>
+						<Label>Father name</Label>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEnglishLastName</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<ElementPosition>1879048190</ElementPosition>
+						<FilterExpression>%1</FilterExpression>
+						<Type>String</Type>
+						<VerticalSpacing>-1</VerticalSpacing>
+						<FormControlExtension
+							i:nil="true" />
+						<BackStyle>Transparent</BackStyle>
+						<ExtendedDataType>LastName</ExtendedDataType>
+					</AxFormControl>
+				</Controls>
+				<ColumnsMode>Fill</ColumnsMode>
+				<Caption>English name</Caption>
+			</FormControl>
+			<Parent>NameTab</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>PersonNameGroup</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyvsm0hebm1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVHcmWorkerEducationType</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>1879048190</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>String</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<BackStyle>Transparent</BackStyle>
+				<ExtendedDataType>NVHcmWorkerEducationTypeId</ExtendedDataType>
+			</FormControl>
+			<Parent>DetailsTab</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>TerminationReasonCode</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlm2wytjmc1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCheckBoxControl">
+				<Name>NVHcmIsExpatriate</Name>
+				<Type>CheckBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Label>Expatriate</Label>
+			</FormControl>
+			<Parent>DetailsTab</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>TerminationReasonCode</PreviousSibling>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

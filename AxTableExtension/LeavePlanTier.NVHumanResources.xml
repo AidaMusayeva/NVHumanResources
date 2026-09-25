@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTableExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>LeavePlanTier.NVHumanResources</Name>
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>NVBaseLeaves</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeaveAmountUnsigned</ExtendedDataType>
+			<HelpText>The base amount employees will accrue per period. Accrual periods are determined by the accrual frequency.</HelpText>
+			<Label>Base leaaves</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>NVAdditionalLeaves</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeaveAmountUnsigned</ExtendedDataType>
+			<HelpText>The additional amount employees will accrue per period. Accrual periods are determined by the accrual frequency.</HelpText>
+			<Label>Additional leaaves</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<PropertyModifications />
+	<RelationExtensions />
+	<RelationModifications />
+	<Relations />
+</AxTableExtension>

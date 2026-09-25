@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxQuery xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
+	i:type="AxQuerySimple">
+	<Name>NVHcmWorkerDetail</Name>
+	<SourceCode>
+		<Methods>
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Query]
+public class NVHcmWorkerDetail extends QueryRun
+{
+}
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<DataSources>
+		<AxQuerySimpleRootDataSource>
+			<Name>HcmWorker</Name>
+			<DynamicFields>Yes</DynamicFields>
+			<Table>HcmWorker</Table>
+			<DataSources>
+				<AxQuerySimpleEmbeddedDataSource>
+					<Name>DirPartyTable</Name>
+					<DynamicFields>Yes</DynamicFields>
+					<Table>DirPartyTable</Table>
+					<DataSources>
+						<AxQuerySimpleEmbeddedDataSource>
+							<Name>LogisticsElectronicAddress_Email</Name>
+							<DynamicFields>Yes</DynamicFields>
+							<Table>LogisticsElectronicAddress</Table>
+							<DataSources />
+							<DerivedDataSources />
+							<Fields />
+							<Ranges />
+							<JoinMode>OuterJoin</JoinMode>
+							<Relations>
+								<AxQuerySimpleDataSourceRelation>
+									<Name>QueryDataSourceRelation1</Name>
+									<Field>PrimaryContactEmail</Field>
+									<JoinDataSource>DirPartyTable</JoinDataSource>
+									<JoinRelationName>PrimaryEmail</JoinRelationName>
+									<RelatedField>RecId</RelatedField>
+								</AxQuerySimpleDataSourceRelation>
+							</Relations>
+						</AxQuerySimpleEmbeddedDataSource>
+						<AxQuerySimpleEmbeddedDataSource>
+							<Name>LogisticsElectronicAddress_Phone</Name>
+							<DynamicFields>Yes</DynamicFields>
+							<Table>LogisticsElectronicAddress</Table>
+							<DataSources />
+							<DerivedDataSources />
+							<Fields />
+							<Ranges />
+							<JoinMode>OuterJoin</JoinMode>
+							<Relations>
+								<AxQuerySimpleDataSourceRelation>
+									<Name>QueryDataSourceRelation1</Name>
+									<Field>PrimaryContactPhone</Field>
+									<JoinDataSource>DirPartyTable</JoinDataSource>
+									<JoinRelationName>PrimaryPhone</JoinRelationName>
+									<RelatedField>RecId</RelatedField>
+								</AxQuerySimpleDataSourceRelation>
+							</Relations>
+						</AxQuerySimpleEmbeddedDataSource>
+					</DataSources>
+					<DerivedDataSources />
+					<Fields />
+					<Ranges />
+					<Relations>
+						<AxQuerySimpleDataSourceRelation>
+							<Name>Person</Name>
+							<Field>Person</Field>
+							<JoinDataSource>HcmWorker</JoinDataSource>
+							<RelatedField>RecId</RelatedField>
+						</AxQuerySimpleDataSourceRelation>
+					</Relations>
+				</AxQuerySimpleEmbeddedDataSource>
+			</DataSources>
+			<DerivedDataSources />
+			<Fields />
+			<Ranges />
+			<GroupBy />
+			<Having />
+			<OrderBy />
+		</AxQuerySimpleRootDataSource>
+	</DataSources>
+</AxQuery>

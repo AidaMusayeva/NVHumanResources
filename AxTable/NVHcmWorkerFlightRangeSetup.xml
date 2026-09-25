@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerFlightRangeSetup</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerFlightRangeSetup extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    public boolean validateWrite()
+    {
+        boolean ret;
+    
+        ret = super();
+    
+        if(this.FromHours < 0)
+            ret = checkFailed(strFmt("%1 must be greater than or equal to 0", fieldPName(NVHcmWorkerFlightRangeSetup, FromHours)));
+    
+        if(this.ToHours < 0)
+            ret = checkFailed(strFmt("%1 must be greater than or equal to 0", fieldPName(NVHcmWorkerFlightRangeSetup, ToHours)));
+            
+        if(this.AdditionalLeaves < 0)
+            ret = checkFailed(strFmt("%1 must be greater than or equal to 0", fieldPName(NVHcmWorkerFlightRangeSetup, ToHours)));
+        
+        if(this.FromHours > this.ToHours)
+            ret = checkFailed(strFmt("%1 must be greater or equal to %2.", fieldPName(NVHcmWorkerFlightRangeSetup, FromHours), fieldPName(NVHcmWorkerFlightRangeSetup, ToHours)));
+
+        ret = this.validateRangeOverlap();
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateRangeOverlap</Name>
+				<Source><![CDATA[
+    private boolean validateRangeOverlap()
+    {
+        NVHcmWorkerFlightRangeSetup otherFlightRangeSetup;
+
+        while select otherFlightRangeSetup
+            where otherFlightRangeSetup.RecId   != this.RecId
+                && (this.FromHours              <= otherFlightRangeSetup.ToHours && this.ToHours >= otherFlightRangeSetup.FromHours)
+        {
+            return checkFailed("Hours range are overlapping with other record. This must be unique to proceed.");
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    public static NVHcmWorkerFlightRangeSetup find(Hours _hours)
+    {
+        NVHcmWorkerFlightRangeSetup flightRangeSetup;
+
+        select firstonly flightRangeSetup
+            where flightRangeSetup.FromHours    <= _hours
+                && flightRangeSetup.ToHours     >= _hours;
+
+        return flightRangeSetup;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<FormRef>NVHcmWorkerFlightRangeSetup</FormRef>
+	<Label>Flight hours range</Label>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>FromHours</TitleField1>
+	<TitleField2>ToHours</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>EntireTable</CacheLookup>
+	<Modules>HumanResource</Modules>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<TableContents>DefaultData</TableContents>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Administration</Name>
+			<Label>@SYS9853</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>SysRowVersionNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>SysRowVersionNumber</ExtendedDataType>
+			<Null>Yes</Null>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>FromHours</Name>
+			<ExtendedDataType>Hours</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Start range</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>ToHours</Name>
+			<ExtendedDataType>Hours</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>End range</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>AdditionalLeaves</Name>
+			<ExtendedDataType>Days</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Additional leaves (days)</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<Relations />
+	<StateMachines />
+</AxTable>

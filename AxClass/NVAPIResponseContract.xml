@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVAPIResponseContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContractAttribute]
+public class NVAPIResponseContract  
+{
+    private int statusCode;
+    private List errorDetails;
+    private List body;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmStatusCode</Name>
+				<Source><![CDATA[
+    [DataMember("StatusCode")]
+    public int parmStatusCode(int _statusCode = statusCode)
+    {
+        statusCode = _statusCode;
+        return statusCode;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmErrorDetails</Name>
+				<Source><![CDATA[
+    [DataMember("ErrorDetails"), AifCollectionTypeAttribute("ErrorDetails", Types::String)]
+    public List parmErrorDetails(List _errors = errorDetails)
+    {
+        errorDetails = _errors;
+        return errorDetails;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBody</Name>
+				<Source><![CDATA[
+    [DataMember("Body"), AifCollectionTypeAttribute("Body", Types::Class)]
+    public List parmBody(List _body = body)
+    {
+        body = _body;
+        return body;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerEmploymentFormPart.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyup44l2bt1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormReferenceGroupControl">
+				<Name>HcmEmploymentDetail_NVHcmRealTermReasonCode</Name>
+				<Type>ReferenceGroup</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls />
+				<DataSource>HcmEmploymentDetail</DataSource>
+				<ReferenceField>NVHcmRealTermReasonCode</ReferenceField>
+			</FormControl>
+			<Parent>EmployentEnd</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copywxobmp5y1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormComboBoxControl">
+				<Name>HcmEmploymentDetail_NVHcmTerminationClassification</Name>
+				<Type>ComboBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHcmTerminationClassification</DataField>
+				<DataSource>HcmEmploymentDetail</DataSource>
+				<Items />
+			</FormControl>
+			<Parent>EmployentEnd</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyzg0s0o4d1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>HcmEmploymentDetail_NVTerminationNotes</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVTerminationNotes</DataField>
+				<DataSource>HcmEmploymentDetail</DataSource>
+			</FormControl>
+			<Parent>EmployentEnd</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

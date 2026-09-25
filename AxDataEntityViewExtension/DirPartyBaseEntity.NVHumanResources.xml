@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxDataEntityViewExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>DirPartyBaseEntity.NVHumanResources</Name>
+	<DataSources />
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVAddress</Name>
+			<DataField>NVAddress</DataField>
+			<DataSource>OMOperatingUnit</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVCoefficient</Name>
+			<DataField>NVCoefficient</DataField>
+			<DataSource>OMOperatingUnit</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartmentHierarchy</Name>
+			<DataField>NVDepartmentHierarchy</DataField>
+			<DataSource>OMOperatingUnit</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVDepartOrderNum</Name>
+			<DataField>NVDepartOrderNum</DataField>
+			<DataSource>OMOperatingUnit</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVParentDepartmentRecId</Name>
+			<DataField>NVParentDepartmentRecId</DataField>
+			<DataSource>OMOperatingUnit</DataSource>
+		</AxDataEntityViewField>
+	</Fields>
+	<Mappings />
+	<PropertyModifications />
+	<Relations />
+</AxDataEntityViewExtension>

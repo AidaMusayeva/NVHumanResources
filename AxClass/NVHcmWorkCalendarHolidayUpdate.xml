@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkCalendarHolidayUpdate</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class NVHcmWorkCalendarHolidayUpdate extends RunBaseBatch implements BatchRetryable
+{
+    HcmWorkCalendarHoliday calendarHoliday;
+    
+    #define.CurrentVersion(1)
+    #localmacro.CurrentList
+        calendarHoliday
+    #endmacro
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>setCalendarHoliday</Name>
+				<Source><![CDATA[
+    public void setCalendarHoliday(HcmWorkCalendarHoliday _calendarHoliday)
+    {
+        calendarHoliday = _calendarHoliday;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canGoBatchJournal</Name>
+				<Source><![CDATA[
+    public boolean canGoBatchJournal()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialog</Name>
+				<Source><![CDATA[
+    public Object dialog()
+    {
+        DialogRunbase       dialog = super();
+
+        return dialog;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogPostRun</Name>
+				<Source><![CDATA[
+    public void dialogPostRun(DialogRunbase dialog)
+    {
+        super(dialog);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFromDialog</Name>
+				<Source><![CDATA[
+    public boolean getFromDialog()
+    {
+        return super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public boolean init()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new()
+    {
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pack</Name>
+				<Source><![CDATA[
+    public container pack()
+    {
+        return [#CurrentVersion, #CurrentList];
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        #OCCRetryCount
+        try
+        {
+            ttsbegin;
+            HcmWorkCalendarGenerationDetail calendarGenerationDetail;
+            while select calendarGenerationDetail
+                where calendarGenerationDetail.WorkCalendarHoliday == calendarHoliday.Id
+                    && calendarGenerationDetail.CalendarId != ''
+            {
+                NVHcmWorkCalendarHolidayUpdate::updateWorkCalendarDaysForHolidays(calendarGenerationDetail);
+            }
+            ttscommit;
+
+            Info("Operation completed");
+        }
+        catch (Exception::Deadlock)
+        {
+            retry;
+        }
+        catch (Exception::UpdateConflict)
+        {
+            if (appl.ttsLevel() == 0)
+            {
+                if (xSession::currentRetryCount() >= #RetryNum)
+                {
+                    throw Exception::UpdateConflictNotRecovered;
+                }
+                else
+                {
+                    retry;
+                }
+            }
+            else
+            {
+                throw Exception::UpdateConflict;
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateWorkCalendarDaysForHolidays</Name>
+				<Source><![CDATA[
+    public static void updateWorkCalendarDaysForHolidays(HcmWorkCalendarGenerationDetail _calendarGenerationDetail)
+    {
+        WorkCalendarDate calendarDate;
+        HcmWorkCalendarHolidayLine workCalendarHolidayLine;
+
+        calendarDate.skipDataMethods(true);
+
+        WorkCalendarTable calendarTable = WorkCalendarTable::find(_calendarGenerationDetail.CalendarId);
+
+        update_recordset calendarDate
+            setting WorkTimeControl = WorkTimeControl::Closed
+            exists join workCalendarHolidayLine
+                where calendarDate.CalendarId == calendarTable.CalendarId
+                && calendarDate.TransDate == workCalendarHolidayLine.HolidayDate
+                && workCalendarHolidayLine.NVNonWorkingDay == NoYes::Yes
+                && workCalendarHolidayLine.HcmWorkCalendarHolidayId == _calendarGenerationDetail.WorkCalendarHoliday;
+
+        update_recordset calendarDate
+            setting WorkTimeControl = WorkTimeControl::Holiday
+            exists join workCalendarHolidayLine
+                where calendarDate.CalendarId == calendarTable.CalendarId
+                && calendarDate.TransDate == workCalendarHolidayLine.HolidayDate
+                && workCalendarHolidayLine.NVNonWorkingDay == NoYes::No
+                && workCalendarHolidayLine.HcmWorkCalendarHolidayId == _calendarGenerationDetail.WorkCalendarHoliday;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runsImpersonated</Name>
+				<Source><![CDATA[
+    public boolean runsImpersonated()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>unpack</Name>
+				<Source><![CDATA[
+    public boolean unpack(container packedClass)
+    {
+        Version version = RunBase::getVersion(packedClass);
+        ;
+        switch (version)
+        {
+            case #CurrentVersion:
+                [version,#CurrentList] = packedClass;
+                break;
+            default:
+                return false;
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>allowSaveLast</Name>
+				<Source><![CDATA[
+    public boolean allowSaveLast()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    public boolean validate(Object _calledFrom = null)
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    static NVHcmWorkCalendarHolidayUpdate construct()
+    {
+        return new NVHcmWorkCalendarHolidayUpdate();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    static ClassDescription description()
+    {
+        return "Update holidays and closure on calendar";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    static void main(Args args)
+    {
+        HcmWorkCalendarHoliday calendarHoliday = args.record() as HcmWorkCalendarHoliday;
+
+        NVHcmWorkCalendarHolidayUpdate update = NVHcmWorkCalendarHolidayUpdate::construct();        
+        update.setCalendarHoliday(calendarHoliday);
+        if (update.prompt())
+        {
+            update.runOperation();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>isRetryable</Name>
+				<Source><![CDATA[
+    [Hookable(false)]
+    public final boolean isRetryable()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canRunInNewSession</Name>
+				<Source><![CDATA[
+    protected boolean canRunInNewSession()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerV2.NVHumanResources1</Name>
+	<ControlModifications>
+		<AxExtensionModification xmlns="">
+			<Name>MilitaryService_Service_DisabledVeteran</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>Military Status</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</ControlModifications>
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlx52mvd431</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuButtonControl">
+				<Name>NVNewWorkerMenuButton</Name>
+				<Type>MenuButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormMenuFunctionButtonControl">
+						<Name>FormMenuFunctionButtonControl1</Name>
+						<Type>MenuFunctionButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<MenuItemName>HcmWorkerNewWorker</MenuItemName>
+						<Text>Standard Hire</Text>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormMenuFunctionButtonControl">
+						<Name>FormMenuFunctionButtonControl2</Name>
+						<Type>MenuFunctionButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<MenuItemName>NVWorkerHireSliderMenuItem</MenuItemName>
+						<Text>Hire by FIN</Text>
+					</AxFormControl>
+				</Controls>
+				<NormalImage>Add</NormalImage>
+				<Text>New </Text>
+			</FormControl>
+			<Parent>NewButtonGroup</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>HRNew_Worker</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControllnlthali1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>FamilyInfo_Family_EyeColor</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVEyeColor</DataField>
+				<DataSource>DirPersonName</DataSource>
+				<Label>Eye Color</Label>
+			</FormControl>
+			<Parent>PersonalInformation</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>FamilyInfo_Family</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControl4k4jpv1o1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormIntegerControl">
+				<Name>FamilyInfo_Family_Height</Name>
+				<Type>Integer</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVHeight</DataField>
+				<DataSource>DirPersonName</DataSource>
+			</FormControl>
+			<Parent>PersonalInformation</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>FamilyInfo_Family</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlocvxnodv1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>FamilyInfo_Family_BloodType</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVBloodType</DataField>
+				<DataSource>DirPersonName</DataSource>
+				<Label>Blood Type</Label>
+			</FormControl>
+			<Parent>PersonalInformation</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>FamilyInfo_Family</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControl0fwusqak1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>PersonalInfo_CountryRegion_Citizenship</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVCitizenship</DataField>
+				<DataSource>HcmPersonPrivateDetails</DataSource>
+				<Label>Citizenship</Label>
+			</FormControl>
+			<Parent>PersonalInfo_CountryRegion</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

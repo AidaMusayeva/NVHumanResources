@@ -1,0 +1,1033 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVFillOrderTypes</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Job class to populate NVOrderTypeTable with 62 predefined order types.
+/// This is a one-time initialization job that should be run during system setup.
+/// </summary>
+/// <remarks>
+/// Prerequisites: NVOrderTypeGroup table must be populated first (run NVFillOrderTypeGroups).
+/// Includes duplicate prevention - the job will not insert data if 62+ types already exist.
+///
+/// Order types are organized into 12 groups:
+/// - GROUP 1: Recruitment (4 types)
+/// - GROUP 2: Position and salary change (7 types)
+/// - GROUP 3: Termination (11 types)
+/// - GROUP 4: Average salary protection (6 types)
+/// - GROUP 5: Maternity leave (2 types)
+/// - GROUP 6: Business trip (5 types)
+/// - GROUP 7: Paid leave (1 type)
+/// - GROUP 8: Social leave (2 types)
+/// - GROUP 9: Education leave (1 type)
+/// - GROUP 10: Unpaid leave (1 type)
+/// - GROUP 11: Overtime (1 type)
+/// - GROUP 12: Others (21 types)
+/// </remarks>
+class NVFillOrderTypes
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Main entry point for the job.
+    /// Populates NVOrderTypeTable with 62 order types linked to their respective groups.
+    /// </summary>
+    /// <param name="_args">Job arguments (not used)</param>
+    public static void main(Args _args)
+    {
+        NVOrderTypeTable orderTypeTable;
+        NVOrderTypeGroup orderTypeGroup;
+        int insertCount = 0;
+        int existingCount = 0;
+        
+        // Check if data already exists to prevent duplicates
+        existingCount = (select count(RecId) from NVOrderTypeTable).RecId;
+        
+        if (existingCount >= 62)
+        {
+            warning(strFmt("Data already exists! Found %1 types in table.", existingCount));
+            warning("Job execution cancelled to prevent duplicates.");
+            return;
+        }
+
+        ttsbegin;
+        
+        // ========================================
+        // GROUP 1: RECRUITMENT (4 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(1);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 1: Employment with allowance
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::EmpWithAllow).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::EmpWithAllow;
+                orderTypeTable.TypeName = "İşə qəbul əmri əlavəli";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Employment with allowance";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 2: Employment with allowance (harmful)
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::EmpWithAllowHarmful).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::EmpWithAllowHarmful;
+                orderTypeTable.TypeName = "İşə qəbul əmri əlavəli+zərərli";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "Employment with allowance (harmful)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 3: Employment without allowance
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::EmpWithoutAllow).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::EmpWithoutAllow;
+                orderTypeTable.TypeName = "İşə qəbul əmri əlavəsiz";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 3;
+                orderTypeTable.Description = "Employment without allowance";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 4: Employment without allowance (harmful)
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::EmpWithoutAllowHarmful).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::EmpWithoutAllowHarmful;
+                orderTypeTable.TypeName = "İşə qəbul əmri əlavəsiz+zərərli";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 4;
+                orderTypeTable.Description = "Employment without allowance (harmful)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 2: POSITION AND SALARY CHANGE (7 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(2);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 5: Position change order
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::PosChange).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::PosChange;
+                orderTypeTable.TypeName = "Vəzifə dəyişikliyi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Position change order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 6
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::PosChangeFlight).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::PosChangeFlight;
+                orderTypeTable.TypeName = "Vəzifə dəyişikliyi SAŞ (Uçuş və kabinə heyəti)";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "Position change (Flight and cabin crew)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 7
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SalaryAllowChange).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SalaryAllowChange;
+                orderTypeTable.TypeName = "Əmək haqqının əlavəsinin dəyişikliyi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 3;
+                orderTypeTable.Description = "Salary allowance change order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 8
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SalaryChange).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SalaryChange;
+                orderTypeTable.TypeName = "Əmək haqqının dəyişikliyi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 4;
+                orderTypeTable.Description = "Salary change order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 9
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SalaryChangePilot).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SalaryChangePilot;
+                orderTypeTable.TypeName = "Əmək haqqı dəyişikliyi SAŞ (pilot)";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 5;
+                orderTypeTable.Description = "Salary change (Pilot)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 10
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SalaryChangePilotLong).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SalaryChangePilotLong;
+                orderTypeTable.TypeName = "Əmək haqqı dəyişikliyi SAŞ (pilot) uzunmüddətli xidmət";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 6;
+                orderTypeTable.Description = "Salary change (Pilot long-term service)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 11
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SalaryChangeP6C3).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SalaryChangeP6C3;
+                orderTypeTable.TypeName = "Əmək haqqı dəyişikliyi (SAŞ) P6 və C3 kateqoriyası";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 7;
+                orderTypeTable.Description = "Salary change (P6 and C3 category)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 3: TERMINATION (11 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(3);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 12
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term68_2a).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term68_2a;
+                orderTypeTable.TypeName = "Xitam 68.2a tərəflərdən birinin təşəbbüsü";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Termination 68.2a (Initiative of one party)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 13
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term68_2b).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term68_2b;
+                orderTypeTable.TypeName = "Xitam 68.2b əmək müqaviləsinin müddətinin qurtarması";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "Termination 68.2b (Contract expiration)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 14
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term68_2e).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term68_2e;
+                orderTypeTable.TypeName = "Xitam 68.2e tərəflərin əmək müqaviləsində müəyyən etdiyi hal";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 3;
+                orderTypeTable.Description = "Termination 68.2e (Agreement condition)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 15
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term69_3).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term69_3;
+                orderTypeTable.TypeName = "Xitam 69.3 başqa işəgötürənlə əmək müqaviləsi bağladıqda";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 4;
+                orderTypeTable.Description = "Termination 69.3 (Other employer contract)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 16
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term70_b).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term70_b;
+                orderTypeTable.TypeName = "Xitam 70.b işçilərin sayı və ya ştatları ixtisar edildikdə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 5;
+                orderTypeTable.Description = "Termination 70.b (Staff reduction)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 17
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term70_c).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term70_c;
+                orderTypeTable.TypeName = "Xitam 70.ç işçi özünün əmək funksiyasını və ya əmək müqaviləsi üzrə öhdəliklərini yerinə yetirmədikdə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 6;
+                orderTypeTable.Description = "Termination 70.c (Non-performance)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 18
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term70_d).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term70_d;
+                orderTypeTable.TypeName = "Xitam 70.d sınaq müddəti ərzində işçi özünü doğrultmadıqda";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 7;
+                orderTypeTable.Description = "Termination 70.d (Probation period)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 19
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term74_1a).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term74_1a;
+                orderTypeTable.TypeName = "Xitam 74.1a işçi hərbi və ya alternativ xidmətə çağırıldıqda";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 8;
+                orderTypeTable.Description = "Termination 74.1a (Military service)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 20
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term74_1c).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term74_1c;
+                orderTypeTable.TypeName = "Xitam 74.1c işçi əmək funksiyasını yerinə yetirə bilmədikdə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 9;
+                orderTypeTable.Description = "Termination 74.1c (Unable to perform)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 21
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term74_1ch).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term74_1ch;
+                orderTypeTable.TypeName = "Xitam 74.1ç məhkəmənin hökmü qanuni qüvvəyə mindikdə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 10;
+                orderTypeTable.Description = "Termination 74.1ch (Court verdict)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 22
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Term74_1e).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Term74_1e;
+                orderTypeTable.TypeName = "Xitam 74.1e işçi vəfat etdikdə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 11;
+                orderTypeTable.Description = "Termination 74.1e (Death)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 4: AVERAGE SALARY PROTECTION (6 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(4);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 23
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::AvgSalMilitary).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::AvgSalMilitary;
+                orderTypeTable.TypeName = "Hərbi Çağırış Haqqında əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Military service order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 24
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::AvgSalSports).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::AvgSalSports;
+                orderTypeTable.TypeName = "İdman yarışı barədə əmr";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "Sports competition order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 25
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::AvgSalCourt).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::AvgSalCourt;
+                orderTypeTable.TypeName = "Məhkəməyə çağırılma Haqqında əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 3;
+                orderTypeTable.Description = "Court summons order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 26
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::AvgSalBloodDonor).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::AvgSalBloodDonor;
+                orderTypeTable.TypeName = "qan donuru ödənişli məzuniyyət əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 4;
+                orderTypeTable.Description = "Blood donor paid leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 27
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::AvgSalElection).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::AvgSalElection;
+                orderTypeTable.TypeName = "Seçki ilə ödənişli məzuniyyət əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 5;
+                orderTypeTable.Description = "Election paid leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 28
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::AvgSalCourseRecall).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::AvgSalCourseRecall;
+                orderTypeTable.TypeName = "MAA Kursdan geri çağrılma haqqında əmr";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 6;
+                orderTypeTable.Description = "Course recall order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 5: MATERNITY LEAVE (2 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(5);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 29
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Maternity14Days).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Maternity14Days;
+                orderTypeTable.TypeName = "14 təqvim günü uzadılma əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "14 calendar days extension order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 30
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Maternity126Days).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Maternity126Days;
+                orderTypeTable.TypeName = "126 təqvim günü əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "126 calendar days order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 6: BUSINESS TRIP (5 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(6);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 31
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::TripCancel).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::TripCancel;
+                orderTypeTable.TypeName = "Ezam əmrin ləğv edilməsi barədə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Business trip cancellation order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 32
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::TripChange).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::TripChange;
+                orderTypeTable.TypeName = "Ezam əmrinə dəyişiklik edilməsi barədə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "Business trip change order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 33
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::TripExtension).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::TripExtension;
+                orderTypeTable.TypeName = "Ezam tarixinin uzadılması barədə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 3;
+                orderTypeTable.Description = "Business trip extension order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 34
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::TripDomestic).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::TripDomestic;
+                orderTypeTable.TypeName = "İşçilərin ezam olunması barədə daxili";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 4;
+                orderTypeTable.Description = "Domestic business trip order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 35
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::TripForeign).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::TripForeign;
+                orderTypeTable.TypeName = "İşçilərin ezam olunması barədə xarici";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 5;
+                orderTypeTable.Description = "Foreign business trip order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 7: PAID LEAVE (1 type)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(7);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 36
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::PaidLeave).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::PaidLeave;
+                orderTypeTable.TypeName = "Əmək məzuniyyəti əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Annual paid leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 8: SOCIAL LEAVE (2 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(8);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 37
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SocialLeavePartial).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SocialLeavePartial;
+                orderTypeTable.TypeName = "Qismən ödənişli sosial məzuniyyət əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Partially paid social leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 38
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SocialLeaveEarlyReturn).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SocialLeaveEarlyReturn;
+                orderTypeTable.TypeName = "Sosial məzuniyyətdən vaxtından əvvəl qayıtma əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "Early return from social leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 9: EDUCATION LEAVE (1 type)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(9);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 39
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::EducationLeave).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::EducationLeave;
+                orderTypeTable.TypeName = "Təhsil məzuniyyəti əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Education leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 10: UNPAID LEAVE (1 type)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(10);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 40
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::UnpaidLeave).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::UnpaidLeave;
+                orderTypeTable.TypeName = "Ödənişsiz məzuniyyət əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Unpaid leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 11: OVERTIME (1 type)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(11);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 41
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::OvertimeHoliday).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::OvertimeHoliday;
+                orderTypeTable.TypeName = "İstirahət və bayram günlərində işə cəlb edilmə barədə";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Work on rest and holiday days order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        // ========================================
+        // GROUP 12: OTHERS (21 types)
+        // ========================================
+        orderTypeGroup = NVOrderTypeGroup::findByGroupId(12);
+        
+        if (orderTypeGroup.RecId)
+        {
+            // Type 42
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::FlightUnfit).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::FlightUnfit;
+                orderTypeTable.TypeName = "Uçuş işinə yararsız əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 1;
+                orderTypeTable.Description = "Flight duty unfit order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 43
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::FlightFit).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::FlightFit;
+                orderTypeTable.TypeName = "Uçuş işinə yararlı əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 2;
+                orderTypeTable.Description = "Flight duty fit order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 44
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SurnameChange).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SurnameChange;
+                orderTypeTable.TypeName = "Soyadın dəyişdirilməsi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 3;
+                orderTypeTable.Description = "Surname change order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 45
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::ReducedTimeMinorShift).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::ReducedTimeMinorShift;
+                orderTypeTable.TypeName = "Qısaldılmış iş vaxtı azyaşlı uşağa görə (növbəli) əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 4;
+                orderTypeTable.Description = "Reduced work time (minor child, shift)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 46
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::ReducedTimeMinor5Day).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::ReducedTimeMinor5Day;
+                orderTypeTable.TypeName = "Qısaldılmış iş vaxtı azyaşlı uşağa görə (5 günlük) əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 5;
+                orderTypeTable.Description = "Reduced work time (minor child, 5-day)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 47
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::ReducedTimeShift).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::ReducedTimeShift;
+                orderTypeTable.TypeName = "Qısaldılmış iş vaxtı (növbəli) əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 6;
+                orderTypeTable.Description = "Reduced work time (shift)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 48
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::ReducedTime5Day).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::ReducedTime5Day;
+                orderTypeTable.TypeName = "Qısaldılmış iş vaxtı (5 günlük) əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 7;
+                orderTypeTable.Description = "Reduced work time (5-day)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 49
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::WorkScheduleChange).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::WorkScheduleChange;
+                orderTypeTable.TypeName = "İş rejimin dəyişikliyi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 8;
+                orderTypeTable.Description = "Work schedule change order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 50
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::ContractExtension).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::ContractExtension;
+                orderTypeTable.TypeName = "Əmək müqaviləsinin müddətinin uzadılması əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 9;
+                orderTypeTable.Description = "Employment contract extension order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 51
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::DutyPerformance).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::DutyPerformance;
+                orderTypeTable.TypeName = "Əmək funksiyalarının icrası barədə əmr";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 10;
+                orderTypeTable.Description = "Duty performance order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 52
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Assignment).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Assignment;
+                orderTypeTable.TypeName = "Həvalə əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 11;
+                orderTypeTable.Description = "Assignment order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 53
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::MilitaryReturn).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::MilitaryReturn;
+                orderTypeTable.TypeName = "Hərbi Çağırışdan qayıtma Haqqında əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 12;
+                orderTypeTable.Description = "Return from military service order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 54
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SportsRecall).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SportsRecall;
+                orderTypeTable.TypeName = "İdman yarışından geri çağrılma haqqında əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 13;
+                orderTypeTable.Description = "Recall from sports competition order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 55
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Suspension).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Suspension;
+                orderTypeTable.TypeName = "İşçinin işdən kənar edilməsi haqqında əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 14;
+                orderTypeTable.Description = "Suspension from work order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 56
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Compensation).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Compensation;
+                orderTypeTable.TypeName = "Kompensasiyanın verilməsi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 15;
+                orderTypeTable.Description = "Compensation payment order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 57
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::LeaveCancel).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::LeaveCancel;
+                orderTypeTable.TypeName = "Məzuniyyət əmrinin ləğvi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 16;
+                orderTypeTable.Description = "Leave cancellation order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 58
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::LeaveRecall).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::LeaveRecall;
+                orderTypeTable.TypeName = "Məzuniyyətdən geri çağrılma haqqında əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 17;
+                orderTypeTable.Description = "Recall from leave order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 59
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::SickLeaveExtension).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::SickLeaveExtension;
+                orderTypeTable.TypeName = "Xəstəlik vərəqəsinin uzadılması əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 18;
+                orderTypeTable.Description = "Sick leave extension order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 60
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::TrainingCourse).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::TrainingCourse;
+                orderTypeTable.TypeName = "MAA İşçilərin ixtisasartırma kursuna göndərilməsi əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 19;
+                orderTypeTable.Description = "Training course assignment order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 61
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::CourseRecall).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::CourseRecall;
+                orderTypeTable.TypeName = "Kursdan geri çağrılma əmri";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 20;
+                orderTypeTable.Description = "Course recall order";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+            
+            // Type 62 (Test)
+            if (!NVOrderTypeTable::findByOrderType(NVOrderType::Employment).RecId)
+            {
+                orderTypeTable.clear();
+                orderTypeTable.OrderType = NVOrderType::Employment;
+                orderTypeTable.TypeName = "İşə qəbul (Test)";
+                orderTypeTable.GroupRecId = orderTypeGroup.RecId;
+                orderTypeTable.IsActive = NoYes::Yes;
+                orderTypeTable.SortOrder = 21;
+                orderTypeTable.Description = "Employment (Test)";
+                orderTypeTable.insert();
+                insertCount++;
+            }
+        }
+        
+        ttscommit;
+        
+        info(strFmt("Job completed successfully. Inserted %1 types.", insertCount));
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

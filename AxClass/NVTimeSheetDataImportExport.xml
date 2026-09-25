@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTimeSheetDataImportExport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using System.IO;
+using OfficeOpenXml;
+internal final class NVTimeSheetDataImportExport
+{
+    NvTimeSheetHeader       timeSheetHeader;
+    
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NVTimeSheetDataImportExport     importExport;
+        NvTimeSheetHeader               lTimeSheetHeader;
+        
+        importExport = new NVTimeSheetDataImportExport();
+
+        if(_args.record() ==null)
+        {
+            throw error('Function was called without active buffer');
+        }
+        
+        lTimeSheetHeader = _args.record() as NvTimeSheetHeader;
+
+        importExport.setTimeSheetHeader(lTimeSheetHeader);
+        if(_args.parmEnum() == NVTimeSheetImportExport::Export)
+        {
+            importExport.exportData();
+        }
+        else
+        {
+            importExport.importData();
+        }
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setTimeSheetHeader</Name>
+				<Source><![CDATA[
+    void setTimeSheetHeader(NvTimeSheetHeader  _timeSheetHeader)
+    {
+        timeSheetHeader = _timeSheetHeader;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getMonthYear</Name>
+				<Source><![CDATA[
+    str getMonthYear(TransDate _date)
+    {
+        int monthNum = mthOfYr(_date);
+        str monthName = mthName(monthNum);
+        int yearNum = year(_date);
+
+        return  strFmt("%1 %2", monthName, yearNum);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>exportData</Name>
+				<Source><![CDATA[
+    void exportData()
+    {
+        MemoryStream            memoryStream = new MemoryStream();
+        NVTimeSheetLines        timeSheetLines;
+        int                     lastDateOfMonth;
+        PayrollPayPeriod        payrollPayPeriod;
+        
+        payrollPayPeriod = PayrollPayPeriod::find(timeSheetHeader.PayPeriod);
+        lastDateOfMonth =  dayOfMth(PayrollPayPeriod.PeriodEndDate);
+        str                     monthYear = this.getMonthYear(PayrollPayPeriod.PeriodEndDate);
+
+        DocuFileSaveResult saveResult =
+            DocuFileSave::promptForSaveLocation(strFmt('Employee time sheet for %1', monthYear),"xlsx", null, "excel create and export");
+
+        if (saveResult&& saveResult.parmAction() == DocuFileSaveAction::Cancel)
+        {
+            return;
+        }
+        using (var package = new OfficeOpenXml.ExcelPackage(memoryStream))
+        {
+            var row = 1;
+
+            var worksheets = package.get_Workbook().get_Worksheets();
+            var worksheet = worksheets.Add("Export");
+            var cells = worksheet.get_Cells();
+
+            OfficeOpenXml.ExcelRange cell = cells.get_Item(row, 1);
+            cell.set_Value("Pay Cycle");
+
+            cell = cells.get_Item(row, 2);
+            cell.set_Value(timeSheetHeader.PayCycleId);
+
+            cell = cells.get_Item(row, 3);
+            cell.set_Value("Pay Period");
+
+            cell = cells.get_Item(row, 4);
+            cell.set_Value(strFmt('%1 - %2', payrollPayPeriod.PeriodStartDate, payrollPayPeriod.PeriodEndDate));
+
+            row = 2;
+            cell = null;
+            cell = cells.get_Item(row, 1);
+            cell.set_Value("Personnel Number");
+
+            cell = cells.get_Item(row, 2);
+            cell.set_Value("Employee Name");
+
+            cell = cells.get_Item(row, 3);
+            cell.set_Value("Overtime Hours");
+
+            cell = cells.get_Item(row, 4);
+            cell.set_Value("Night Hours");
+            
+            int eachDate;
+            for(eachDate = 0; eachDate <  lastDateOfMonth; eachDate++)
+            {
+                cell = cells.get_Item(row, 5+eachDate);
+                cell.set_Value(strFmt('%1', payrollPayPeriod.PeriodStartDate + eachDate));
+            }
+        
+            while select timeSheetLines
+                where timeSheetLines.TimeSheetHeader == timeSheetHeader.RecId
+            {
+                row++;
+                cell = null;
+                cell = cells.get_Item(row, 1);
+                cell.set_Value(timeSheetLines.EmpId);
+                cell = cells.get_Item(row, 2);
+                cell.set_Value(timeSheetLines.EmpName);
+                cell = cells.get_Item(row, 3);
+                cell.set_Value(timeSheetLines.OvertimeHours);
+                cell = cells.get_Item(row, 4);
+                cell.set_Value(timeSheetLines.NightHours);
+
+                cell = cells.get_Item(row, 5);
+                cell.set_Value(timeSheetLines.HoursDay1);
+                cell = cells.get_Item(row, 6);
+                cell.set_Value(timeSheetLines.HoursDay2);
+                cell = cells.get_Item(row, 7);
+                cell.set_Value(timeSheetLines.HoursDay3);
+                cell = cells.get_Item(row, 8);
+                cell.set_Value(timeSheetLines.HoursDay4);
+                cell = cells.get_Item(row, 9);
+                cell.set_Value(timeSheetLines.HoursDay5);
+                cell = cells.get_Item(row, 10);
+                cell.set_Value(timeSheetLines.HoursDay6);
+                cell = cells.get_Item(row, 11);
+                cell.set_Value(timeSheetLines.HoursDay7);
+                cell = cells.get_Item(row, 12);
+                cell.set_Value(timeSheetLines.HoursDay8);
+                cell = cells.get_Item(row, 13);
+                cell.set_Value(timeSheetLines.HoursDay9);
+                cell = cells.get_Item(row, 14);
+                cell.set_Value(timeSheetLines.HoursDay10);
+                cell = cells.get_Item(row, 15);
+                cell.set_Value(timeSheetLines.HoursDay11);
+                cell = cells.get_Item(row, 16);
+                cell.set_Value(timeSheetLines.HoursDay12);
+                cell = cells.get_Item(row, 17);
+                cell.set_Value(timeSheetLines.HoursDay13);
+                cell = cells.get_Item(row, 18);
+                cell.set_Value(timeSheetLines.HoursDay14);
+                cell = cells.get_Item(row, 19);
+                cell.set_Value(timeSheetLines.HoursDay15);
+                cell = cells.get_Item(row, 20);
+                cell.set_Value(timeSheetLines.HoursDay16);
+                cell = cells.get_Item(row, 21);
+                cell.set_Value(timeSheetLines.HoursDay17);
+                cell = cells.get_Item(row, 22);
+                cell.set_Value(timeSheetLines.HoursDay18);
+                cell = cells.get_Item(row, 23);
+                cell.set_Value(timeSheetLines.HoursDay19);
+                cell = cells.get_Item(row, 24);
+                cell.set_Value(timeSheetLines.HoursDay20);
+                cell = cells.get_Item(row, 25);
+                cell.set_Value(timeSheetLines.HoursDay21);
+                cell = cells.get_Item(row, 26);
+                cell.set_Value(timeSheetLines.HoursDay22);
+                cell = cells.get_Item(row, 27);
+                cell.set_Value(timeSheetLines.HoursDay23);
+                cell = cells.get_Item(row, 28);
+                cell.set_Value(timeSheetLines.HoursDay24);
+                cell = cells.get_Item(row, 29);
+                cell.set_Value(timeSheetLines.HoursDay25);
+                cell = cells.get_Item(row, 30);
+                cell.set_Value(timeSheetLines.HoursDay26);
+                cell = cells.get_Item(row, 31);
+                cell.set_Value(timeSheetLines.HoursDay27);
+                cell = cells.get_Item(row, 32);
+                cell.set_Value(timeSheetLines.HoursDay28);
+                if(eachDate > 28)
+                {
+                    cell = cells.get_Item(row, 33);
+                    cell.set_Value(timeSheetLines.HoursDay29);
+                }
+                if(eachDate > 29)
+                {
+                    cell = cells.get_Item(row, 34);
+                    cell.set_Value(timeSheetLines.HoursDay30);
+                }
+                if(eachDate > 30)
+                {
+                    cell = cells.get_Item(row, 35);
+                    cell.set_Value(timeSheetLines.HoursDay31);
+                }
+            }
+            package.Save();
+
+            memoryStream.Seek(0,System.IO.SeekOrigin::Begin);
+
+            DocuFileSave::processSaveResult(memoryStream,saveResult);
+            
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>importData</Name>
+				<Source><![CDATA[
+    void importData()
+    {
+        Stream                              stream;   
+        ExcelWorksheet                      worksheet;
+        ExcelRange                          range;
+        FileUploadTemporaryStorageResult    fileUploadResult;
+        FileUploadBuild                     fileUpload;
+        DialogGroup                         dlgUploadGroup;
+        FileUpload                          fileUploadControl;
+        FileUploadBuild                     fileUploadBuild;
+        FormBuildControl                    formBuildControl;
+        ExcelSpreadsheetName                sheeet;
+        int                                 i, excelRowCount;
+        boolean                             errorFound = false;
+        Dialog                              dialog = new Dialog("Upload time sheet file");
+
+        dlgUploadGroup = dialog.addGroup("Upload file");
+        formBuildControl = dialog.formBuildDesign().control(dlgUploadGroup.name());
+        fileUploadBuild = formBuildControl.addControlEx(classstr(FileUpload), 'Upload');
+        fileUploadBuild.fileTypesAccepted('.xlsx');
+        fileUploadBuild.style(FileUploadStyle::MinimalWithFilename);
+        if (dialog.run() && dialog.closedOk())
+        {
+            fileUploadControl = dialog.formRun().control(dialog.formRun().controlId('Upload'));
+            fileUploadResult  = fileUploadControl.getFileUploadResult();
+
+
+            if (fileUploadResult != null && fileUploadResult.getUploadStatus())
+            {
+                stream = fileUploadResult.openResult();
+                using (OfficeOpenXml.ExcelPackage package = new OfficeOpenXml.ExcelPackage(stream))
+                {
+                    Package.Load(stream);
+                    worksheet = package.get_Workbook().get_Worksheets().get_Item(1);
+                    range     = worksheet.Cells;
+                    excelRowCount = worksheet.Dimension.End.Row - worksheet.Dimension.Start.Row + 1;
+                    try
+                    {
+                        ttsbegin;
+                        for (i = 3; i<= excelRowCount; i++)  // Start with 2 due to header excluded.
+                        {
+                            HcmPersonnelNumberId    empId = range.get_Item(i, 1).value;
+                            NVTimeSheetLines        timeSheetLine = NVTimeSheetLines::find(timeSheetHeader.RecId, empId, true);
+
+                            if(!timeSheetLine.RecId)
+                            {
+                                error(strFmt('No record exist in time sheet for line %1', i));
+                                continue;
+                            }
+                            if(timeSheetLine.status == NVTimeSheetLineStatus::Submitted)
+                            {
+                                error(strFmt('Data cannot be imported for line %1 as the line status is submitted' , i));
+                                continue;
+                            }
+                            timeSheetLine.OvertimeHours = str2Int(range.get_Item(i, 3).value);
+                            timeSheetLine.NightHours = str2Int(range.get_Item(i, 4).value);
+
+                            int lastDayOFMonth = dayOfMth(timeSheetLine.timeSheetHeader().EndDate);
+                            for(int day = 1; day<=lastDayOFMonth; day++)
+                            {
+                                FieldName   fieldName = "HoursDay" + int2str(day);
+                                int         fieldid = fieldName2Id(tableNum(NVTimeSheetLines),fieldName);
+
+                                if(this.validateColumnValue(timeSheetLine.(fieldid), any2Str(range.get_Item(i, 4 + day).value)))
+                                {
+                                    timeSheetLine.(FieldId) = any2Str(range.get_Item(i, 4 + day).value);
+                                }
+                                else
+                                    warning(strFmt('Employee %1, wrong value %2 for date %3', empId, range.get_Item(i, 4 + day).value, timesheetLine.fieldNumToDate(fieldid)));
+                            }
+                            
+                            if(timeSheetLine.validateWrite())
+                                timeSheetLine.write(); 
+                            else
+                            {
+                                warning(strFmt('Issues in importing data for employee %1', timeSheetLine.empID));
+                                errorFound = true;
+                            }
+                        }
+                        if(errorFound)
+                        {
+                            Error('Import failed because of errors. Please see all the info logs for errors.');
+                            ttsabort;
+                        }
+                        else
+                        {
+                            ttscommit;
+                            info("Data import completed");
+                        }
+                    }
+                    catch (Exception::Error)
+                    {
+                        ttsabort;
+                        throw error("error during upload");
+                    }
+                }
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateColumnValue</Name>
+				<Source><![CDATA[
+    boolean validateColumnValue(str _currentValue, str _newValue)
+    {
+        if(_newValue == '' || _currentValue == _newValue)
+            return true;
+
+        //if(!NVTimeSheetLinesAllowedValues::isLeaveInitial(_newValue))
+        //{
+        //    return false;
+        //}
+       
+        if(Global::isInteger(_newValue) || NVTimeSheetLinesAllowedValues::isAllowedValue(_newValue))
+        {
+            return true;
+        }
+        
+        return false;
+
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

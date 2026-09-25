@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderHeaderWorkflowSubmitManager</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Submit manager for NVOrderHeaderWorkflow.
+/// Called when user clicks Submit to Workflow.
+/// Uses Workflow::activateFromWorkflowType — confirmed signature from AOT.
+/// </summary>
+public class NVOrderHeaderWorkflowSubmitManager 
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args args)
+	{
+        NVOrderHeader           header;
+        WorkflowTypeName        workflowTypeName;
+        WorkflowComment         initialNote;
+        WorkflowSubmitDialog    workflowSubmitDialog;
+
+        if (!args || !args.record())
+        {
+            throw error("NVOrderHeaderWorkflowSubmitManager: No record provided.");
+        }
+
+        header = args.record();
+
+        if (header.TableId != tableNum(NVOrderHeader))
+        {
+            throw error("NVOrderHeaderWorkflowSubmitManager: Invalid record type.");
+        }
+
+        if (!header.canSubmitToWorkflow())
+        {
+            throw error("NVOrderHeaderWorkflowSubmitManager: Order cannot be submitted in current status.");
+        }
+
+        // Resolve active workflow configuration for this document
+        WorkflowVersionTable workflowVersionTable;
+        workflowVersionTable = Workflow::findWorkflowConfigToActivateForType(
+            workflowTypeStr(NVOrderHeaderWorkflow),
+            header.RecId,
+            tableNum(NVOrderHeader));
+
+        if (!workflowVersionTable.RecId)
+        {
+            throw error("NVOrderHeaderWorkflowSubmitManager: No active workflow configuration found.");
+        }
+
+        // Show standard workflow comment dialog
+        workflowSubmitDialog = WorkflowSubmitDialog::construct(workflowVersionTable);
+        workflowSubmitDialog.run();
+
+        if (!workflowSubmitDialog.parmIsClosedOK())
+        {
+            return; // User cancelled
+        }
+
+        initialNote      = workflowSubmitDialog.parmWorkflowComment();
+        workflowTypeName = workflowTypeStr(NVOrderHeaderWorkflow);
+
+        try
+        {
+            ttsbegin;
+
+            // Confirmed API: Workflow::activateFromWorkflowType
+            // Signature: (workflowTypeName, recId, WorkflowComment, NoYes, [WorkflowUser])
+            Workflow::activateFromWorkflowType(
+                workflowTypeName,
+                header.RecId,
+                initialNote,
+                NoYes::No);
+
+            NVOrderHeader::updateWorkflowStatus(
+                header.RecId,
+                NVOrderStatus::PendingApproval);
+
+            ttscommit;
+
+            // Refresh the calling form
+            if (args.caller())
+            {
+                //args.caller().updateWorkflowControls();
+                #Task
+                args.caller().task(#taskRefresh);
+            }
+        }
+        catch (Exception::Error)
+        {
+            ttsabort;
+            error("NVOrderHeaderWorkflowSubmitManager: Workflow activation failed.");
+            throw;
+        }
+	}
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

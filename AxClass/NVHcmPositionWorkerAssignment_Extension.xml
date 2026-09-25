@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPositionWorkerAssignment_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(HcmPositionWorkerAssignment))]
+public final class NVHcmPositionWorkerAssignment_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>existPositionWorker</Name>
+				<Source><![CDATA[
+    public static boolean existPositionWorker(HcmPositionRecId _positionRecId,
+        HcmWorkerRecId _workerRecId,
+        utcdatetime _validFrom = DateTimeUtil::utcNow(),
+        utcdatetime _validTo = _validFrom)
+    {
+        PayrollPositionDetails positionDetails;
+        HcmPositionWorkerAssignment positionWorkerAssignment;
+        HcmPosition position;
+
+        if (prmisDefault(_validFrom) && prmisDefault(_validTo))
+        {
+            select firstonly RecId from positionWorkerAssignment
+                where positionWorkerAssignment.Worker == _workerRecId
+                    && positionWorkerAssignment.Position == _positionRecId;
+        }
+
+        else if (_validFrom == _validTo)
+        {
+            select firstonly validTimeState(_validFrom) RecId from positionWorkerAssignment
+                where positionWorkerAssignment.Worker == _workerRecId
+                    && positionWorkerAssignment.Position == _positionRecId;
+        }
+        else
+        {
+            select firstonly validTimeState(_validFrom, _validTo)  RecId from positionWorkerAssignment
+                where positionWorkerAssignment.Worker == _workerRecId
+                    && positionWorkerAssignment.Position == _positionRecId;
+        }
+
+        return positionWorkerAssignment.RecId != 0;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

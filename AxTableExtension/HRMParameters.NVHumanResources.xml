@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTableExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>HRMParameters.NVHumanResources</Name>
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>NVTrvWorkerExpReqAdvDays</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>Days</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Advance days for travel request</Label>
+			<Visible>No</Visible>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>NVWorkerProbationMonthEnd</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<HelpText>Default number of month of probation end date</HelpText>
+			<Label>Probation default month end date</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<PropertyModifications />
+	<RelationExtensions />
+	<RelationModifications />
+	<Relations />
+</AxTableExtension>

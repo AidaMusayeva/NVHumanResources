@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerCalcRequestContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVTrvWorkerCalcRequestContract  
+{
+    str         fromLocation;
+    str         toLocation;
+    TransDate   fromDate;
+    TransDate   toDate;
+    boolean     includeLastDayHotel;
+    str         ESSRequest;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFromLocation</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FromLocation")]
+    public str parmFromLocation(str _parm = fromLocation)
+    {
+        fromLocation = _parm;
+        return fromLocation;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmToLocation</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ToLocation")]
+    public str parmToLocation(str _parm = toLocation)
+    {
+        toLocation = _parm;
+        return toLocation;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFromDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("FromDate")]
+    public TransDate parmFromDate(TransDate _parm = fromDate)
+    {
+        fromDate = _parm;
+        return fromDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmToDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ToDate")]
+    public TransDate parmToDate(TransDate _parm = toDate)
+    {
+        toDate = _parm;
+        return toDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmIncludeLastDayHotel</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("IncludeLastDayHotel")]
+    public boolean parmIncludeLastDayHotel(boolean _parm = includeLastDayHotel)
+    {
+        includeLastDayHotel = _parm;
+        return includeLastDayHotel;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmESSRequest</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ESSRequest")]
+    public str parmESSRequest(str _parm = ESSRequest)
+    {
+        ESSRequest = _parm;
+        return ESSRequest;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

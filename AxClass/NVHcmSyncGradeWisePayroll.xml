@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmSyncGradeWisePayroll</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class NVHcmSyncGradeWisePayroll extends RunBaseBatch implements BatchRetryable
+{
+    #NVHcmEmailAlertsMacro
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>canGoBatchJournal</Name>
+				<Source><![CDATA[
+    public boolean canGoBatchJournal()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialog</Name>
+				<Source><![CDATA[
+    public Object dialog()
+    {
+        DialogRunbase dialog = super();
+        
+        return dialog;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogPostRun</Name>
+				<Source><![CDATA[
+    public void dialogPostRun(DialogRunbase dialog)
+    {
+        super(dialog);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFromDialog</Name>
+				<Source><![CDATA[
+    public boolean getFromDialog()
+    {
+        return super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public boolean init()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new()
+    {
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        TransDate curDate = systemDateGet();
+        TransDateTime curDateTime = DateTimeUtil::getSystemDateTime();//DateTimeUtil::newDateTime(curDate, 0);
+        HcmPositionDetail positionDetail;
+        HcmWorker worker;
+        HcmPositionWorkerAssignment workerPosition;
+        NVHcmCompensationLevelPayroll gradePayroll;
+
+        while select worker
+            join workerPosition 
+                where workerPosition.Worker == worker.RecId
+                    && workerPosition.ValidFrom <= curDateTime
+                    && workerPosition.ValidTo >= curDateTime
+            join positionDetail
+                where positionDetail.Position == workerPosition.Position
+                    && positionDetail.ValidFrom <= curDateTime
+                    && positionDetail.ValidTo >= curDateTime
+            join gradePayroll
+                where gradePayroll.CompensationLevelId == positionDetail.NVLegalGrade
+                    && gradePayroll.PayrollEarningCodeId != ''
+                    && gradePayroll.FromDate <= curDate
+                    && gradePayroll.ToDate >= curDate
+                    
+        {
+            ttsbegin;
+            PayrollEarningCode earningCode = PayrollEarningCode::findByEarningCode(gradePayroll.PayrollEarningCodeId);
+            PayrollWorkerPositionEarningCode workerPositionEarningCode;
+
+            select workerPositionEarningCode
+                where workerPositionEarningCode.Worker == worker.RecId
+                    && workerPositionEarningCode.Position == positionDetail.Position
+                    && workerPositionEarningCode.EarningCode == earningCode.RecId
+                    && workerPositionEarningCode.ValidFrom <= curDate
+                    && workerPositionEarningCode.ValidTo >= curDate;
+
+            if(workerPositionEarningCode)
+            {
+                if(workerPositionEarningCode.Formula != gradePayroll.SalaryAmount)
+                {
+                    workerPositionEarningCode.selectForUpdate(true);
+                    workerPositionEarningCode.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+                    workerPositionEarningCode.Formula = gradePayroll.SalaryAmount;
+
+                    workerPositionEarningCode.update();
+                }
+            }
+            else
+            {
+                workerPositionEarningCode.Formula = gradePayroll.SalaryAmount;
+                workerPositionEarningCode.EarningCode = earningCode.RecId;
+                workerPositionEarningCode.modifiedField(fieldNum(PayrollWorkerPositionEarningCode, EarningCode));
+                workerPositionEarningCode.Position = positionDetail.Position;
+                workerPositionEarningCode.Worker = worker.RecId;
+                workerPositionEarningCode.ValidFrom = gradePayroll.FromDate;
+                workerPositionEarningCode.ValidTo = gradePayroll.ToDate;
+
+                workerPositionEarningCode.insert();
+            }
+            ttscommit;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runsImpersonated</Name>
+				<Source><![CDATA[
+    public boolean runsImpersonated()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    static NVHcmSyncGradeWisePayroll construct()
+    {
+        return new NVHcmSyncGradeWisePayroll();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    static ClassDescription description()
+    {
+        return "Payroll grade wise synchronize";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    static void main(Args args)
+    {
+        NVHcmSyncGradeWisePayroll job;
+        
+        job = NVHcmSyncGradeWisePayroll::construct();
+
+        if(job.prompt())
+            job.runOperation();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>isRetryable</Name>
+				<Source><![CDATA[
+    [Hookable(false)]
+    public final boolean isRetryable()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canRunInNewSession</Name>
+				<Source><![CDATA[
+    protected boolean canRunInNewSession()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

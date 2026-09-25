@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmEmailAlertsSetup</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmEmailAlertsSetup extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    public static NVHcmEmailAlertsSetup find(NVHcmEmailAlertsType _type, boolean _forUpdate = false)
+    {
+        NVHcmEmailAlertsSetup hcmEmailAlerts;
+
+        if(_forUpdate)
+            hcmEmailAlerts.selectForUpdate(_forUpdate);
+    
+        select hcmEmailAlerts
+            where hcmEmailAlerts.Type == _type;
+        return hcmEmailAlerts;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>exists</Name>
+				<Source><![CDATA[
+    public static boolean exists(NVHcmEmailAlertsType _type)
+    {
+        return (select NVHcmEmailAlertsSetup
+            where NVHcmEmailAlertsSetup.Type == _type).RecId != 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createNotFoundAll</Name>
+				<Source><![CDATA[
+    public static void createNotFoundAll()
+    {
+        NVHcmEmailAlertsSetup::createNotFound(NVHcmEmailAlertsType::ContractExpiry);
+        NVHcmEmailAlertsSetup::createNotFound(NVHcmEmailAlertsType::ProbationExpiry);
+        NVHcmEmailAlertsSetup::createNotFound(NVHcmEmailAlertsType::IdentExpiry);
+        NVHcmEmailAlertsSetup::createNotFound(NVHcmEmailAlertsType::PositionReplacement);
+        NVHcmEmailAlertsSetup::createNotFound(NVHcmEmailAlertsType::WorkerResidence);
+        NVHcmEmailAlertsSetup::createNotFound(NVHcmEmailAlertsType::WorkPermit);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createNotFound</Name>
+				<Source><![CDATA[
+    public static void createNotFound(NVHcmEmailAlertsType _type)
+    {
+        if(NVHcmEmailAlertsSetup::exists(_type))
+            return;
+
+        NVHcmEmailAlertsSetup hcmEmailAlerts;
+        hcmEmailAlerts.Type = _type;
+        hcmEmailAlerts.insert();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<FormRef>NVHcmEmailAlertsSetup</FormRef>
+	<Label>Human resouces email alerts setup</Label>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>Type</TitleField1>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>EntireTable</CacheLookup>
+	<ClusteredIndex>TypeIdx</ClusteredIndex>
+	<Modules>HumanResource</Modules>
+	<PrimaryIndex>TypeIdx</PrimaryIndex>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<TableContents>DefaultData</TableContents>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Administration</Name>
+			<Label>@SYS9853</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>SysRowVersionNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>SysRowVersionNumber</ExtendedDataType>
+			<Null>Yes</Null>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Type</Name>
+			<Label>Type</Label>
+			<EnumType>NVHcmEmailAlertsType</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>EmailId</Name>
+			<ExtendedDataType>SysEmailId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>FromDays</Name>
+			<ExtendedDataType>Days</ExtendedDataType>
+			<HelpText>Number of days defined to notify before reaching certain date reach</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Before days</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Enable</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Enable</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>ToDays</Name>
+			<ExtendedDataType>Days</ExtendedDataType>
+			<HelpText>Number of days defined to notify after reaching certain date reach</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>To days</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>OneTime</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<HelpText>Send email only one time</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>One time</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>EmailTo</Name>
+			<ExtendedDataType>Email</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Email to</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>EmailToManager</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<HelpText>Enable to worker's line manager as per level sepecified via email</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Email to manager</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>ManagerLevel</Name>
+			<ExtendedDataType>Days</ExtendedDataType>
+			<HelpText>If 0 is specified then email will be send to only immediate manager</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Manager level</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>EmailToWorker</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<HelpText>Enable to notify worker via email</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Email to worker</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>DeadlineDays</Name>
+			<ExtendedDataType>Days</ExtendedDataType>
+			<HelpText>Number of days defined to notify specified date in the email as per type date reaches</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Deadline days</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>Intervals</Name>
+			<ExtendedDataType>Days</ExtendedDataType>
+			<HelpText>Define intervals, each email will be sent after number of days</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Intervals</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>TypeIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>Type</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation>
+			<Name>SysEmailTable</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>SysEmailTable</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>EmailId</Name>
+					<Field>EmailId</Field>
+					<RelatedField>EmailId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerV2_HcmWorker_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formDataSourceStr(HcmWorkerV2, HcmWorker))]
+internal final class NVHcmWorkerV2_HcmWorker_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>latestPastEmploymentDetail</Name>
+				<Source><![CDATA[
+    private HcmEmploymentDetail latestPastEmploymentDetail(HcmWorker _worker)
+    {
+        HcmEmploymentDetail employmentDetail = HcmWorkerHelper::getLatestPastEmploymentDetail(_worker.RecId);
+        
+        return employmentDetail;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>displayTerminationNotes</Name>
+				<Source><![CDATA[
+    public display Notes displayTerminationNotes(HcmWorker _worker)
+    {
+        FormRun formRun = this.formRun();
+        
+        return this.latestPastEmploymentDetail(_worker).NVTerminationNotes;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>displayRealTermination</Name>
+				<Source><![CDATA[
+    public display NVHcmRealTermReasonCodeId displayRealTermination(HcmWorker _worker)
+    {
+        return NVHcmRealTermReasonCode::find(this.latestPastEmploymentDetail(_worker).NVHcmRealTermReasonCode).ReasonCodeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>displayTerminationClassification</Name>
+				<Source><![CDATA[
+    public display NVHcmTerminationClassification displayTerminationClassification(HcmWorker _worker)
+    {
+        return this.latestPastEmploymentDetail(_worker).NVHcmTerminationClassification;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

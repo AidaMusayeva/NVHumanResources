@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveBalanceDetailsTmp</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVLeaveBalanceDetailsTmp extends common
+{    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>balanceByLeaveType</Name>
+				<Source><![CDATA[
+    public static NVLeaveBalanceDetailsTmp balanceByLeaveType(HcmWorkerRecId _worker, 
+        date _asOfDate = dateMax(),
+        LeaveTypeRecId _leaveType = 0,
+        date _startDate = dateMax(),
+        real _totalRequestedDays = 0,
+        LeaveRequestRecId _requestToIgnore = 0)
+    {
+        date asOfDate       = _asOfDate;
+        date startDate      = _startDate == dateMax()? _asOfDate: _startDate - 1;
+
+        NVLeaveBalanceDetailsTmp    detailsTmp;
+        LeaveBankTransaction        transaction;
+        ttsbegin;
+        /// Get all details by year and category
+        while select Worker, LeaveType, NVLeaveCategory, NVTransactionYear, maxof(LeavePlan), sum(Amount) from transaction
+            group by transaction.Worker,
+                transaction.LeaveType, 
+                transaction.NVLeaveCategory,
+                transaction.NVTransactionYear
+            where transaction.Worker                == _worker
+                && transaction.TransactionDate      <= asOfDate
+                && transaction.NVTransactionYear    != 0
+                && (_leaveType == 0 || transaction.LeaveType == _leaveType)
+                && transaction.TransactionType != LeaveTransactionType::Grant
+        {
+            //if(transaction.Amount != 0)
+            {
+                NVLeavePlanLeaveBalancePolicy balancePolicy = NVLeavePlanLeaveBalancePolicy::findByPlan(transaction.LeavePlan, transaction.NVLeaveCategory);
+
+                detailsTmp.Worker                   = transaction.Worker;
+                detailsTmp.LeaveType                = transaction.LeaveType;
+                detailsTmp.Category                 = transaction.NVLeaveCategory;
+                detailsTmp.TransactionYear          = transaction.NVTransactionYear;
+                detailsTmp.Balance                  = transaction.Amount;
+                detailsTmp.DeductPriority           = balancePolicy.Priority;
+                detailsTmp.IncludeBalanceInBase     = detailsTmp.Category == NVLeaveCategory::None? NoYes::No: balancePolicy.IncludeBalanceInBase;
+
+                detailsTmp.insert();
+            }
+        }
+        
+        /// Sum up the values where balance needs to be included in base of other categories
+        select sum(Balance) from detailsTmp
+            where detailsTmp.IncludeBalanceInBase == NoYes::Yes;
+        LeaveAmountUnsigned baseAdditional = detailsTmp.Balance;
+        NVLeaveBalanceDetailsTmp details;
+        while select detailsTmp
+            where detailsTmp.IncludeBalanceInBase == NoYes::No
+        {
+            details.Worker                  = detailsTmp.Worker;
+            details.LeaveType               = detailsTmp.LeaveType;
+            details.Category                = detailsTmp.Category;
+            details.TransactionYear         = detailsTmp.TransactionYear;
+            details.Balance                 = detailsTmp.Balance;
+            details.DeductPriority          = detailsTmp.DeductPriority;
+
+            if(details.Category == NVLeaveCategory::None)
+            {
+                details.Balance             = details.Balance + baseAdditional;
+            }
+
+            details.insert();
+        }
+        
+        /// Get used details for in review request
+        NVLeaveBalanceDetailsTmp    leaveTypeGroup;
+        insert_recordset leaveTypeGroup (LeaveType)
+            select LeaveType from details
+                group by details.LeaveType;
+        while select leaveTypeGroup
+        {
+            LeaveAmountUnsigned inReviewRequest = NVLeaveBalanceDetailsTmp::inReviewByLeaveType(_worker, startDate, _leaveType);
+            if(inReviewRequest > 0)
+            {
+                select details
+                order details.TransactionYear, details.DeductPriority
+                where details.LeaveType  == leaveTypeGroup.LeaveType;
+
+                while(inReviewRequest > 0 && details)
+                {
+                    if(details.Balance > 0)
+                    {
+                        details.selectForUpdate(true);
+                        details.InReviewRequest = details.Balance >= inReviewRequest? inReviewRequest: inReviewRequest - details.Balance;
+                        details.update();
+
+                        inReviewRequest -= details.InReviewRequest;
+                    }
+                    next details;
+                }
+            }
+        }
+
+        
+        /// Get used details for current request
+        if(_totalRequestedDays != 0 )
+        {
+            LeaveAmountUnsigned totalRequestedDays = _totalRequestedDays;
+            select details
+                order details.TransactionYear, details.DeductPriority
+                where details.LeaveType  == _leaveType;
+
+            while(totalRequestedDays > 0 && details)
+            {
+                LeaveAmountUnsigned unusedBalance = details.Balance - details.InReviewRequest;
+                if(unusedBalance > 0)
+                {
+                    details.selectForUpdate(true);
+                    details.CurrentRequest = unusedBalance >= totalRequestedDays? totalRequestedDays: unusedBalance;
+                    details.update();
+
+                    totalRequestedDays -= details.CurrentRequest;
+                }
+                next details;
+            }
+        }
+        ttscommit;
+
+        return details;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>inReviewByLeaveType</Name>
+				<Source><![CDATA[
+    public static LeaveAmountUnsigned inReviewByLeaveType(HcmWorkerRecId _worker, date _asOfDate, LeaveTypeRecId _leaveType)
+    {
+        LeaveRequest            request;
+        LeaveRequestDetail      requestDetails;
+        
+        select count(RecId) from request
+            where request.Worker            == _worker
+                && (request.Status          == LeaveRequestApprovalStatus::InReview
+                    || request.Status       == LeaveRequestApprovalStatus::Submitted)
+            join sum(Amount) from requestDetails
+                where requestDetails.Request    == request.RecId
+                    && requestDetails.LeaveType == _leaveType
+                    && requestDetails.LeaveDate <= _asOfDate;
+
+        return requestDetails.Amount;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<Label>Leave balance details</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<TitleField1>Worker</TitleField1>
+	<TitleField2>Category</TitleField2>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<TableType>InMemory</TableType>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Category</Name>
+			<EnumType>NVLeaveCategory</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>TransactionYear</Name>
+			<ExtendedDataType>Year</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>LeaveType</Name>
+			<ExtendedDataType>LeaveTypeRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Worker</Name>
+			<ExtendedDataType>HcmWorkerRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>Balance</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<Label>Balance</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>IncludeBalanceInBase</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Include balance in base</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>InReviewRequest</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<Label>In review</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>CurrentRequest</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LeaveAmountSigned</ExtendedDataType>
+			<Label>Current</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>LeavePlan</Name>
+			<AllowEdit>No</AllowEdit>
+			<AssetClassification>System metadata</AssetClassification>
+			<ExtendedDataType>LeavePlanRecId</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>DeductPriority</Name>
+			<ExtendedDataType>Priority</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Deduct priority</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>SortIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>LeaveType</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>TransactionYear</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>Category</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>LeaveType</Name>
+			<RelatedTable>LeaveType</RelatedTable>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>LeaveType</Name>
+					<Field>LeaveType</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmWorker</Name>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Worker</Name>
+					<Field>Worker</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

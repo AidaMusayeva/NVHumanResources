@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmPosition.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlj0qmmdr51</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVMiscellaneous</Name>
+				<Type>Group</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormCheckBoxControl">
+						<Name>NVMiscellaneous_NVHazardousWork</Name>
+						<Type>CheckBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVHazardousWork</DataField>
+						<DataSource>HcmPositionDetail</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVMiscellaneous_NVHcmHazardousAllowanceId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVHcmHazardousAllowanceId</DataField>
+						<DataSource>HcmPositionDetail</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVMiscellaneous_NVHcmPositionRateId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVHcmPositionRateId</DataField>
+						<DataSource>HcmPositionDetail</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVMiscellaneous_NVFlightCrewId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVFlightCrewId</DataField>
+						<DataSource>HcmPositionDetail</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormCheckBoxControl">
+						<Name>NVMiscellaneous_NVRoleCriticality</Name>
+						<Type>CheckBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVRoleCriticality</DataField>
+						<DataSource>HcmPositionDetail</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormReferenceGroupControl">
+						<Name>NVMiscellaneous_NVLocation</Name>
+						<Type>ReferenceGroup</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls />
+						<DataSource>HcmPositionDetail</DataSource>
+						<ReferenceField>NVLocation</ReferenceField>
+					</AxFormControl>
+				</Controls>
+				<DataGroup>NVMiscellaneous</DataGroup>
+				<DataSource>HcmPositionDetail</DataSource>
+			</FormControl>
+			<Parent>DetailsTabPage</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlf0deavcz1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormTabPageControl">
+				<Name>NVStructureLevel</Name>
+				<Pattern>FieldsFieldGroups</Pattern>
+				<PatternVersion>1.1</PatternVersion>
+				<Type>TabPage</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormGroupControl">
+						<Name>NVDepartmentStructures</Name>
+						<Type>Group</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormReferenceGroupControl">
+								<Name>HcmPositionDetail_NVDepartLegalEntity</Name>
+								<Type>ReferenceGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls />
+								<DataSource>HcmPositionDetail</DataSource>
+								<ReferenceField>NVDepartLegalEntity</ReferenceField>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormReferenceGroupControl">
+								<Name>HcmPositionDetail_NVDepartBusinessUnit</Name>
+								<Type>ReferenceGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls />
+								<DataSource>HcmPositionDetail</DataSource>
+								<ReferenceField>NVDepartBusinessUnit</ReferenceField>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormReferenceGroupControl">
+								<Name>HcmPositionDetail_NVDepartDepartment</Name>
+								<Type>ReferenceGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls />
+								<DataSource>HcmPositionDetail</DataSource>
+								<ReferenceField>NVDepartDepartment</ReferenceField>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormReferenceGroupControl">
+								<Name>HcmPositionDetail_NVDepartDivision</Name>
+								<Type>ReferenceGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls />
+								<DataSource>HcmPositionDetail</DataSource>
+								<ReferenceField>NVDepartDivision</ReferenceField>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormReferenceGroupControl">
+								<Name>HcmPositionDetail_NVDepartGroup1</Name>
+								<Type>ReferenceGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls />
+								<DataSource>HcmPositionDetail</DataSource>
+								<ReferenceField>NVDepartGroup1</ReferenceField>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormReferenceGroupControl">
+								<Name>HcmPositionDetail_NVDepartGroup2</Name>
+								<Type>ReferenceGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls />
+								<DataSource>HcmPositionDetail</DataSource>
+								<ReferenceField>NVDepartGroup2</ReferenceField>
+							</AxFormControl>
+						</Controls>
+					</AxFormControl>
+				</Controls>
+				<ColumnsMode>Fill</ColumnsMode>
+				<Caption>Position structure level</Caption>
+			</FormControl>
+			<Parent>FastTabs</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>DetailsTabPage</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy4dtd4sko1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVGrades</Name>
+				<Type>Group</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVLegalGrade</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVLegalGrade</DataField>
+						<DataSource>HcmPositionDetail</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVInternalGrade</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVInternalGrade</DataField>
+						<DataSource>HcmPositionDetail</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVInternalGradeMinAmount</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<CacheDataMethod>Yes</CacheDataMethod>
+						<DataMethod>NVHcmPositionDetail_Extension.internalGradeMinAmount</DataMethod>
+						<DataSource>HcmPositionDetail</DataSource>
+						<Label>Minimum salary</Label>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVInternalGradeMedAmount</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<CacheDataMethod>Yes</CacheDataMethod>
+						<DataMethod>NVHcmPositionDetail_Extension.internalGradeMedAmount</DataMethod>
+						<DataSource>HcmPositionDetail</DataSource>
+						<Label>Medium salary</Label>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>NVInternalGradeMaxAmount</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<CacheDataMethod>Yes</CacheDataMethod>
+						<DataMethod>NVHcmPositionDetail_Extension.internalGradeMaxAmount</DataMethod>
+						<DataSource>HcmPositionDetail</DataSource>
+						<Label>Maximum salary</Label>
+					</AxFormControl>
+				</Controls>
+				<Caption>Grades</Caption>
+				<DataSource>HcmPositionDetail</DataSource>
+			</FormControl>
+			<Parent>DetailsTabPage</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

@@ -1,0 +1,1264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVTimeSheetLines</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Form]
+public class NVTimeSheetLines extends FormRun
+{
+    /// <summary>
+    ///
+    /// </summary>
+    //public void init()
+    //{
+    //    super();
+    //    TransDate   thismonth = DateStartMth(NvTimeSheetHeader.LastDateOfMonth);
+    //    TransDate   currentDate = thismonth;
+    //    for(int Counter = 1; Counter <= 31; counter++)
+    //    {
+
+    //        str controlname = strFmt('%1%2', 'HoursDay',counter);
+    //        FormStringControl fieldControl = this.design().controlName(controlname);
+
+    //        if (fieldControl)
+    //        {
+    //            if(currentDate > endMth(thismonth))
+    //                fieldControl.visible(false);
+    //            else
+    //            fieldControl.label(this.getDateString(currentDate));
+    //        }
+    //        currentDate = thismonth + counter;            
+    //    }
+
+    //    for (int i = 1; i <= conLen(NvTimeSheetHeader.LeaveTypesSequencing); i += 2)
+    //    {
+    //        str abbrevation = conPeek(NvTimeSheetHeader.LeaveTypesSequencing, i);
+    //        int fieldnumber = conPeek(NvTimeSheetHeader.LeaveTypesSequencing, i + 1);
+
+    //        str controlname = strFmt('%1%2', 'LeaveType',fieldnumber);
+    //        FormStringControl fieldControl = this.design().controlName(controlname);
+
+    //        if (fieldControl)
+    //        {
+    //            fieldControl.visible(false);
+    //            fieldControl.label(abbrevation);
+    //        }
+    //    }
+
+    //}
+
+
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getDateString</Name>
+				<Source><![CDATA[
+    str getDateString(TransDate _transdate)
+    {
+        return date2Str(_transdate,
+        213,
+        DateDay::Digits2,
+            DateSeparator::Slash, // separator1
+        DateMonth::Digits2,
+            DateSeparator::Slash, // separator2
+        DateYear::Digits4
+        );
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="">
+			<DataSource>
+				<Name>NvTimeSheetHeader</Name>
+				<Methods>
+					<Method>
+						<Name>active</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
+        public int active()
+        {
+            int ret;
+
+            ret = super();
+
+            NVTimeSheetDataImport.enabled(NvTimeSheetHeader.Status == NVTimeSheetStatus::Draft);
+            
+
+
+            TransDate   thismonth = DateStartMth(NvTimeSheetHeader.LastDateOfMonth);
+            TransDate   currentDate = thismonth;
+            for(int Counter = 1; Counter <= 31; counter++)
+            {
+            
+                str controlname = strFmt('%1%2', 'HoursDay',counter);
+                FormStringControl fieldControl = element.design().controlName(controlname);
+
+                if (fieldControl)
+                {
+                    if(currentDate > endMth(thismonth))
+                    fieldControl.visible(false);
+                    else
+                fieldControl.label(element.getDateString(currentDate));
+                }
+                currentDate = thismonth + counter;
+            }
+
+            for (int i = 1; i <= conLen(NvTimeSheetHeader.LeaveTypesSequencing); i += 2)
+            {
+                str abbrevation = conPeek(NvTimeSheetHeader.LeaveTypesSequencing, i);
+                int fieldnumber = conPeek(NvTimeSheetHeader.LeaveTypesSequencing, i + 1);
+            
+                str controlname = strFmt('%1%2', 'LeaveType',fieldnumber);
+                FormIntControl fieldControl = element.design().controlName(controlname);
+
+                if (fieldControl)
+                {
+                    fieldControl.visible(true);
+                    fieldControl.label(abbrevation);
+                }
+            }
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>executeQuery</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        public void executeQuery()
+        {
+            NvTimeSheetHeader       caller = element.args().record();
+            QueryBuildDataSource qbds;
+            
+            this.query().datasourceNo(1).addRange(fieldnum(NvTimeSheetHeader,RecId)).value(queryValue(caller.RecId));
+            super();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+				<Fields />
+			</DataSource>
+			<DataSource>
+				<Name>NVTimeSheetLines</Name>
+				<Methods>
+					<Method>
+						<Name>selectionChanged</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        public void selectionChanged()
+        {
+            super();
+            NVTimeSheetLines_DS.allowEdit(NVTimeSheetLines.Status == NVTimeSheetLineStatus::Draft);
+            Submit.enabled(NvTimeSheetHeader.Status == NVTimeSheetStatus::Draft && NVTimeSheetLines.Status == NVTimeSheetLineStatus::Draft);
+            Open.enabled(NvTimeSheetHeader.Status == NVTimeSheetStatus::Draft && NVTimeSheetLines.Status == NVTimeSheetLineStatus::Submitted);
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+				<Fields />
+			</DataSource>
+		</DataSources>
+		<DataControls xmlns="">
+			<Control>
+				<Name>Submit</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            super();
+            LeaveRequest        leaveRequest;
+            LeaveRequestDetail  leaveRequestDetail;
+            NVTimeSheetLines    localTimeSheetLine;
+            NvTimeSheetHeader   timeSheetHeader;
+            PayrollPayPeriod    payrollPayPeriod;
+            MultiSelectionHelper helper = MultiSelectionHelper::construct();
+            
+            helper.parmDatasource(NVTimeSheetLines_DS);
+            localTimeSheetLine = helper.getFirst();
+   
+            timeSheetHeader = localTimeSheetLine.timeSheetHeader();
+            payrollPayPeriod = PayrollPayPeriod::find(timeSheetHeader.PayPeriod);
+
+            while(localTimeSheetLine)
+            {
+                if(!localTimeSheetLine.validateAllColumnsAreFilled())
+                {
+                    warning(strFmt('Cannot submit entry for employee %1 because of missing data in columns', localTimeSheetLine.EmpId));
+                    localTimeSheetLine = NVTimeSheetLines_DS.getNext();
+                    continue;
+                }
+
+                select RecId from leaveRequest       
+                    where leaveRequest.Worker       == localTimeSheetLine.Worker
+                        && (leaveRequest.Status     == LeaveRequestApprovalStatus::Draft
+                            || leaveRequest.Status  == LeaveRequestApprovalStatus::InReview)
+                    join LeaveDate from leaveRequestDetail
+                    where leaveRequestDetail.Request        == leaveRequest.RecId
+                        && (leaveRequestDetail.LeaveDate    >= payrollPayPeriod.PeriodStartDate
+                        && leaveRequestDetail.LeaveDate     <= payrollPayPeriod.PeriodEndDate);
+
+                if(leaveRequest)
+                {
+                    DialogButton dialogBtn;
+                    
+                    dialogBtn = Box::yesNo(strFmt('There is an open leave request for employee %1. Do you want to still submit timesheet?',localTimeSheetLine.EmpId) , DialogButton::No, 'Confirmation');
+                    if (dialogBtn == DialogButton::No)
+                    {
+                        localTimeSheetLine = NVTimeSheetLines_DS.getNext();
+                        continue;
+                    }
+                }
+
+                NVTimesheetChangeHandler changeHelper;
+                select changeHelper
+                    where changeHelper.Worker == localTimeSheetLine.Worker;
+                if(changeHelper)
+                {
+                    HcmWorker hcmWorker = HcmWorker::find(localTimeSheetLine.Worker);
+                    warning(strFmt("Cannot submit timesheet line for worker %1. Please synchronise and try again.", hcmWorker.name()));
+                    localTimeSheetLine = NVTimeSheetLines_DS.getNext();
+                    continue;
+                }
+
+                if(localTimeSheetLine.Status == NVTimeSheetLineStatus::Draft)
+                {
+                    localTimeSheetLine.Status = NVTimeSheetLineStatus::Submitted;
+                    localTimeSheetLine.write();
+                }
+                localTimeSheetLine = NVTimeSheetLines_DS.getNext();
+            }
+            NVTimeSheetLines_DS.reread();
+            NVTimeSheetLines_DS.refresh();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>Open</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        public void clicked()
+        {
+            super();
+            LeaveRequest        leaveRequest;
+            LeaveRequestDetail  leaveRequestDetail;
+            NVTimeSheetLines    localTimeSheetLine;
+            HcmWorker           hcmWorker;
+            NvTimeSheetHeader   timeSheetHeader;
+            PayrollPayPeriod    payrollPayPeriod;
+            MultiSelectionHelper helper = MultiSelectionHelper::construct();
+            
+            helper.parmDatasource(NVTimeSheetLines_DS);
+            localTimeSheetLine = helper.getFirst();
+   
+            timeSheetHeader = localTimeSheetLine.timeSheetHeader();
+            payrollPayPeriod = PayrollPayPeriod::find(timeSheetHeader.PayPeriod);
+    
+            while(localTimeSheetLine)
+            {
+                if(localTimeSheetLine.Status == NVTimeSheetLineStatus::Submitted)
+                {
+                    localTimeSheetLine.Status = NVTimeSheetLineStatus::Draft;
+                    localTimeSheetLine.write();
+                }
+                localTimeSheetLine = NVTimeSheetLines_DS.getNext();
+            }
+            NVTimeSheetLines_DS.reread();
+            NVTimeSheetLines_DS.refresh();
+
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>RemoveLines</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            super();
+
+            MultiSelectionHelper helper = MultiSelectionHelper::construct();            
+            helper.parmDatasource(NVTimeSheetLines_DS);
+            NVTimeSheetLines localTimeSheetLine = helper.getFirst();
+    
+            while(localTimeSheetLine)
+            {
+                if(localTimeSheetLine.Status == NVTimeSheetLineStatus::Draft)
+                {
+                    ttsbegin;
+                    localTimeSheetLine.selectForUpdate(true);
+                    localTimeSheetLine.delete();
+                    ttscommit;
+                }
+                else
+                {
+                    warning(strFmt("Cannot delete submitted line for employee %1", localTimeSheetLine.EmpId));
+                }
+                localTimeSheetLine = NVTimeSheetLines_DS.getNext();
+            }
+
+            NVTimeSheetLines_DS.reread();
+            NVTimeSheetLines_DS.refresh();
+
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources>
+		<AxFormDataSource xmlns="">
+			<Name>NvTimeSheetHeader</Name>
+			<Table>NvTimeSheetHeader</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>DataAreaId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LastDateOfMonth</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PayCycleId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PayPeriod</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<AllowCreate>No</AllowCreate>
+			<AllowDelete>No</AllowDelete>
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+		<AxFormDataSource xmlns="">
+			<Name>NVTimeSheetLines</Name>
+			<Table>NVTimeSheetLines</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>ActualWorkingHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>CalcNightHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>CalendarId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Courses</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>DataAreaId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmpId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmpName</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay1</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay10</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay11</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay12</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay13</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay14</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay15</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay16</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay17</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay18</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay19</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay2</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay20</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay21</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay22</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay23</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay24</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay25</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay26</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay27</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay28</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay29</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay3</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay30</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay31</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay4</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay5</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay6</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay7</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay8</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HoursDay9</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LateEarlyHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType1</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType10</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType11</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType2</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType3</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType4</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType5</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType6</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType7</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType8</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>LeaveType9</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ManagerName</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ManagerPositionId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>MonthStartDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>NightHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OvertimeHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PositionId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Status</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TimeSheetHeader</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TotalWorkingDays</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TotalWorkingHours</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Worker</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<JoinSource>NvTimeSheetHeader</JoinSource>
+			<LinkType>InnerJoin</LinkType>
+			<AllowCreate>No</AllowCreate>
+			<AllowDelete>No</AllowDelete>
+			<InsertIfEmpty>No</InsertIfEmpty>
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+	</DataSources>
+	<Design>
+		<Caption xmlns="">Time Sheet Lines</Caption>
+		<Pattern xmlns="">SimpleList</Pattern>
+		<PatternVersion xmlns="">1.1</PatternVersion>
+		<Style xmlns="">SimpleList</Style>
+		<TitleDataSource xmlns="">NvTimeSheetHeader</TitleDataSource>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormActionPaneControl">
+				<Name>ActionPane</Name>
+				<Type>ActionPane</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormActionPaneTabControl">
+						<Name>ActionPaneTab</Name>
+						<Type>ActionPaneTab</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormButtonGroupControl">
+								<Name>General</Name>
+								<Type>ButtonGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls>
+									<AxFormControl xmlns=""
+										i:type="AxFormMenuFunctionButtonControl">
+										<Name>NVTimeSheetDataExport</Name>
+										<Type>MenuFunctionButton</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataSource>NvTimeSheetHeader</DataSource>
+										<MenuItemName>NVTimeSheetDataExport</MenuItemName>
+										<MenuItemType>Action</MenuItemType>
+										<NeedsRecord>Yes</NeedsRecord>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormMenuFunctionButtonControl">
+										<Name>NVTimeSheetDataImport</Name>
+										<AutoDeclaration>Yes</AutoDeclaration>
+										<Type>MenuFunctionButton</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataSource>NvTimeSheetHeader</DataSource>
+										<MenuItemName>NVTimeSheetDataImport</MenuItemName>
+										<MenuItemType>Action</MenuItemType>
+										<NeedsRecord>Yes</NeedsRecord>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormMenuFunctionButtonControl">
+										<Name>NVTimesheetUpdateBatch</Name>
+										<Type>MenuFunctionButton</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<AutoRefreshData>Yes</AutoRefreshData>
+										<DataSource>NvTimeSheetHeader</DataSource>
+										<MenuItemName>NVTimesheetUpdateBatch</MenuItemName>
+										<MenuItemType>Action</MenuItemType>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormButtonControl">
+										<Name>Submit</Name>
+										<AutoDeclaration>Yes</AutoDeclaration>
+										<NeededPermission>Manual</NeededPermission>
+										<Type>Button</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<MultiSelect>Yes</MultiSelect>
+										<Text>Submit Timesheet Entry</Text>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormButtonControl">
+										<Name>Open</Name>
+										<AutoDeclaration>Yes</AutoDeclaration>
+										<NeededPermission>Manual</NeededPermission>
+										<Type>Button</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<MultiSelect>Yes</MultiSelect>
+										<Text>Open Timesheet Entry</Text>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormButtonControl">
+										<Name>RemoveLines</Name>
+										<AutoDeclaration>Yes</AutoDeclaration>
+										<NeededPermission>Manual</NeededPermission>
+										<Type>Button</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<MultiSelect>Yes</MultiSelect>
+										<Text>Remove lines</Text>
+									</AxFormControl>
+								</Controls>
+							</AxFormControl>
+						</Controls>
+						<Caption>Time Sheet</Caption>
+					</AxFormControl>
+				</Controls>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>CustomFilterGroup</Name>
+				<Pattern>CustomAndQuickFilters</Pattern>
+				<PatternVersion>1.1</PatternVersion>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl>
+						<Name>QuickFilter</Name>
+						<FormControlExtension>
+							<Name>QuickFilterControl</Name>
+							<ExtensionComponents />
+							<ExtensionProperties>
+								<AxFormControlExtensionProperty>
+									<Name>targetControlName</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+								<AxFormControlExtensionProperty>
+									<Name>placeholderText</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+								<AxFormControlExtensionProperty>
+									<Name>defaultColumnName</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+							</ExtensionProperties>
+						</FormControlExtension>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>HorizontalLeft</ArrangeMethod>
+				<FrameType>None</FrameType>
+				<Style>CustomFilter</Style>
+				<ViewEditMode>Edit</ViewEditMode>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormGridControl">
+				<Name>FormGrid</Name>
+				<Type>Grid</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVTimeSheetLines_CalendarId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>CalendarId</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVTimeSheetLines_EmpId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>EmpId</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVTimeSheetLines_EmpName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>EmpName</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVTimeSheetLines_PositionId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>PositionId</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVTimeSheetLines_ManagerPositionId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>ManagerPositionId</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVTimeSheetLines_ManagerName</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>ManagerName</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay1</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay1</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay2</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay2</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay3</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay3</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay4</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay4</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay5</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay5</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay6</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay6</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay7</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay7</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay8</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay8</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay9</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay9</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay10</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay10</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay11</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay11</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay12</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay12</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay13</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay13</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay14</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay14</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay15</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay15</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay16</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay16</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay17</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay17</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay18</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay18</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay19</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay19</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay20</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay20</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay21</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay21</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay22</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay22</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay23</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay23</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay24</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay24</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay25</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay25</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay26</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay26</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay27</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay27</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay28</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay28</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay29</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay29</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay30</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay30</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HoursDay31</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>HoursDay31</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_TotalWorkingDays</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>TotalWorkingDays</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_TotalWorkingHours</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>TotalWorkingHours</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_Courses</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>Courses</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_ActualWorkingHours</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>ActualWorkingHours</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_OvertimeHours</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>OvertimeHours</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_NightHours</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NightHours</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_CalcNightHours</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>CalcNightHours</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVTimeSheetLines_TotalNightHours</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataMethod>totalNightHours</DataMethod>
+						<DataSource>NVTimeSheetLines</DataSource>
+						<Label>Total night hours</Label>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType1</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType1</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType2</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType2</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType3</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType3</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType4</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType4</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType5</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType5</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType6</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType6</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType7</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType7</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType8</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType8</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType9</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType9</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType10</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType10</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>LeaveType11</Name>
+						<Type>Integer</Type>
+						<Visible>No</Visible>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>LeaveType11</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormComboBoxControl">
+						<Name>NVTimeSheetLines_Status</Name>
+						<Type>ComboBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>Status</DataField>
+						<DataSource>NVTimeSheetLines</DataSource>
+						<Items />
+					</AxFormControl>
+				</Controls>
+				<DataSource>NVTimeSheetLines</DataSource>
+				<Style>Tabular</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

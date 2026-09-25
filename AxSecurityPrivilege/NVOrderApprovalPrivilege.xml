@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityPrivilege xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderApprovalPrivilege</Name>
+	<Label>Approve and reject employment orders</Label>
+	<DataEntityPermissions />
+	<DirectAccessPermissions>
+		<AxSecurityDataEntityReference>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<Name>NVOrderHeader</Name>
+			<Fields />
+		</AxSecurityDataEntityReference>
+		<AxSecurityDataEntityReference>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<Name>NVOrderLine</Name>
+			<Fields />
+		</AxSecurityDataEntityReference>
+	</DirectAccessPermissions>
+	<EntryPoints>
+		<AxSecurityEntryPointReference>
+			<Name>NVOrderListMenuItem</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<ObjectName>NVOrderListMenuItem</ObjectName>
+			<ObjectType>MenuItemDisplay</ObjectType>
+			<Forms>
+				<AxSecurityEntryPointReferenceForm>
+					<Name>NVOrderList</Name>
+					<Controls />
+					<DataSources />
+				</AxSecurityEntryPointReferenceForm>
+			</Forms>
+		</AxSecurityEntryPointReference>
+		<AxSecurityEntryPointReference>
+			<Name>NVOrderDetailsMenuItem</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<ObjectName>NVOrderDetailsMenuItem</ObjectName>
+			<ObjectType>MenuItemDisplay</ObjectType>
+			<Forms>
+				<AxSecurityEntryPointReferenceForm>
+					<Name>NVOrderDetails</Name>
+					<Controls />
+					<DataSources />
+				</AxSecurityEntryPointReferenceForm>
+			</Forms>
+		</AxSecurityEntryPointReference>
+		<AxSecurityEntryPointReference>
+			<Name>NVOrderApprovalApprove</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<ObjectName>NVOrderApprovalApprove</ObjectName>
+			<ObjectType>MenuItemAction</ObjectType>
+			<Forms />
+		</AxSecurityEntryPointReference>
+		<AxSecurityEntryPointReference>
+			<Name>NVOrderApprovalReject</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<ObjectName>NVOrderApprovalReject</ObjectName>
+			<ObjectType>MenuItemAction</ObjectType>
+			<Forms />
+		</AxSecurityEntryPointReference>
+		<AxSecurityEntryPointReference>
+			<Name>NVOrderApprovalDelegateMenuItem</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<ObjectName>NVOrderApprovalDelegateMenuItem</ObjectName>
+			<ObjectType>MenuItemAction</ObjectType>
+			<Forms />
+		</AxSecurityEntryPointReference>
+	</EntryPoints>
+	<FormControlOverrides />
+</AxSecurityPrivilege>

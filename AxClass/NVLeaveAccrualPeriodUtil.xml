@@ -1,0 +1,789 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveAccrualPeriodUtil</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Helper class for calculating leave and absence accrual periods using accrual
+/// frequencies.
+/// Duplicating LeaveAccrualPeriodUtil as this was marked as Internal
+/// </summary>
+internal static class NVLeaveAccrualPeriodUtil
+{
+    public const int OneDay = 1;
+    public const int FifteenDays = 15;
+    public const int DaysInWeek = 7;
+    public const int FirstSemimonthlyDayInMonth = 1;
+    public const int SecondSemimonthlyDayInMonth = 16;
+    public const int SixMonths = 6;
+    public const int January = 1;
+    public const int December = 12;
+    public const LeaveHours MaxHoursPerDay = 24.00;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getUpcomingAccrualDateRelativeTo</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines the next accrual date relative to a specific date for a specific accrual frequency.
+    /// </summary>
+    /// <param name = "_targetDate">
+    /// The date for which to find its next accrual date.
+    /// </param>
+    /// <param name = "_accrualDate">
+    /// A known accrual date used to calculate accrual periods.
+    /// </param>
+    /// <param name = "_frequency">
+    /// Indicates the accrual frequency used to determine the accrual date.
+    /// </param>
+    /// <returns>
+    /// A date representing the next accrual date relative to a specific date.
+    /// </returns>
+    /// <remarks>
+    /// If the target date is itself an accrual date, the returned value is a date equal to the target date.
+    /// </remarks>
+    public static LeaveDate getUpcomingAccrualDateRelativeTo(
+        LeaveDate _targetDate,
+        LeaveDate _accrualDate,
+        LeavePlanAccrualFrequency _frequency)
+    {
+        date nextAccrualDate;
+
+        if (_targetDate > _accrualDate)
+        {
+            nextAccrualDate = NVLeaveAccrualPeriodUtil::getUpcomingAccrualDateRelativeToForward(_targetDate, _accrualDate, _frequency);
+        }
+        else if (_targetDate < _accrualDate)
+        {
+            nextAccrualDate = NVLeaveAccrualPeriodUtil::getUpcomingAccrualDateRelativeToBackward(_targetDate, _accrualDate, _frequency);
+        }
+        else if (LeavePlan::nvAccrualFrequencyHasAccrualPeriods(_frequency))
+        {
+            nextAccrualDate = _accrualDate;
+        }
+
+        return nextAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getUpcomingAccrualDateRelativeToForward</Name>
+				<Source><![CDATA[
+    private static LeaveDate getUpcomingAccrualDateRelativeToForward(
+        LeaveDate _targetDate,
+        LeaveDate _accrualDate,
+        LeavePlanAccrualFrequency _frequency)
+    {
+        date nextAccrualDate = _targetDate == dateNull() ? dateNull() : _accrualDate;
+
+        while (nextAccrualDate < _targetDate && nextAccrualDate != dateNull())
+        {
+            nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDate(nextAccrualDate, _frequency);
+        }
+
+        return nextAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getUpcomingAccrualDateRelativeToBackward</Name>
+				<Source><![CDATA[
+    private static LeaveDate getUpcomingAccrualDateRelativeToBackward(
+        LeaveDate _targetDate,
+        LeaveDate _accrualDate,
+        LeavePlanAccrualFrequency _frequency)
+    {
+        date nextAccrualDate;
+        date previousAccrualDate = NVLeaveAccrualPeriodUtil::getLastAccrualDateRelativeToBackward(_targetDate, _accrualDate, _frequency);
+
+        if (previousAccrualDate == _targetDate || previousAccrualDate == dateNull())
+        {
+            nextAccrualDate = previousAccrualDate;
+        }
+        else
+        {
+            nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDate(previousAccrualDate, _frequency);
+        }
+
+        return nextAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines the next accrual date relative to a given date for a specific
+    /// accrual frequency.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next accrual date.
+    /// </param>
+    /// <param name = "_frequency">
+    /// Indicates the accrual frequency used to determine the next accrual date.
+    /// </param>
+    /// <returns>
+    /// A date representing the next accrual date relative to the provided date.
+    /// </returns>
+    public static LeaveDate getNextAccrualDate(LeaveDate _date, LeavePlanAccrualFrequency _frequency)
+    {
+        date nextAccrualDate;
+
+        switch (_frequency)
+        {
+            case LeavePlanAccrualFrequency::Annually:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateAnnually(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Semiannually:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateSemiannually(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Quarterly:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateQuarterly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Monthly:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateMonthly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Semimonthly:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateSemimonthly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Biweekly:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateBiweekly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Weekly:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateWeekly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Daily:
+                nextAccrualDate = NVLeaveAccrualPeriodUtil::getNextAccrualDateDaily(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::NoAccruals:
+                nextAccrualDate = dateNull();
+                break;
+
+            default:
+                nextAccrualDate = dateNull();
+                break;
+        }
+
+        return nextAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateAnnually</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next annual accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next annual accrual date.
+    /// </param>
+    /// <returns>The next annual date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateAnnually(LeaveDate _date)
+    {
+        return nextYr(_date);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateSemiannually</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next semi-annual accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next semi-annual accrual date.
+    /// </param>
+    /// <returns>The next semi-annual date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateSemiannually(LeaveDate _date)
+    {
+        return dateMthFwd(_date, SixMonths);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateQuarterly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next quarterly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next quarterly accrual date.
+    /// </param>
+    /// <returns>The next quarterly date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateQuarterly(LeaveDate _date)
+    {
+        return nextQtr(_date);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateMonthly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next monthly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next monthly accrual date.
+    /// </param>
+    /// <returns>The next monthly date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateMonthly(LeaveDate _date)
+    {
+        return nextMth(_date);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateSemimonthly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next semi-monthly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next semi-monthly accrual date.
+    /// </param>
+    /// <returns>The next semi-monthly date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateSemimonthly(LeaveDate _date)
+    {
+        LeaveDate nextDate;
+        int dayOfMonth = dayOfMth(_date);
+        int month = mthOfYr(_date);
+        int currentYear = year(_date);
+
+        if (dayOfMonth >= FirstSemimonthlyDayInMonth && dayOfMonth < SecondSemimonthlyDayInMonth)
+        {
+            nextDate = mkDate(SecondSemimonthlyDayInMonth, month, currentYear);
+        }
+        else
+        {
+            if (month == December)
+            {
+                // The next accrual period after 12/16 is 1/1 of the next year
+                nextDate = mkDate(FirstSemimonthlyDayInMonth, 1, currentYear + 1);
+            }
+            else
+            {
+                nextDate = mkDate(FirstSemimonthlyDayInMonth, month + 1, currentYear);
+            }
+        }
+            
+        return nextDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateBiweekly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next bi-weekly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next bi-weekly accrual date.
+    /// </param>
+    /// <returns>The next bi-weekly date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateBiweekly(LeaveDate _date)
+    {
+        return (_date + (DaysInWeek * 2));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateWeekly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next weekly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next weekly accrual date.
+    /// </param>
+    /// <returns>The next weekly date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateWeekly(LeaveDate _date)
+    {
+        return (_date + DaysInWeek);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextAccrualDateDaily</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the next daily accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its next daily accrual date.
+    /// </param>
+    /// <returns>The next daily date relative to the specified date.</returns>
+    private static LeaveDate getNextAccrualDateDaily(LeaveDate _date)
+    {
+        return (_date + OneDay);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getLastAccrualDateRelativeTo</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines the previous accrual date relative to a specific date for a specific accrual frequency.
+    /// </summary>
+    /// <param name = "_targetDate">
+    /// The date for which to find its previous accrual date.
+    /// </param>
+    /// <param name = "_accrualDate">
+    /// A known accrual date used to calculate accrual periods.
+    /// </param>
+    /// <param name = "_frequency">
+    /// Indicates the accrual frequency used to determine the accrual date.
+    /// </param>
+    /// <returns>
+    /// A date representing the previous accrual date relative to a specific date.
+    /// </returns>
+    /// <remarks>
+    /// If the target date is itself an accrual date, the returned value is a date equal to the target date.
+    /// </remarks>
+    public static LeaveDate getLastAccrualDateRelativeTo(
+        LeaveDate _targetDate,
+        LeaveDate _accrualDate,
+        LeavePlanAccrualFrequency _frequency)
+    {
+        date previousAccrualDate;
+
+        if (_targetDate < _accrualDate)
+        {
+            previousAccrualDate = NVLeaveAccrualPeriodUtil::getLastAccrualDateRelativeToBackward(_targetDate, _accrualDate, _frequency);
+        }
+        else if (_targetDate > _accrualDate)
+        {
+            previousAccrualDate = NVLeaveAccrualPeriodUtil::getLastAccrualDateRelativeToForward(_targetDate, _accrualDate, _frequency);
+        }
+        else if (LeavePlan::nvAccrualFrequencyHasAccrualPeriods(_frequency))
+        {
+            previousAccrualDate = _accrualDate;
+        }
+
+        return previousAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getLastAccrualDateRelativeToBackward</Name>
+				<Source><![CDATA[
+    private static LeaveDate getLastAccrualDateRelativeToBackward(
+        LeaveDate _targetDate,
+        LeaveDate _accrualDate,
+        LeavePlanAccrualFrequency _frequency)
+    {
+        date previousAccrualDate = _targetDate == dateNull() ? dateNull() : _accrualDate;
+
+        while (previousAccrualDate > _targetDate && previousAccrualDate != dateNull())
+        {
+            previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDate(previousAccrualDate, _frequency);
+        }
+
+        return previousAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getLastAccrualDateRelativeToForward</Name>
+				<Source><![CDATA[
+    private static LeaveDate getLastAccrualDateRelativeToForward(
+        LeaveDate _targetDate,
+        LeaveDate _accrualDate,
+        LeavePlanAccrualFrequency _frequency)
+    {
+        date previousAccrualDate;
+        date nextAccrualDate = NVLeaveAccrualPeriodUtil::getUpcomingAccrualDateRelativeToForward(_targetDate, _accrualDate, _frequency);
+
+        if (nextAccrualDate == _targetDate || nextAccrualDate == dateNull())
+        {
+            previousAccrualDate = nextAccrualDate;
+        }
+        else
+        {
+            previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDate(nextAccrualDate, _frequency);
+        }
+
+        return previousAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines the previous accrual date relative to a given date for a specific
+    /// accrual frequency.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous accrual date.
+    /// </param>
+    /// <param name = "_frequency">
+    /// Indicates the accrual frequency used to determine the previous accrual date.
+    /// </param>
+    /// <returns>
+    /// A date representing the previous accrual date relative to the provided date.
+    /// </returns>
+    public static LeaveDate getPreviousAccrualDate(LeaveDate _date, LeavePlanAccrualFrequency _frequency)
+    {
+        date previousAccrualDate;
+
+        switch (_frequency)
+        {
+            case LeavePlanAccrualFrequency::Annually:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateAnnually(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Semiannually:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateSemiannually(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Quarterly:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateQuarterly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Monthly:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateMonthly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Semimonthly:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateSemimonthly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Biweekly:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateBiweekly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Weekly:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateWeekly(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::Daily:
+                previousAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateDaily(_date);
+                break;
+
+            case LeavePlanAccrualFrequency::NoAccruals:
+                previousAccrualDate = dateNull();
+                break;
+
+            default:
+                previousAccrualDate = dateNull();
+                break;
+        }
+
+        return previousAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateAnnually</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous annual accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous annual accrual date.
+    /// </param>
+    /// <returns>The previous annual date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateAnnually(LeaveDate _date)
+    {
+        return prevYr(_date);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateSemiannually</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous semi-annual accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous semi-annual accrual date.
+    /// </param>
+    /// <returns>The previous semi-annual date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateSemiannually(LeaveDate _date)
+    {
+        return dateMthFwd(_date, -SixMonths);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateQuarterly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous quarterly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous quarterly accrual date.
+    /// </param>
+    /// <returns>The previous quarterly date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateQuarterly(LeaveDate _date)
+    {
+        return prevQtr(_date);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateMonthly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous monthly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous monthly accrual date.
+    /// </param>
+    /// <returns>The previous monthly date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateMonthly(LeaveDate _date)
+    {
+        return prevMth(_date);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateSemimonthly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous semi-monthly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous semi-monthly accrual date.
+    /// </param>
+    /// <returns>The previous semi-monthly date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateSemimonthly(LeaveDate _date)
+    {
+        LeaveDate previousDate;
+        int dayOfMonth = dayOfMth(_date);
+        int month = mthOfYr(_date);
+        int currentYear = year(_date);
+
+        if (dayOfMonth == FirstSemimonthlyDayInMonth)
+        {
+            if (month == January)
+            {
+                // The previous accrual period for 1/1 is 12/16 of the previous year
+                previousDate = mkDate(SecondSemimonthlyDayInMonth, December, currentYear - 1);
+            }
+            else
+            {
+                previousDate = mkDate(SecondSemimonthlyDayInMonth, month - 1, currentYear);
+            }
+        }
+        else if (dayOfMonth > FirstSemimonthlyDayInMonth && dayOfMonth <= SecondSemimonthlyDayInMonth)
+        {
+            previousDate = mkDate(FirstSemimonthlyDayInMonth, month, currentYear);
+        }
+        else
+        {
+            previousDate = mkDate(SecondSemimonthlyDayInMonth, month, currentYear);
+        }
+
+        return previousDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateBiweekly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous bi-weekly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous bi-weekly accrual date.
+    /// </param>
+    /// <returns>The previous bi-weekly date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateBiweekly(LeaveDate _date)
+    {
+        return (_date - (DaysInWeek * 2));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateWeekly</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous weekly accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous weekly accrual date.
+    /// </param>
+    /// <returns>The previous weekly date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateWeekly(LeaveDate _date)
+    {
+        return (_date - DaysInWeek);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPreviousAccrualDateDaily</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the previous daily accrual date relative to the provided
+    /// date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to find its previous daily accrual date.
+    /// </param>
+    /// <returns>The next previous date relative to the specified date.</returns>
+    private static LeaveDate getPreviousAccrualDateDaily(LeaveDate _date)
+    {
+        return (_date - OneDay);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>determineValidAccrualDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determine the valid accrual date for the given date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date for which to determine a valid accrual date.
+    /// </param>
+    /// <param name = "_frequency">
+    /// The accrual frequency.
+    /// </param>
+    /// <returns>
+    /// A valid accrual date.
+    /// </returns>
+    /// <remarks>
+    /// The following rules apply:
+    /// For semi-monthly accruals, if the date provided is not a valid accrual date,
+    /// the closest semimonthly accrual date prior is returned.
+    /// </remarks>
+    public static LeaveDate determineValidAccrualDate(LeaveDate _date, LeavePlanAccrualFrequency _frequency)
+    {
+        LeaveDate validAccrualDate = _date;
+
+        if (_frequency == LeavePlanAccrualFrequency::Semimonthly)
+        {
+            validAccrualDate = NVLeaveAccrualPeriodUtil::determineValidAccrualDateSemimonthly(_date);
+        }
+
+        return validAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>determineValidAccrualDateSemimonthly</Name>
+				<Source><![CDATA[
+    private static LeaveDate determineValidAccrualDateSemimonthly(LeaveDate _date)
+    {
+        LeaveDate validAccrualDate;
+        int dayOfMonth = dayOfMth(_date);
+
+        if (dayOfMonth != FirstSemimonthlyDayInMonth && dayOfMonth != SecondSemimonthlyDayInMonth)
+        {
+            validAccrualDate = NVLeaveAccrualPeriodUtil::getPreviousAccrualDateSemimonthly(_date);
+        }
+        else
+        {
+            validAccrualDate = _date;
+        }
+
+        return validAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateAccrualDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates whether the given date is a valid accrual date.
+    /// </summary>
+    /// <param name = "_date">
+    /// The date to validate as an accrual date.
+    /// </param>
+    /// <param name = "_frequency">
+    /// The accrual frequency.
+    /// </param>
+    /// <param name = "_displayFailureMessage">
+    /// If true, failure messages are displayed when validation fails; otherwise, validation will be done silently.
+    /// </param>
+    /// <returns>
+    /// true if the date is a valid accrual date; otherwise, false.
+    /// </returns>
+    public static boolean validateAccrualDate(LeaveDate _date, LeavePlanAccrualFrequency _frequency, boolean _displayFailureMessage = true)
+    {
+        boolean isValidAccrualDate = true;
+
+        if (_frequency == LeavePlanAccrualFrequency::Semimonthly)
+        {
+            isValidAccrualDate = NVLeaveAccrualPeriodUtil::validateAccrualDateSemimonthly(_date, _displayFailureMessage);
+        }
+
+        return isValidAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateAccrualDateSemimonthly</Name>
+				<Source><![CDATA[
+    private static boolean validateAccrualDateSemimonthly(LeaveDate _date, boolean _displayFailureMessage = true)
+    {
+        int dayOfMonth = dayOfMth(_date);
+
+        boolean isValidSemimonthlyAccrualDate = dayOfMonth == FirstSemimonthlyDayInMonth || dayOfMonth == SecondSemimonthlyDayInMonth;
+
+        if (!isValidSemimonthlyAccrualDate && _displayFailureMessage)
+        {
+            checkFailed("@Leave:InvalidSemimonthlyAccrualDate");
+        }
+
+        return isValidSemimonthlyAccrualDate;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

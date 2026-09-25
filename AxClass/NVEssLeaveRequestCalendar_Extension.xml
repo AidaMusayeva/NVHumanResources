@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVEssLeaveRequestCalendar_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(EssLeaveRequestCalendar))]
+internal final class NVEssLeaveRequestCalendar_Extension
+{
+    private HcmWorker locCallerWorker;
+
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        next init();
+
+        if (this.args().record() is HcmWorker)
+        {
+            locCallerWorker = this.args().record() as HcmWorker;
+        }
+        else if (this.args().record() is DirPartyTable)
+        {
+            DirPartyTable locDirPartyTable = this.args().record() as DirPartyTable;
+            locCallerWorker = HcmWorker::findByPerson(locDirPartyTable.RecId);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        next run();
+        
+        this.initBalanceDetails();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initBalanceDetails</Name>
+				<Source><![CDATA[
+    public void initBalanceDetails()
+    {
+        date locAsOfDate = AsOfDate.dateValue() == dateNull()? DateTimeUtil::getSystemDate(DateTimeUtil::getUserPreferredTimeZone()): AsOfDate.dateValue();
+        NVLeaveBalanceDetailsTmp detailsTmp = NVLeaveBalanceDetailsTmp::balanceByLeaveType(locCallerWorker.RecId, locAsOfDate);
+                
+        NVLeaveBalanceDetailsTmp.setTmpData(detailsTmp);
+        NVLeaveBalanceDetailsTmp_ds.executeQuery();
+        NVLeaveBalanceDetailsTmp_ds.research(true);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>Balances_Update</Name>
+				<Source><![CDATA[
+    [
+        FormControlEventHandler(formControlStr(EssLeaveRequestCalendar, Balances), FormControlEventType::PageActivated),
+        FormControlEventHandler(formControlStr(EssLeaveRequestCalendar, Apply), FormControlEventType::Clicked)
+    ]
+    public static void Balances_Update(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+
+        formRun.initBalanceDetails();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

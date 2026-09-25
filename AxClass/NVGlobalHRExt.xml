@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVGlobalHRExt</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class NVGlobalHRExt
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getFileDataFromBase64</Name>
+				<Source><![CDATA[
+    public static container getFileDataFromBase64(str _base64)
+    {
+        int pos;
+        BinData bindata;
+        str base64, base64ext;
+        container data;
+
+        base64 = _base64;
+        base64ext = '';
+
+        if (base64 != '')
+        {
+            pos = strFind(base64, ';', 1, 60);
+            if (pos)
+            {
+                base64ext = subStr(base64, 1, pos - 1);
+            }
+            pos = strFind(base64, ',', 1, 60);
+            base64 = strDel(base64, 1, pos);
+            
+            bindata = new BinData();
+            data = BinData::loadFromBase64(base64);
+            bindata.setData(data);
+        }
+        return data;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

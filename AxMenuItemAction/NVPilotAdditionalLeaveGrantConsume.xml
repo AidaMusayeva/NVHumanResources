@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxMenuItemAction xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V1">
+	<Name>NVPilotAdditionalLeaveGrantConsume</Name>
+	<HelpText>Run this job to grant additional leave to worker on the basis of recorded flight hours</HelpText>
+	<Label>Grant pilot additional leave</Label>
+	<Object>NVPilotAdditionalLeaveGrantConsume</Object>
+	<ObjectType>Class</ObjectType>
+	<SubscriberAccessLevel>
+		<Read xmlns="">Allow</Read>
+	</SubscriberAccessLevel>
+</AxMenuItemAction>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOMDepartmentGradeCoefficient</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVOMDepartmentGradeCoefficient extends common
+{ 
+}
+
+]]></Declaration>
+		<Methods />
+	</SourceCode>
+	<DeveloperDocumentation>@SYS126193</DeveloperDocumentation>
+	<FormRef>NVOMDepartmentGradeCoefficient</FormRef>
+	<Label>Department grade coefficient</Label>
+	<TableGroup>Reference</TableGroup>
+	<TitleField1>Department</TitleField1>
+	<TitleField2>InternalGrade</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>EntireTable</CacheLookup>
+	<CreatedBy>Yes</CreatedBy>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<ModifiedBy>Yes</ModifiedBy>
+	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<ReplacementKey>Idx</ReplacementKey>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions>
+		<AxTableDeleteAction>
+			<Name>HcmJobDetail</Name>
+			<DeleteAction>Restricted</DeleteAction>
+			<Relation></Relation>
+			<Table>HcmJobDetail</Table>
+		</AxTableDeleteAction>
+		<AxTableDeleteAction>
+			<Name>HRCComp</Name>
+			<DeleteAction>Restricted</DeleteAction>
+			<Relation></Relation>
+			<Table>HRCComp</Table>
+		</AxTableDeleteAction>
+		<AxTableDeleteAction>
+			<Name>HRMCompEligibilityLevel</Name>
+			<DeleteAction>Restricted</DeleteAction>
+			<Relation></Relation>
+			<Table>HRMCompEligibilityLevel</Table>
+		</AxTableDeleteAction>
+		<AxTableDeleteAction>
+			<Name>HRMCompEventLineComposite</Name>
+			<DeleteAction>Restricted</DeleteAction>
+			<Relation></Relation>
+			<Table>HRMCompEventLineComposite</Table>
+		</AxTableDeleteAction>
+		<AxTableDeleteAction>
+			<Name>HRMCompEventLinePointInTime</Name>
+			<DeleteAction>Restricted</DeleteAction>
+			<Relation></Relation>
+			<Table>HRMCompEventLinePointInTime</Table>
+		</AxTableDeleteAction>
+		<AxTableDeleteAction>
+			<Name>HRMCompVarPlanLevel</Name>
+			<DeleteAction>Restricted</DeleteAction>
+			<Relation></Relation>
+			<Table>HRMCompVarPlanLevel</Table>
+		</AxTableDeleteAction>
+	</DeleteActions>
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Department</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>InternalGrade</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Description</Name>
+			<Label>@SYS80470</Label>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Identification</Name>
+			<Label>@SYS35583</Label>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Overview</Name>
+			<Label>@SYS50012</Label>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>System</Name>
+			<Label>@SYS4278</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>SysRowVersionNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>SysRowVersionNumber</ExtendedDataType>
+			<Null>Yes</Null>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Department</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>OMDepartmentRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>InternalGrade</Name>
+			<ExtendedDataType>HcmCompensationLevelId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Internal (WTW)</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>Coefficient</Name>
+			<Label>Coefficient</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>Idx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>Department</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>InternalGrade</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>Department</Name>
+			<Cardinality>OneMore</Cardinality>
+			<RelatedTable>OMOperatingUnit</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Department</Name>
+					<Field>Department</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmCompensationLevel_Internal</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>HcmCompensationLevel</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelatedTableRole>EarningCode</RelatedTableRole>
+			<RelationshipType>Association</RelationshipType>
+			<Role>NVHcmCompensationLevel_Internal</Role>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>InternalGrade</Name>
+					<Field>InternalGrade</Field>
+					<RelatedField>CompensationLevelId</RelatedField>
+				</AxTableRelationConstraint>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintRelatedFixed">
+					<Name>EnabledNVLegalGrade</Name>
+					<RelatedField>NVInternalGrade</RelatedField>
+					<ValueStr>NoYes::Yes</ValueStr>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

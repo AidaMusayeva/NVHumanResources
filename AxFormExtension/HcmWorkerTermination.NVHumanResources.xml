@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerTermination.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy4342fvbr1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormReferenceGroupControl">
+				<Name>NVHcmRealTermReasonCode</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>2013265918</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>ReferenceGroup</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>ReasonCode_ReasonCodeIdCopy1</Name>
+						<FilterExpression>%1</FilterExpression>
+						<HeightMode>Auto</HeightMode>
+						<Type>String</Type>
+						<VerticalSpacing>-1</VerticalSpacing>
+						<WidthMode>Auto</WidthMode>
+						<FormControlExtension
+							i:nil="true" />
+					</AxFormControl>
+				</Controls>
+				<ExtendedDataType>NVHcmRealTermReasonCodeRecId</ExtendedDataType>
+				<Label>Real termination reason</Label>
+			</FormControl>
+			<Parent>Termination</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>ReasonCode</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copycqiclf2n1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormComboBoxControl">
+				<Name>NVReasonClassification</Name>
+				<AllowEdit>No</AllowEdit>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>ComboBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<EnumType>NVHcmTerminationClassification</EnumType>
+				<Items />
+			</FormControl>
+			<Parent>Termination</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>ReasonCode</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copymgwezrow1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>NVTerminationNote</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>1207959549</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>String</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<BackStyle>Transparent</BackStyle>
+				<ExtendedDataType>Notes</ExtendedDataType>
+				<Label>Termination note</Label>
+				<MultiLine>Yes</MultiLine>
+			</FormControl>
+			<Parent>Termination</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>BenefitEmploymentStatus</PreviousSibling>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

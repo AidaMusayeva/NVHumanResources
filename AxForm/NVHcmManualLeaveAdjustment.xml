@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVHcmManualLeaveAdjustment</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Form]
+public class NVHcmManualLeaveAdjustment extends FormRun
+{
+    LeaveTmpForecastedBalance leaveTmpForecastedBalance;
+    
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        super();
+
+        if (!element.args() || !element.args().caller())
+        {
+            throw error("@SYS22539");
+        }
+
+        leaveTmpForecastedBalance = element.args().record() as LeaveTmpForecastedBalance;
+
+        FldLeaveTransactionType.selection(LeaveTransactionType::BalanceAdjustment);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="">
+			<Control>
+				<Name>OK</Name>
+				<Type>CommandButton</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            int days = FldAdjustmentDays.value();
+
+            if(days == 0)
+                throw error("Adjustment days must be specified.");
+
+            LeaveType leaveType = LeaveType::findByType(leaveTmpForecastedBalance.Type);
+
+            if(leaveType.RecId == 0)
+                throw error("Leave type not found.");
+
+            if(leaveTmpForecastedBalance.Worker == 0)
+                throw error("Worker not found.");
+
+            ttsbegin;
+            LeaveBankTransaction leaveBankTransaction;
+            leaveBankTransaction.clear();
+
+            leaveBankTransaction.Worker             = leaveTmpForecastedBalance.Worker;
+            leaveBankTransaction.LeavePlan          = NVLeavePlanEventHandler::getPlanForLeaveType(leaveType.RecId, leaveBankTransaction.Worker).RecId;
+            leaveBankTransaction.LeaveType          = leaveType.RecId;
+            leaveBankTransaction.TransactionDate    =  HcmDateTimeUtil::companyCurrentDate();
+            leaveBankTransaction.TransactionType    = FldLeaveTransactionType.selection();
+            leaveBankTransaction.NVLeaveCategory    = FldLeaveCategory.selection();
+            leaveBankTransaction.Amount             = days;
+            leaveBankTransaction.Comment            = "";
+
+            leaveBankTransaction.insert();
+            ttscommit;
+            
+            info("Leave adjusted.");
+
+            super();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources />
+	<Design>
+		<Caption xmlns="">Manual leave adjustment</Caption>
+		<Pattern xmlns="">DropDialog</Pattern>
+		<PatternVersion xmlns="">1.2</PatternVersion>
+		<Style xmlns="">DropDialog</Style>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>DialogContentGroup</Name>
+				<Pattern>FieldsFieldGroups</Pattern>
+				<PatternVersion>1.1</PatternVersion>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormComboBoxControl">
+						<Name>FldLeaveTransactionType</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<Type>ComboBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<EnumType>LeaveTransactionType</EnumType>
+						<Items />
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormComboBoxControl">
+						<Name>FldLeaveCategory</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<Type>ComboBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<EnumType>NVLeaveCategory</EnumType>
+						<Items />
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>FldAdjustmentDays</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Label>Adjustment days</Label>
+					</AxFormControl>
+				</Controls>
+				<ColumnsMode>Fill</ColumnsMode>
+				<Style>DialogContent</Style>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>DialogCommitContainer</Name>
+				<Type>ButtonGroup</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormCommandButtonControl">
+						<Name>OK</Name>
+						<Type>CommandButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Command>OK</Command>
+						<DefaultButton>Yes</DefaultButton>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>HorizontalRight</ArrangeMethod>
+				<Style>DialogCommitContainer</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

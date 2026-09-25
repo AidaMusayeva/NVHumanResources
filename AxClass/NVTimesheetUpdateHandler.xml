@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTimesheetUpdateHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVTimesheetUpdateHandler
+{
+    #define.BusinessTrip('BT')
+    Map linesMap;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmLinesMap</Name>
+				<Source><![CDATA[
+    public Map parmLinesMap(Map _linesMap = linesMap)
+    {
+        linesMap = _linesMap;
+        return linesMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateLeaveRequestTimesheet</Name>
+				<Source><![CDATA[
+    public static void updateLeaveRequestTimesheet(LeaveRequestRecId _leaveRequestRecId)
+    {
+        LeaveRequest                request = LeaveRequest::find(_leaveRequestRecId);
+        if(request.RecId == 0)
+            return;
+
+        NVTimesheetUpdateHandler    timesheetUpdateHandler = new NVTimesheetUpdateHandler();
+        NVTimeSheetLines            timeSheetLines;
+        NvTimeSheetHeader           timeSheetHeader;
+        LeaveRequestDetail          leaveRequestDetail;
+        LeaveType                   LeaveType;
+        container                   sequencing;
+
+        ttsbegin;
+        boolean update = false;
+        while select timeSheetHeader
+            where (request.RequestDate      >= timeSheetHeader.StartDate
+                && request.RequestDate      <= timeSheetHeader.EndDate)
+                && timeSheetHeader.Status   == NVTimeSheetStatus::Draft
+        {
+            Map leaveMap = timeSheetHeader.LeaveTypeSequencingMap();
+            timesheetUpdateHandler.parmLinesMap(leaveMap);
+            
+            while select leaveRequestDetail
+                    where leaveRequestDetail.Request    == request.RecId
+                join leaveType
+                    where leaveType.RecId               == leaveRequestDetail.LeaveType                
+            {
+                select timeSheetLines
+                    where timeSheetLines.TimeSheetHeader    == timeSheetHeader.RecId
+                        && timeSheetLines.Worker            == request.Worker
+                        && timeSheetLines.Status            == NVTimeSheetLineStatus::Draft;
+
+                if(timeSheetLines)
+                {
+                    timeSheetLines.selectForUpdate(true);
+                    str leaveInitials = leaveType.NVLeaveInitials != '' ? leaveType.NVLeaveInitials : LeaveType.Type;
+                    str existingValue = timeSheetLines.getValueFromDate(leaveRequestDetail.LeaveDate);
+                
+                    if(existingValue && existingValue == enum2Str(WorkTimeControl::Holiday))
+                    {
+                        FieldId fieldId = fieldName2Id(tableNum(LeaveType), "IncludeHolidays");
+                        if(fieldId != 0 && leaveType.(fieldId) == NoYes::No)
+                        continue;
+                    }
+                    if(existingValue && existingValue == enum2Str(WorkTimeControl::Closed))
+                    {
+                        FieldId fieldId = fieldName2Id(tableNum(LeaveType), "IncludeClosedDays");
+                        if(fieldId != 0 && leaveType.(fieldId) == NoYes::No)
+                        continue;
+                    }
+                    
+                    timeSheetLines.setValueToDayColumn(leaveRequestDetail.LeaveDate, leaveInitials);
+                    int leaveId = timesheetUpdateHandler.getOrCreateTypeId(leaveInitials);
+                
+                    timeSheetLines.selectForUpdate(true);
+                    timeSheetLines.setValueToLeaveColumn(leaveId);
+                    timeSheetLines.update();
+                    update = true;
+                }
+            }
+
+            if(update)
+            {
+                timeSheetHeader.selectForUpdate(true);
+                timeSheetHeader.LeaveTypesSequencing = timeSheetHeader.serializeLeaveTypeMap(leaveMap);
+                timeSheetHeader.update();
+            }
+        }
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateTrvExpenseRequestTimesheet</Name>
+				<Source><![CDATA[
+    public static void updateTrvExpenseRequestTimesheet(RefRecId __refRecId)
+    {
+        NVTrvWorkerExpenseRequest   request = NVTrvWorkerExpenseRequest::find(__refRecId);
+        if(request.RecId == 0)
+            return;
+
+        NVTrvWorkerLocationPerDiem  locationPerDiem = NVTrvWorkerLocationPerDiem::findPerDiem(request.FromLocation, request.ToLocation);
+        NVTimesheetUpdateHandler    timesheetUpdateHandler = new NVTimesheetUpdateHandler();
+       
+        NvTimeSheetHeader           timeSheetHeader;
+        container                   sequencing;
+
+        ttsbegin;
+        date currentDate = request.FromDate;
+        while (currentDate <= request.ToDate)
+        {
+            boolean update = false;
+            while select timeSheetHeader
+            where (currentDate              >= timeSheetHeader.StartDate
+                && currentDate              <= timeSheetHeader.EndDate)
+                && timeSheetHeader.Status   == NVTimeSheetStatus::Draft
+            {
+                Map lineMap = timeSheetHeader.LeaveTypeSequencingMap();
+                timesheetUpdateHandler.parmLinesMap(lineMap);
+            
+                NVTimeSheetLines  timeSheetLines;
+                select timeSheetLines
+                    where timeSheetLines.TimeSheetHeader    == timeSheetHeader.RecId
+                        && timeSheetLines.Worker            == request.Worker
+                        && timeSheetLines.Status            == NVTimeSheetLineStatus::Draft;
+
+                if(timeSheetLines)
+                {
+                    timeSheetLines.selectForUpdate(true);
+                    str abbreviation = locationPerDiem.Abbreviation != '' ? locationPerDiem.Abbreviation: #BusinessTrip;
+                    str existingValue = timeSheetLines.getValueFromDate(currentDate);
+                    timeSheetLines.setValueToDayColumn(currentDate, abbreviation);
+
+                    int nextTypeId = timesheetUpdateHandler.getOrCreateTypeId(abbreviation);
+                
+                    timeSheetLines.selectForUpdate(true);
+                    timeSheetLines.setValueToLeaveColumn(nextTypeId);
+                    timeSheetLines.update();
+                    update = true;
+                }
+
+                if(update)
+                {
+                    timeSheetHeader.selectForUpdate(true);
+                    timeSheetHeader.LeaveTypesSequencing = timeSheetHeader.serializeLeaveTypeMap(lineMap);
+                    timeSheetHeader.update();
+                }
+            }
+
+            currentDate++;
+        }
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getOrCreateTypeId</Name>
+				<Source><![CDATA[
+    public int getOrCreateTypeId(str _abbreviation)
+    {
+        if(linesMap.exists(_abbreviation))
+        {
+            return linesMap.lookup(_abbreviation);
+        }
+        else
+        {
+            int nextID = linesMap.elements() + 1;
+            linesMap.insert(_abbreviation, nextID);
+            return nextID;
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

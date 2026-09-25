@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmPositionWorkerAssignmentDialog.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy3bbemgfp1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCheckBoxControl">
+				<Name>NVTemporaryCheckbox</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>1610612733</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>CheckBox</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<Label>Make temporary</Label>
+			</FormControl>
+			<Parent>DialogContent</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>Duration</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copym43n11sf1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormReferenceGroupControl">
+				<Name>TempPosition_Control</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>1073741822</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>ReferenceGroup</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<Visible>No</Visible>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>Position_Control_PositionIdCopy1Copy1</Name>
+						<FilterExpression>%1</FilterExpression>
+						<HeightMode>Auto</HeightMode>
+						<Type>String</Type>
+						<VerticalSpacing>-1</VerticalSpacing>
+						<WidthMode>Auto</WidthMode>
+						<FormControlExtension
+							i:nil="true" />
+					</AxFormControl>
+				</Controls>
+				<ExtendedDataType>HcmPositionRecId</ExtendedDataType>
+				<LabelAlignment>Center</LabelAlignment>
+				<LabelPosition>Above</LabelPosition>
+			</FormControl>
+			<Parent>Detail</Parent>
+			<PositionType>Begin</PositionType>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copygotyfs4m1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCommandButtonControl">
+				<Name>TempWorkerAssignmentOk</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<ElementPosition>1717986916</ElementPosition>
+				<Enabled>No</Enabled>
+				<FilterExpression>%1</FilterExpression>
+				<HeightMode>Auto</HeightMode>
+				<Type>CommandButton</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<Visible>No</Visible>
+				<WidthMode>Auto</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<ButtonDisplay>TextOnly</ButtonDisplay>
+				<Command>OK</Command>
+				<DefaultButton>Yes</DefaultButton>
+				<SaveRecord>No</SaveRecord>
+				<Text>@SYS330156</Text>
+			</FormControl>
+			<Parent>ButtonGroup</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>WorkerAssignmentOk</PreviousSibling>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

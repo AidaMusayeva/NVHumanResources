@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerPositionHistoryFormPart.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy4tgz4eps1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormCheckBoxControl">
+				<Name>HcmPositionWorkerAssignment_NVTempPosition</Name>
+				<Type>CheckBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVTempPosition</DataField>
+				<DataSource>HcmPositionWorkerAssignment</DataSource>
+			</FormControl>
+			<Parent>Grid</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>HcmPositionWorkerAssignment_NumberOfMonthsInPosition</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy3z5r213b1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>HcmPositionDetail_NVPositionStructureL2</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmPosition_Extension.positionDepartmentLevel2</DataMethod>
+				<DataSource>HcmPosition</DataSource>
+				<Label>Business unit</Label>
+			</FormControl>
+			<Parent>Grid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copynpzavk3z1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>HcmPositionDetail_NVPositionStructureL3</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmPosition_Extension.positionDepartmentLevel3</DataMethod>
+				<DataSource>HcmPosition</DataSource>
+				<Label>Department</Label>
+			</FormControl>
+			<Parent>Grid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyloln1zex1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>HcmPositionDetail_NVPositionStructureL4</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmPosition_Extension.positionDepartmentLevel4</DataMethod>
+				<DataSource>HcmPosition</DataSource>
+				<Label>Division</Label>
+			</FormControl>
+			<Parent>Grid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyl5bw0ftn1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>HcmPositionDetail_NVPositionStructureL5</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmPosition_Extension.positionDepartmentLevel5</DataMethod>
+				<DataSource>HcmPosition</DataSource>
+				<Label>Group 1</Label>
+			</FormControl>
+			<Parent>Grid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copy51nht1ko1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>HcmPositionDetail_NVPositionStructureL6</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataMethod>NVHcmPosition_Extension.positionDepartmentLevel6</DataMethod>
+				<DataSource>HcmPosition</DataSource>
+				<Label>Group 2</Label>
+			</FormControl>
+			<Parent>Grid</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

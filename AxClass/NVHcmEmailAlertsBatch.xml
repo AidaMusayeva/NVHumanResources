@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmEmailAlertsBatch</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class NVHcmEmailAlertsBatch extends RunBaseBatch implements BatchRetryable
+{
+    #NVHcmEmailAlertsMacro
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>canGoBatchJournal</Name>
+				<Source><![CDATA[
+    public boolean canGoBatchJournal()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialog</Name>
+				<Source><![CDATA[
+    public Object dialog()
+    {
+        DialogRunbase dialog = super();
+        
+        return dialog;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogPostRun</Name>
+				<Source><![CDATA[
+    public void dialogPostRun(DialogRunbase dialog)
+    {
+        super(dialog);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFromDialog</Name>
+				<Source><![CDATA[
+    public boolean getFromDialog()
+    {
+        return super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public boolean init()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new()
+    {
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        NVHcmEmailAlertsSetup alertsSetup;
+        while select alertsSetup
+            where alertsSetup.Enable == NoYes::Yes
+        {
+            NVHcmEmailAlertsType type = alertsSetup.Type;
+            
+            switch(type)
+            {
+                case NVHcmEmailAlertsType::ContractExpiry:
+                    this.runContractExpiry(alertsSetup);
+                    break;
+
+                case NVHcmEmailAlertsType::ProbationExpiry:
+                    this.runProbationExpiry(alertsSetup);
+                    break;
+
+                case NVHcmEmailAlertsType::IdentExpiry:
+                    this.runIdentifyExpiry(alertsSetup);
+
+                case NVHcmEmailAlertsType::WorkerResidence:
+                    this.runResidenceExpiry(alertsSetup);
+                    break;
+
+                case NVHcmEmailAlertsType::WorkPermit:
+                    this.runWorkPemitExpiry(alertsSetup);
+                    break;
+
+                case NVHcmEmailAlertsType::PositionReplacement:
+                    this.runPositionReplacement(alertsSetup);
+                    break;
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runContractExpiry</Name>
+				<Source><![CDATA[
+    private void runContractExpiry(NVHcmEmailAlertsSetup alertsSetup)
+    {
+        date currentDate    = systemDateGet();
+        date startDate      = currentDate - alertsSetup.FromDays;
+        date endDate        = currentDate + alertsSetup.ToDays;
+
+        NVHcmWorkerContractDetails contractDetails;
+        while select contractDetails
+            where contractDetails.EndDate   >= startDate
+                && contractDetails.EndDate  <= endDate
+        {
+            HcmWorker worker    = HcmWorker::find(contractDetails.Worker);
+            str description     = strFmt("%1: Worker %2, %3.", alertsSetup.Type, worker.PersonnelNumber, worker.name());
+            date transDate      = contractDetails.EndDate;
+            date deadline       = transDate - alertsSetup.DeadlineDays;
+
+            if(this.insertUpdateAlerts(contractDetails, description, transDate, alertsSetup.OneTime, alertsSetup.Intervals, alertsSetup.Type))
+            {
+                str emailTo = this.getEmailTo(alertsSetup, worker);
+
+                if(alertsSetup.EmailId != "" && emailTo != "")
+                    this.sendEmail(alertsSetup.EmailId, worker, transDate, deadline, emailTo);
+            }
+        }
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runProbationExpiry</Name>
+				<Source><![CDATA[
+    private void runProbationExpiry(NVHcmEmailAlertsSetup alertsSetup)
+    {
+        utcdatetime currentDate    = DateTimeUtil::getSystemDateTime();
+        utcdatetime startDate      = DateTimeUtil::addDays(currentDate, -alertsSetup.FromDays);
+        utcdatetime endDate         = DateTimeUtil::addDays(currentDate, alertsSetup.ToDays);
+        
+        HcmPositionWorkerAssignment positionWorker;
+        utcdatetime now = DateTimeUtil::utcNow();
+        
+        while select ValidTimeState(now) positionWorker
+            where positionWorker.ValidFrom  >= startDate
+                && positionWorker.ValidTo   <= endDate
+        {
+            HcmWorker worker        = HcmWorker::find(positionWorker.Worker);
+            str description         = strFmt("%1: Worker %2, %3.", alertsSetup.Type, worker.PersonnelNumber, worker.name());
+            date transDate          = DateTimeUtil::date(positionWorker.ValidTo);
+            date deadline           = transDate - alertsSetup.DeadlineDays;
+            
+            if(this.insertUpdateAlerts(positionWorker, description, transDate, alertsSetup.OneTime, alertsSetup.Intervals, alertsSetup.Type))
+            {
+                str emailTo = this.getEmailTo(alertsSetup, worker);
+                if(alertsSetup.EmailId != "" && emailTo != "")
+                    this.sendEmail(alertsSetup.EmailId, worker, transDate, deadline, emailTo);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runIdentifyExpiry</Name>
+				<Source><![CDATA[
+    private void runIdentifyExpiry(NVHcmEmailAlertsSetup alertsSetup)
+    {
+        date currentDate    = systemDateGet();
+        date startDate      = currentDate - alertsSetup.FromDays;
+        date endDate        = currentDate + alertsSetup.ToDays;
+
+        HcmPersonIdentificationNumber identification;
+        while select identification
+            where identification.ExpirationDate     >= startDate
+                && identification.ExpirationDate    <= endDate
+        {
+            HcmWorker worker =HcmWorker::findByPerson(identification.Person);
+            str description     = strFmt("%1: Worker %2, %3.", alertsSetup.Type, worker.PersonnelNumber, worker.name());
+            date transDate      = identification.ExpirationDate;
+            date deadline       = transDate - alertsSetup.DeadlineDays;
+
+            if(this.insertUpdateAlerts(identification, description, transDate, alertsSetup.OneTime, alertsSetup.Intervals, alertsSetup.Type))
+            {
+                str emailTo = this.getEmailTo(alertsSetup, worker);
+                
+                if(alertsSetup.EmailId != "" && emailTo != "")
+                    this.sendEmail(alertsSetup.EmailId, worker, transDate, deadline, emailTo);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runPositionReplacement</Name>
+				<Source><![CDATA[
+    private void runPositionReplacement(NVHcmEmailAlertsSetup alertsSetup)
+    {
+        date currentDate            = DateTimeUtil::getSystemDate(DateTimeUtil::getCompanyTimeZone());
+        utcdatetime startDate       = DateTimeUtil::addDays(DateTimeUtil::newDateTime(currentDate, 0), -alertsSetup.FromDays);
+        utcdatetime endDate       = DateTimeUtil::addDays(DateTimeUtil::newDateTime(currentDate, 86399), alertsSetup.ToDays);
+        
+        HcmPositionWorkerAssignment positionWorker;
+
+        while select positionWorker
+            where positionWorker.ValidTo            >= startDate
+                && positionWorker.ValidTo           <= endDate
+                && positionWorker.NVTempPosition    == NoYes::Yes
+        {
+            HcmWorker worker    = HcmWorker::find(positionWorker.Worker);
+            str description     = strFmt("%1: Worker %2, %3.", alertsSetup.Type, worker.PersonnelNumber, worker.name());
+            date transDate      = DateTimeUtil::date(DateTimeUtil::applyTimeZoneOffset(positionWorker.ValidTo, DateTimeUtil::getCompanyTimeZone()));
+            date deadline       = transDate - alertsSetup.DeadlineDays;
+
+            if(this.insertUpdateAlerts(positionWorker, description, transDate, alertsSetup.OneTime, alertsSetup.Intervals, alertsSetup.Type))
+            {
+                str emailTo = this.getEmailTo(alertsSetup, worker);
+                
+                if(alertsSetup.EmailId != "" && emailTo != "")
+                    this.sendEmail(alertsSetup.EmailId, worker, transDate, deadline, emailTo);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runResidenceExpiry</Name>
+				<Source><![CDATA[
+    private void runResidenceExpiry(NVHcmEmailAlertsSetup alertsSetup)
+    {
+        date currentDate    = systemDateGet();
+        date startDate      = currentDate - alertsSetup.FromDays;
+        date endDate        = currentDate + alertsSetup.ToDays;
+
+        NVHcmWorkerResidence residence;
+        while select residence
+            where residence.ToDate          >= startDate
+                && residence.ToDate         <= endDate
+                && residence.Type           == NVHcmWorkerResidenceType::Residence
+        {
+            HcmWorker worker    = HcmWorker::find(residence.Worker);
+            str description     = strFmt("%1: Worker %2, %3.", alertsSetup.Type, worker.PersonnelNumber, worker.name());
+            date transDate      = residence.ToDate;
+            date deadline       = transDate - alertsSetup.DeadlineDays;
+
+            if(this.insertUpdateAlerts(residence, description, transDate, alertsSetup.OneTime, alertsSetup.Intervals, alertsSetup.Type))
+            {
+                str emailTo = this.getEmailTo(alertsSetup, worker);
+                
+                if(alertsSetup.EmailId != "" && emailTo != "")
+                    this.sendEmail(alertsSetup.EmailId, worker, transDate, deadline, emailTo);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runWorkPemitExpiry</Name>
+				<Source><![CDATA[
+    private void runWorkPemitExpiry(NVHcmEmailAlertsSetup alertsSetup)
+    {
+        date currentDate    = systemDateGet();
+        date startDate      = currentDate - alertsSetup.FromDays;
+        date endDate        = currentDate + alertsSetup.ToDays;
+
+        NVHcmWorkerResidence residence;
+        while select residence
+            where residence.ToDate          >= startDate
+                && residence.ToDate         <= endDate
+                && residence.Type           == NVHcmWorkerResidenceType::WorkPermit
+        {
+            HcmWorker worker    = HcmWorker::find(residence.Worker);
+            str description     = strFmt("%1: Worker %2, %3.", alertsSetup.Type, worker.PersonnelNumber, worker.name());
+            date transDate      = residence.ToDate;
+            date deadline       = transDate - alertsSetup.DeadlineDays;
+
+            if(this.insertUpdateAlerts(residence, description, transDate, alertsSetup.OneTime, alertsSetup.Intervals, alertsSetup.Type))
+            {
+                str emailTo = this.getEmailTo(alertsSetup, worker);
+                
+                if(alertsSetup.EmailId != "" && emailTo != "")
+                    this.sendEmail(alertsSetup.EmailId, worker, transDate, deadline, emailTo);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getEmailTo</Name>
+				<Source><![CDATA[
+    private str getEmailTo(NVHcmEmailAlertsSetup alertsSetup, HcmWorker worker)
+    {
+        str emailTo = alertsSetup.EmailTo;
+
+        NVHcmEmailAlertsList emailList;
+
+        while select emailList
+            where emailList.EmailAlertsSetup == alertsSetup.RecId
+        {
+            emailTo = strFmt("%1;%2", emailList.EmailTo, emailTo);
+        }
+
+        if(alertsSetup.EmailToManager == NoYes::Yes)
+        {
+            int managerLevel = alertsSetup.ManagerLevel == 0? 1: alertsSetup.ManagerLevel;
+            for(int inc = 1; inc <= managerLevel; inc++)
+            {
+                HcmWorker managerWorker = HcmWorkerHelper::getManagerForWorker(worker.RecId);
+
+                str managerEmail = managerWorker.email();
+                if(managerEmail != "") 
+                    emailTo = strFmt("%1;%2", managerEmail, emailTo);
+                
+            }
+        }
+
+        if(alertsSetup.EmailToWorker == NoYes::Yes)
+        {
+            str workerEmail = worker.email();
+            if(workerEmail != "")
+                emailTo = strFmt("%1;%2", workerEmail, emailTo);
+        }
+
+        return emailTo;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insertUpdateAlerts</Name>
+				<Source><![CDATA[
+    private boolean insertUpdateAlerts(Common _common, str _description, date _transDate, NoYesId _oneTime, Days _interval, NVHcmEmailAlertsType _type)
+    {
+        NVHcmEmailAlerts alerts = NVHcmEmailAlerts::findbyRef(_common.TableId, _common.RecId, _transDate);
+
+        if(alerts
+            && alerts.TransDate == _transDate)
+        {
+            if(_oneTime != NoYes::No)
+                return false;
+
+            if(_interval > 1)
+            {
+                TransDate nextAlertDate = alerts.LastAlertDate + _interval;
+                if(!(nextAlertDate <= DateTimeUtil::getSystemDate(DateTimeUtil::getCompanyTimeZone())))
+                    return false;
+            }
+            ttsbegin;
+            alerts.selectForUpdate(true);
+            alerts.AlertCounter     = alerts.AlertCounter + 1;
+            alerts.LastAlertDate    = DateTimeUtil::getSystemDate(DateTimeUtil::getCompanyTimeZone());
+            alerts.update();
+            ttscommit;
+        }
+        else
+        {
+            alerts.Type             = _type;
+            alerts.RefTableId       = _common.TableId;
+            alerts.RefRecId         = _common.RecId;
+            alerts.Description      = _description;
+            alerts.TransDate        = _transDate;
+            alerts.LastAlertDate    = DateTimeUtil::getSystemDate(DateTimeUtil::getCompanyTimeZone());
+            alerts.AlertCounter     = 1;
+            
+            alerts.insert();
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>sendEmail</Name>
+				<Source><![CDATA[
+    private void sendEmail(SysEmailid _emailId, HcmWorker _worker, TransDate _transDate, TransDate _deadlineDate,  str _emailTo, Map _parmPlaceHolders = null)
+    {
+        SysEmailTable        sysEmailTable        = SysEmailTable::find(_emailId);
+        SysEmailMessageTable sysEmailMessageTable = SysEmailMessageTable::find(sysEmailTable.EmailId, sysEmailTable.DefaultLanguage);
+                
+        str body        = sysEmailMessageTable.Mail;
+        str subject     = sysEmailMessageTable.Subject;
+
+        HcmWorker managerWorker = HcmWorkerHelper::getManagerForWorker(_worker.RecId);
+        Map placeholderMap = new Map(Types::String, Types::String);
+        
+        placeholderMap.insert(#WorkerName, _worker.name());
+        placeholderMap.insert(#WorkerId, _worker.PersonnelNumber);
+        placeholderMap.insert(#WorkerManagerName, managerWorker.name());
+        placeholderMap.insert(#WorkerJobTitle, _worker.primaryPositionTitle());
+        placeholderMap.insert(#TransDate, date2Str(_transDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateDay::Digits2, DateSeparator::Hyphen, DateYear::Digits4));
+        placeholderMap.insert(#DeadlineDate, date2Str(_deadlineDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateDay::Digits2, DateSeparator::Hyphen, DateYear::Digits4));
+        
+        if(_parmPlaceHolders != null)
+        {            
+            MapIterator parmPlaceHoldersIter = new MapIterator(_parmPlaceHolders);
+            while(parmPlaceHoldersIter.more())
+            {
+                placeholderMap.insert(parmPlaceHoldersIter.key(), parmPlaceHoldersIter.value());
+                parmPlaceHoldersIter.next();
+            }
+        }
+        
+        body        = SysEmailMessage::stringExpand(body, placeholderMap);
+        subject     = SysEmailMessage::stringExpand(subject, placeholderMap);
+        
+        SysOutgoingEmailTable outgoingEmailTable;
+        
+        outgoingEmailTable.clear();
+        outgoingEmailTable.Origin                       = sysEmailTable.Description;
+        outgoingEmailTable.EmailItemId                  = EventInbox::nextEventId();;
+        outgoingEmailTable.IsSystemEmail                = NoYes::Yes;
+        outgoingEmailTable.Sender                       = sysEmailTable.SenderAddr;
+        outgoingEmailTable.SenderName                   = sysEmailTable.SenderName;
+        outgoingEmailTable.Recipient                    = _emailTo;
+        outgoingEmailTable.Subject                      = sysEmailMessageTable.Subject;
+        outgoingEmailTable.Priority                     = eMailPriority::High;
+        outgoingEmailTable.WithRetries                  = NoYes::No;
+        outgoingEmailTable.RetryNum                     = 0;
+        outgoingEmailTable.UserId                       = curUserId();
+        outgoingEmailTable.Status                       = SysEmailStatus::Unsent;
+        outgoingEmailTable.Message                      = body;
+        outgoingEmailTable.LatestStatusChangeDateTime   = DateTimeUtil::getSystemDateTime();
+        outgoingEmailTable.TemplateId                   = sysEmailTable.EmailId;
+        
+        outgoingEmailTable.insert();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runsImpersonated</Name>
+				<Source><![CDATA[
+    public boolean runsImpersonated()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    static NVHcmEmailAlertsBatch construct()
+    {
+        return new NVHcmEmailAlertsBatch();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    static ClassDescription description()
+    {
+        return "Human resources email alerts";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    static void main(Args args)
+    {
+        NVHcmEmailAlertsBatch alertsBatch;
+        
+        alertsBatch = NVHcmEmailAlertsBatch::construct();
+
+        if(alertsBatch.prompt())
+            alertsBatch.runOperation();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>isRetryable</Name>
+				<Source><![CDATA[
+    [Hookable(false)]
+    public final boolean isRetryable()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canRunInNewSession</Name>
+				<Source><![CDATA[
+    protected boolean canRunInNewSession()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

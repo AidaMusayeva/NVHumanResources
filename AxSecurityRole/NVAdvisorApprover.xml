@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityRole xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVAdvisorApprover</Name>
+	<Description>Grants access to view and approve/reject employment orders in the HR order management module.</Description>
+	<Label>Employment Order Advisor Approver</Label>
+	<DirectAccessPermissions />
+	<Duties>
+		<AxSecurityDutyReference>
+			<Name>NVOrderApprovalDuty</Name>
+		</AxSecurityDutyReference>
+	</Duties>
+	<Privileges />
+	<SubRoles />
+</AxSecurityRole>

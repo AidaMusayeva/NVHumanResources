@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVPilotAdditionalLeaveGrantConsume</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class NVPilotAdditionalLeaveGrantConsume extends RunBaseBatch implements BatchRetryable
+{
+    #Define.RetryNum(5)
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>canGoBatchJournal</Name>
+				<Source><![CDATA[
+    public boolean canGoBatchJournal()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialog</Name>
+				<Source><![CDATA[
+    public Object dialog()
+    {
+        DialogRunbase       dialog = super();
+        
+        return dialog;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogPostRun</Name>
+				<Source><![CDATA[
+    public void dialogPostRun(DialogRunbase dialog)
+    {
+        super(dialog);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFromDialog</Name>
+				<Source><![CDATA[
+    public boolean getFromDialog()
+    {
+        return super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public boolean init()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new()
+    {
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runForGrant</Name>
+				<Source><![CDATA[
+    private void runForGrant()
+    {
+        LeavePlan       leavePlan;
+        LeaveEnrollment enrollment;
+
+        while select leavePlan
+            where leavePlan.NVPilotAdditionalLeaveType != 0
+            join enrollment where enrollment.Plan == leavePlan.RecId
+        {
+            ttsbegin;
+            this.runForEnrolledWorker(leavePlan, enrollment.Worker);
+            ttscommit;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runForEnrolledWorker</Name>
+				<Source><![CDATA[
+    private void runForEnrolledWorker(LeavePlan _leavePlan, HcmWorkerRecId _workerRecId)
+    {
+        Hours totalWorkerHours = NVHcmWorkerFlightHours::totalHoursYear(_workerRecId);
+
+        if(totalWorkerHours == 0) return;
+        
+        NVHcmWorkerFlightRangeSetup flightRangeSetup = NVHcmWorkerFlightRangeSetup::find(totalWorkerHours);
+        Amount totalLeavesGranted = NVPilotAdditionalLeaveTransaction::totalGrantCurrentYear(_workerRecId);
+        
+        if(totalLeavesGranted < flightRangeSetup.AdditionalLeaves)
+        {
+            Amount leavesToGrant = flightRangeSetup.AdditionalLeaves - totalLeavesGranted;
+
+            this.grantAdditionalLeaves(_leavePlan, _workerRecId, leavesToGrant);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>grantAdditionalLeaves</Name>
+				<Source><![CDATA[
+    private void grantAdditionalLeaves(LeavePlan _leavePlan, HcmWorkerRecId _workerRecId, Amount _leavesToGrant)
+    {
+        LeaveType leaveType = LeaveType::find(_leavePlan.NVPilotAdditionalLeaveType);
+        HcmWorker worker    = HcmWorker::find(_workerRecId);
+
+        NVPilotAdditionalLeaveTransaction additionalLeaveTransaction;
+    
+        additionalLeaveTransaction.Amount           = _leavesToGrant;
+        additionalLeaveTransaction.Worker           = worker.RecId;
+        additionalLeaveTransaction.LeavePlan        = _leavePlan.RecId;
+        additionalLeaveTransaction.LeaveType        = _leavePlan.NVPilotAdditionalLeaveType;
+        additionalLeaveTransaction.TransactionDate  = today();
+        additionalLeaveTransaction.TransactionType  = LeaveTransactionType::Grant;
+
+        additionalLeaveTransaction.insert();
+                
+        additionalLeaveTransaction.adjustLeaveBalance();
+
+        info(strFmt("Additional %1 leaves of type %2 granted to worker %3.", _leavesToGrant, leaveType.Type, worker.name()));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runForConsumption</Name>
+				<Source><![CDATA[
+    [SysObsolete("Method is marked as obolete", true)]
+    private void runForConsumption()
+    {
+        LeaveBankTransaction                leaveBankTransaction;
+        NVPilotAdditionalLeaveTransaction   pilotAdditionalLeaveTransaction;
+        LeavePlan                           leavePlan;
+        TransDate                           leaveConsumptionApplyDate = LeaveAbsenceParameters::find().NVLeaveConsumptionApplyDate;
+
+        while select leaveBankTransaction
+            where (leaveBankTransaction.TransactionType         == LeaveTransactionType::Request
+                    || leaveBankTransaction.TransactionType     == LeaveTransactionType::LeaveOfAbsenceRequest)
+                && leaveBankTransaction.TransactionDate         >= leaveConsumptionApplyDate
+            notexists join pilotAdditionalLeaveTransaction
+                where pilotAdditionalLeaveTransaction.LeaveBankTransaction == leaveBankTransaction.RecId
+        {
+            if(NVPilotAdditionalLeaveTransaction::totalBalanceDateYear(leaveBankTransaction.Worker, leaveBankTransaction.LeaveType, leaveBankTransaction.TransactionDate) > 0)
+                this.runConsumptionTransaction(leaveBankTransaction);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runConsumptionTransaction</Name>
+				<Source><![CDATA[
+    private void runConsumptionTransaction(LeaveBankTransaction _leaveBankTransaction)
+    {
+        Amount  additionalLeave     = 0;
+        NVLeaveConsumptionPriority consumptionPriority = LeaveAbsenceParameters::find().NVLeaveConsumptionPriority;
+
+        LeavePlan leavePlan = LeavePlan::find(_leaveBankTransaction.LeavePlan);
+        if(leavePlan.RecId == 0)
+        {            
+            leavePlan = NVLeavePlanEventHandler::getPlanForLeaveType(_leaveBankTransaction.LeaveType, _leaveBankTransaction.Worker);
+        }
+
+        if(leavePlan.NVPilotAdditionalLeaveType != _leaveBankTransaction.LeaveType)
+            return;
+
+        LeaveType leaveType = LeaveType::find(_leaveBankTransaction.LeaveType);
+        Amount totalPilotAdditionalBalance  = NVPilotAdditionalLeaveTransaction::totalBalanceCurrentYear(_leaveBankTransaction.Worker, _leaveBankTransaction.LeaveType);
+
+        if(consumptionPriority == NVLeaveConsumptionPriority::Additional
+        && totalPilotAdditionalBalance > 0)
+        {
+            additionalLeave     = _leaveBankTransaction.Amount < totalPilotAdditionalBalance? _leaveBankTransaction.Amount: _leaveBankTransaction.Amount - totalPilotAdditionalBalance;
+            NVPilotAdditionalLeaveTransaction::insertRequest(_leaveBankTransaction, additionalLeave);
+            return;
+        }
+
+        NVLeavePlanTypeBalanceView leavePlanTypeBalanceView;
+        select crosscompany sum(Balance), sum(Used), sum(TotalBalance) from leavePlanTypeBalanceView
+        where leavePlanTypeBalanceView.Worker       == _leaveBankTransaction.Worker
+            && leavePlanTypeBalanceView.DataAreaId  == leaveType.DataAreaId
+            && leavePlanTypeBalanceView.LeaveType   == leaveType.RecId;
+
+        Amount totalBalance         = leavePlanTypeBalanceView.Balance;
+        Amount baseBalance          = totalBalance - totalPilotAdditionalBalance;
+
+        if(consumptionPriority == NVLeaveConsumptionPriority::Base
+            && baseBalance < 0)
+        {
+            additionalLeave = -baseBalance;
+            additionalLeave = additionalLeave < totalPilotAdditionalBalance? additionalLeave: totalPilotAdditionalBalance;
+            NVPilotAdditionalLeaveTransaction::insertRequest(_leaveBankTransaction, additionalLeave);
+            return;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        try
+        {
+            this.runForGrant();
+            
+            info("Operation completed.");
+        }
+        catch (Exception::Deadlock)
+        {
+            retry;
+        }
+        catch (Exception::UpdateConflict)
+        {
+            if (appl.ttsLevel() == 0)
+            {
+                if (xSession::currentRetryCount() >= #RetryNum)
+                {
+                    throw Exception::UpdateConflictNotRecovered;
+                }
+                else
+                {
+                    retry;
+                }
+            }
+            else
+            {
+                throw Exception::UpdateConflict;
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runsImpersonated</Name>
+				<Source><![CDATA[
+    public boolean runsImpersonated()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    public boolean validate(Object _calledFrom = null)
+    {
+        if (false)
+            return checkFailed("");
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    static NVPilotAdditionalLeaveGrantConsume construct()
+    {
+        return new NVPilotAdditionalLeaveGrantConsume();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    static ClassDescription description()
+    {
+        return "Grant pilot additional leave";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    static void main(Args args)
+    {
+        NVPilotAdditionalLeaveGrantConsume    pilotAdditionalLeave = NVPilotAdditionalLeaveGrantConsume::construct();
+
+        if (pilotAdditionalLeave.prompt())
+            pilotAdditionalLeave.runOperation();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>isRetryable</Name>
+				<Source><![CDATA[
+    [Hookable(false)]
+    public final boolean isRetryable()
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canRunInNewSession</Name>
+				<Source><![CDATA[
+    protected boolean canRunInNewSession()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

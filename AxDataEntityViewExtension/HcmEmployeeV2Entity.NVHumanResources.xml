@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxDataEntityViewExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>HcmEmployeeV2Entity.NVHumanResources</Name>
+	<DataSources />
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVEngFirstName</Name>
+			<Label>First name (English)</Label>
+			<DataField>NVEngFirstName</DataField>
+			<DataSource>DirPersonBaseEntity</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVEngLastName</Name>
+			<Label>Last name (English)</Label>
+			<DataField>NVEngLastName</DataField>
+			<DataSource>DirPersonBaseEntity</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVEngMiddleName</Name>
+			<Label>Father name (English)</Label>
+			<DataField>NVEngMiddleName</DataField>
+			<DataSource>DirPersonBaseEntity</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVSelfEditTimesheet</Name>
+			<DataField>NVSelfEditTimesheet</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmLeaveGroupId</Name>
+			<DataField>NVHcmLeaveGroupId</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmWorkerEducationTypeId</Name>
+			<DataField>NVHcmWorkerEducationTypeId</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmWorkerHireReasonId</Name>
+			<DataField>NVHcmWorkerHireReasonId</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmWorkerPID</Name>
+			<DataField>NVHcmWorkerPID</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmWorkerRehireReasonId</Name>
+			<DataField>NVHcmWorkerRehireReasonId</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVIsExpatriate</Name>
+			<DataField>NVIsExpatriate</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVTerminationNotes</Name>
+			<DataField>NVTerminationNotes</DataField>
+			<DataSource>HcmEmploymentDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmRealTermReasonCode</Name>
+			<DataField>NVHcmRealTermReasonCode</DataField>
+			<DataSource>HcmEmploymentDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVHcmTerminationClassification</Name>
+			<DataField>NVHcmTerminationClassification</DataField>
+			<DataSource>HcmEmploymentDetail</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVEmpWarehouse</Name>
+			<DataField>NVEmpWarehouse</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+		<AxDataEntityViewField xmlns=""
+			i:type="AxDataEntityViewMappedField">
+			<Name>NVPerson</Name>
+			<DataField>Person</DataField>
+			<DataSource>HcmWorker</DataSource>
+		</AxDataEntityViewField>
+	</Fields>
+	<Mappings />
+	<PropertyModifications />
+	<Relations />
+</AxDataEntityViewExtension>

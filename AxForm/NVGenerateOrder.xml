@@ -1,0 +1,1297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVGenerateOrder</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+/// <summary>
+/// Form class for employee order generation with filtering.
+/// Allows users to filter employees by order type, name, FIN, or date range,
+/// then passes selected employees to NVOrderSelection for order creation.
+/// </summary>
+/// <remarks>
+/// Form flow: NVOrderList -> NVGenerateOrder (filters) -> NVOrderSelection (selection) -> NVOrderList (refresh)
+///
+/// Key features:
+/// - Two-level order type selection (Group -> Type)
+/// - Employee filtering by Name OR FIN (mutually exclusive)
+/// - Date range filtering
+/// - NVOrderStaging population (Regular table, BatchId isolation)
+/// </remarks>
+[Form]
+public class NVGenerateOrder extends FormRun
+{
+    // REMOVED: TempNVTransactions tmpBuffer — no longer needed.
+    // NVOrderStaging is a Regular table — no physical instance passing required.
+
+    str batchId;
+
+    /// <summary>
+    /// Form controls for managing employee filter field availability.
+    /// </summary>
+    FormStringControl employeeNameCtrl;
+    FormStringControl employeeFINCtrl;
+
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the form and sets up filter controls.
+    /// </summary>
+    public void init()
+    {
+        super();
+
+        FormStringControl orderTypeCtrl;
+
+        TempNVFilters tempFilter = TempNVFilters_ds.getFirst();
+        if (!tempFilter)
+        {
+            TempNVFilters_ds.create();
+            tempFilter = TempNVFilters_ds.cursor();
+
+            tempFilter.OrderType       = NVOrderType::None;
+            tempFilter.OrderGroupRecId = 0;
+            tempFilter.StartDate       = dateNull();
+            tempFilter.EndDate         = dateNull();
+            tempFilter.insert();
+        }
+
+        // Initialize controls (AutoDeclaration = No)
+        employeeNameCtrl = this.design().controlName('EmployeeName');
+        employeeFINCtrl  = this.design().controlName('EmployeeFIN');
+
+        // Disable Order Type if group not selected
+        orderTypeCtrl = element.design().controlName('OrderType');
+        if (orderTypeCtrl)
+        {
+            if (!tempFilter.OrderGroupRecId)
+            {
+                orderTypeCtrl.enabled(false);
+                orderTypeCtrl.text('');
+            }
+            else
+            {
+                orderTypeCtrl.enabled(true);
+            }
+        }
+
+        this.resolveInitialEmployeeFilterConflict();
+        this.syncEmployeeFilterInputs();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Additional UI synchronization on form run.
+    /// </summary>
+    public void run()
+    {
+        super();
+        this.syncEmployeeFilterInputs();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates filter data before processing.
+    /// </summary>
+    public boolean validate()
+    {
+        TempNVFilters tempFilter = TempNVFilters_ds.getFirst();
+
+        if (!tempFilter)
+        {
+            error("Filter data is missing.");
+            return false;
+        }
+
+        if (tempFilter.OrderType == NVOrderType::None)
+        {
+            error("Order Type is mandatory.");
+            return false;
+        }
+
+        str name = strLTrim(strRTrim(tempFilter.EmployeeName));
+        str fin  = strLTrim(strRTrim(tempFilter.EmployeeFIN));
+
+        if (strLen(name) > 0 && strLen(fin) > 0)
+        {
+            error("Please specify either Employee Name or Employee FIN — not both.");
+            return false;
+        }
+
+        boolean hasEmployeeFilter = tempFilter.EmployeeName || tempFilter.EmployeeFIN;
+        boolean hasDateFilter     = tempFilter.StartDate != dateNull();
+
+        if (!hasEmployeeFilter && !hasDateFilter)
+        {
+            error("Please specify either Employee Name/FIN or Start Date for filtering.");
+            return false;
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>OK_clicked</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Handles OK button click.
+    /// Validates filters, inserts into NVOrderStaging, opens NVOrderSelection.
+    /// </summary>
+    public void OK_clicked()
+    {
+        TempNVFilters   filter;
+        int             recordCount;
+        Args            args;
+        NVOrderStaging  cleanup;
+
+        if (!this.validate())
+            return;
+
+        filter = TempNVFilters_ds.getFirst();
+
+        // Generate unique BatchId for this session
+        batchId = guid2Str(newGuid());
+
+        // Safety cleanup — should never hit but protects against GUID collision
+        delete_from cleanup
+            where cleanup.BatchId == batchId;
+
+        recordCount = this.fillTransactions(filter);
+
+        if (recordCount == 0)
+        {
+            warning("No employees found matching the criteria.");
+            return;
+        }
+
+        // Pass BatchId via parm only — NVOrderStaging is Regular table, visible to all connections
+        // Pass NVOrderList as caller so NVOrderSelection can notify it directly on close
+        args = new Args(formStr(NVOrderSelection));
+        args.parm(batchId);
+        args.caller(element.args() ? element.args().caller() : element);
+
+        new MenuFunction(menuItemDisplayStr(NVOrderSelectionMenuItem), MenuItemType::Display).run(args);
+
+        // Close GenerateOrder — NVOrderStaging data persists independently in SQL
+        element.close();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>resolveInitialEmployeeFilterConflict</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Resolves initial conflict if both EmployeeName and EmployeeFIN are populated.
+    /// Prioritizes FIN and clears EmployeeName.
+    /// </summary>
+    private void resolveInitialEmployeeFilterConflict()
+    {
+        TempNVFilters filter = TempNVFilters_ds.getFirst();
+        if (!filter)
+            return;
+
+        str name = strLTrim(strRTrim(filter.EmployeeName));
+        str fin  = strLTrim(strRTrim(filter.EmployeeFIN));
+
+        if (strLen(name) > 0 && strLen(fin) > 0)
+        {
+            filter.EmployeeName = '';
+            filter.update();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>syncEmployeeFilterInputs</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Synchronizes EmployeeName and EmployeeFIN control availability.
+    /// </summary>
+    private void syncEmployeeFilterInputs()
+    {
+        TempNVFilters filter = TempNVFilters_ds.getFirst();
+
+        str name = filter ? strLTrim(strRTrim(filter.EmployeeName)) : '';
+        str fin  = filter ? strLTrim(strRTrim(filter.EmployeeFIN))  : '';
+
+        boolean hasName = strLen(name) > 0;
+        boolean hasFIN  = strLen(fin)  > 0;
+
+        if (employeeNameCtrl && employeeFINCtrl)
+        {
+            if (hasName && !hasFIN)
+            {
+                employeeNameCtrl.enabled(true);
+                employeeFINCtrl.enabled(false);
+            }
+            else if (hasFIN && !hasName)
+            {
+                employeeNameCtrl.enabled(false);
+                employeeFINCtrl.enabled(true);
+            }
+            else
+            {
+                employeeNameCtrl.enabled(true);
+                employeeFINCtrl.enabled(true);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>fillTransactions</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Populates NVOrderStaging with employees matching filter criteria.
+    /// NVOrderStaging is a Regular table — data visible across all connections via BatchId.
+    /// </summary>
+    /// <remarks>
+    /// FIX 1: Terminated employees now included for Termination order types.
+    ///         Employment query split — active query vs. latest-past query by order type.
+    /// FIX 2: BU/Group1/Group2 now read directly from HcmPositionDetail.NVDepartBusinessUnit,
+    ///         NVDepartGroup1, NVDepartGroup2 — replaces old NVDepartmentHierarchy recursive traversal.
+    /// FIX 3: StaffUnitBefore now stores previous POSITION DESCRIPTION (HcmPositionDetail.Description),
+    ///         not department name. Consistent with StaffUnit = current position description.
+    /// </remarks>
+    private int fillTransactions(TempNVFilters _filter)
+    {
+        HcmWorker                       worker;
+        HcmEmployment                   employment;
+        DirPerson                       person;
+        HcmPersonIdentificationNumber   identNum;
+        HcmIdentificationType           idType;
+        HcmPositionWorkerAssignment     currentPosAssignment;
+        HcmPositionDetail               posDetail;
+        PayrollWorkerPositionEarningCode earnCode;
+        PayrollEarningCode              earningCodeDef;
+        HcmPosition                     position;
+        OMOperatingUnit                 department;
+        int                             recordCount  = 0;
+        int                             skippedCount = 0;
+        TransDate                       effectiveDate = today();
+        UtcDateTime                     asOf = DateTimeUtil::utcNow();
+        CompanyInfo                     companyInfo;
+        RefRecId                        currentLegalEntity;
+        WorkCalendarEmployment          workCalEmp;
+        WorkCalendarTable               workCalTable;
+
+        // FIX 1: Helper boolean — determines whether to include terminated employees
+        boolean isTerminationOrder =
+        _filter.OrderType == NVOrderType::Term68_2a  ||
+        _filter.OrderType == NVOrderType::Term68_2b  ||
+        _filter.OrderType == NVOrderType::Term68_2e  ||
+        _filter.OrderType == NVOrderType::Term69_3   ||
+        _filter.OrderType == NVOrderType::Term70_b   ||
+        _filter.OrderType == NVOrderType::Term70_c   ||
+        _filter.OrderType == NVOrderType::Term70_d   ||
+        _filter.OrderType == NVOrderType::Term74_1a  ||
+        _filter.OrderType == NVOrderType::Term74_1c  ||
+        _filter.OrderType == NVOrderType::Term74_1ch ||
+        _filter.OrderType == NVOrderType::Term74_1e;
+
+        UtcDateTime minDt = DateTimeUtil::minValue();
+        UtcDateTime maxDt = DateTimeUtil::maxValue();
+
+        select firstonly companyInfo
+        where companyInfo.DataArea == curext();
+
+        currentLegalEntity = companyInfo.RecId;
+
+        if (_filter.EmployeeFIN)
+        {
+            select firstonly idType
+            where idType.IdentificationTypeId == 'FIN';
+
+            if (!idType.RecId)
+            {
+                warning("FIN identification type not found.");
+                return 0;
+            }
+        }
+
+        while select worker
+        join person
+            where person.RecId == worker.Person
+        {
+            // FIX 1: Split employment query by order type
+            // Termination orders: take the latest employment record regardless of ValidTo
+            // All other orders: only active employment (ValidTo >= now)
+            if (isTerminationOrder)
+            {
+                // Latest employment by ValidFrom desc — no LegalEntity filter
+                // Terminated employees may belong to different legal entity
+                select firstonly validTimeState(minDt, maxDt) employment
+                    order by employment.ValidFrom desc
+                    where employment.Worker      == worker.RecId;
+            }
+            else
+            {
+                select firstonly employment
+                    where employment.Worker      == worker.RecId
+                       && employment.LegalEntity == currentLegalEntity
+                       && employment.ValidFrom   <= asOf
+                       && employment.ValidTo     >= asOf;
+            }
+
+            if (!employment.RecId)
+            continue;
+
+            // Apply employee name filter (partial match)
+            if (_filter.EmployeeName)
+            {
+                if (strScan(person.Name, _filter.EmployeeName, 1, strLen(person.Name)) == 0)
+                continue;
+            }
+
+            // Apply FIN filter
+            if (_filter.EmployeeFIN)
+            {
+                select firstonly identNum
+                    where identNum.Person               == person.RecId
+                       && identNum.IdentificationType   == idType.RecId
+                       && identNum.IdentificationNumber == _filter.EmployeeFIN;
+
+                if (!identNum.RecId)
+                continue;
+            }
+
+            // Apply date range filter on employment start (hire date)
+            // Skip date filter for termination orders — terminated employees hired long ago
+            if (_filter.StartDate && !isTerminationOrder)
+            {
+                TransDate hireDate = DateTimeUtil::date(employment.ValidFrom);
+
+                if (hireDate < _filter.StartDate)
+                    continue;
+
+                if (_filter.EndDate != dateNull() && hireDate > _filter.EndDate)
+                    continue;
+            }
+
+            // Get current position assignment
+            // For terminated employees — use last known assignment (no active one exists)
+            if (isTerminationOrder)
+            {
+                // Last assignment for terminated employee — order by ValidFrom desc
+                select firstonly validTimeState(minDt, maxDt) currentPosAssignment
+                    order by currentPosAssignment.ValidFrom desc
+                    where currentPosAssignment.Worker == worker.RecId;
+            }
+            else
+            {
+                currentPosAssignment =
+                    HcmWorkerHelper::getCurrentPrimaryOrNearestFutureDatedWorkerPositionAssignment(
+                        worker.RecId);
+            }
+
+            if (!currentPosAssignment.RecId || !currentPosAssignment.Position)
+            {
+                skippedCount++;
+                continue;
+            }
+
+            // ============================================================================
+            // Get Previous Position for Position Change Orders
+            // FIX 3: StaffUnitBefore = previous POSITION DESCRIPTION, not department name
+            // ============================================================================
+            HcmPositionWorkerAssignment prevPosAssignment;
+            HcmPositionDetail           prevPosDetail;
+            str                         prevPositionDescription;
+            TransDate                   changeDate;
+
+            // Position change effective date = ValidFrom of current assignment
+            changeDate = DateTimeUtil::date(currentPosAssignment.ValidFrom);
+
+            if (_filter.OrderType == NVOrderType::PosChange ||
+            _filter.OrderType == NVOrderType::PosChangeFlight)
+            {
+                // Find the assignment that was valid 1 second before current started
+                UtcDateTime asOfPrev = DateTimeUtil::addSeconds(currentPosAssignment.ValidFrom, -1);
+
+                select firstonly validTimeState(asOfPrev, asOfPrev) prevPosAssignment
+                where prevPosAssignment.Worker == worker.RecId;
+
+                if (prevPosAssignment.RecId)
+                {
+                    // FIX 3: Read previous position DESCRIPTION from HcmPositionDetail
+                    // HcmPositionDetail is VTS — use validTimeState for the same moment
+                    select firstonly validTimeState(asOfPrev, asOfPrev) prevPosDetail
+                    where prevPosDetail.Position == prevPosAssignment.Position;
+
+                    if (prevPosDetail.RecId && prevPosDetail.Description)
+                    {
+                        // Previous POSITION name — consistent with how current StaffUnit works
+                        prevPositionDescription = prevPosDetail.Description;
+                    }
+                    else if (prevPosAssignment.RecId)
+                    {
+                        // Fallback: use PositionId if Description is empty
+                        HcmPosition prevPosition = HcmPosition::find(prevPosAssignment.Position);
+                        prevPositionDescription  = prevPosition.PositionId;
+                    }
+                }
+            }
+            // ============================================================================
+
+            // Get salaries via validTimeState (PayrollWorkerPositionEarningCode is VTS table)
+            Real    baseSalary       = 0;
+            Real    additionalSalary = 0;
+            Real    hazardousPercent = 0;
+            boolean hasBaseSalary    = false;
+
+            while select validTimeState(effectiveDate) earnCode
+            where earnCode.Worker   == worker.RecId
+               && earnCode.Position == currentPosAssignment.Position
+            join earningCodeDef
+                where earningCodeDef.RecId == earnCode.EarningCode
+            {
+                if (earningCodeDef.EarningCode == "Basic Salary")
+                {
+                    baseSalary    = earnCode.Formula;
+                    hasBaseSalary = true;
+                }
+                else if (earningCodeDef.EarningCode == "Additional Salary")
+                {
+                    additionalSalary = earnCode.Formula;
+                }
+                else if (strScan(
+                strLwr(earningCodeDef.EarningCode),
+                "hazardous",
+                1,
+                strLen(earningCodeDef.EarningCode)) > 0)
+                {
+                    hazardousPercent = earnCode.Formula;
+                }
+            }
+
+            // TODO: Zero salary allowed for all order types during testing.
+            // Revert to type-specific check before production release.
+            if (!hasBaseSalary)
+            {
+                baseSalary    = 0;
+                hasBaseSalary = true;
+            }
+
+            // ============================================================================
+            // FIX 2: Get current position detail and BU/Group hierarchy
+            // Reads directly from HcmPositionDetail.NVDepartBusinessUnit/Group1/Group2
+            // Replaces old NVDepartmentHierarchy recursive traversal via OMOperatingUnit
+            // ============================================================================
+            posDetail  = null;
+            department = null;
+
+            select firstonly posDetail
+            where posDetail.Position  == currentPosAssignment.Position
+               && posDetail.ValidFrom <= asOf
+               && posDetail.ValidTo   >= asOf;
+
+            // Fallback for terminated employees — get last known posDetail
+            if (!posDetail.RecId && isTerminationOrder)
+            {
+                select firstonly validTimeState(minDt, maxDt) posDetail
+                    order by posDetail.ValidFrom desc
+                    where posDetail.Position == currentPosAssignment.Position;
+            }
+
+            position = HcmPosition::find(currentPosAssignment.Position);
+
+            // FIX 2: Read BU/Group names directly from posDetail custom fields
+            str buName     = '';
+            str group1Name = '';
+            str group2Name = '';
+
+            if (posDetail.RecId)
+            {
+                // NVDepartBusinessUnit, NVDepartGroup1, NVDepartGroup2 are RecId fields
+                // pointing to OMOperatingUnit — direct lookup, no recursive traversal needed
+                if (posDetail.NVDepartBusinessUnit)
+                {
+                    OMOperatingUnit buUnit = OMOperatingUnit::find(
+                    posDetail.NVDepartBusinessUnit,
+                    OMOperatingUnitType::OMAnyOU);
+                    buName = buUnit.RecId ? buUnit.Name : '';
+                }
+
+                if (posDetail.NVDepartGroup1)
+                {
+                    OMOperatingUnit group1Unit = OMOperatingUnit::find(
+                    posDetail.NVDepartGroup1,
+                    OMOperatingUnitType::OMAnyOU);
+                    group1Name = group1Unit.RecId ? group1Unit.Name : '';
+                }
+
+                if (posDetail.NVDepartGroup2)
+                {
+                    OMOperatingUnit group2Unit = OMOperatingUnit::find(
+                    posDetail.NVDepartGroup2,
+                    OMOperatingUnitType::OMAnyOU);
+                    group2Name = group2Unit.RecId ? group2Unit.Name : '';
+                }
+
+                // Department still needed for DepartmentRecId in staging
+                if (posDetail.Department)
+                {
+                    department = OMOperatingUnit::find(
+                    posDetail.Department,
+                    OMOperatingUnitType::OMDepartment);
+                }
+            }
+            // ============================================================================
+
+            // Get FIN for denormalization
+            if (!idType.RecId)
+            {
+                select firstonly idType
+                where idType.IdentificationTypeId == 'FIN';
+            }
+
+            if (idType.RecId)
+            {
+                select firstonly identNum
+                where identNum.Person             == person.RecId
+                   && identNum.IdentificationType == idType.RecId;
+            }
+
+            // Get work schedule via WorkCalendarEmployment (VTS table)
+            workCalEmp   = null;
+            workCalTable = null;
+
+            select firstonly validTimeState(asOf) workCalEmp
+            where workCalEmp.Employment == employment.RecId;
+
+            if (workCalEmp.RecId && workCalEmp.CalendarId)
+            {
+                select firstonly workCalTable
+                where workCalTable.CalendarId == workCalEmp.CalendarId
+                   && workCalTable.DataAreaId == workCalEmp.CalendarDataAreaId;
+            }
+
+            // Get previous additional salary — only for SalaryAllowChange (Type 19)
+            Real additionalSalaryBefore = 0;
+
+            if (_filter.OrderType == NVOrderType::SalaryAllowChange)
+            {
+                PayrollWorkerPositionEarningCode currEarnCode;
+                PayrollWorkerPositionEarningCode prevEarnCode;
+                PayrollEarningCode               earnCodeDefPrev;
+
+                select firstonly validTimeState(effectiveDate) currEarnCode
+                where currEarnCode.Worker    == worker.RecId
+                   && currEarnCode.Position  == currentPosAssignment.Position
+                join earnCodeDefPrev
+                    where earnCodeDefPrev.RecId       == currEarnCode.EarningCode
+                       && earnCodeDefPrev.EarningCode == "Additional Salary";
+
+                if (currEarnCode.RecId && currEarnCode.ValidFrom > dateNull())
+                {
+                    date prevDate = currEarnCode.ValidFrom - 1;
+
+                    select firstonly validTimeState(prevDate, prevDate) prevEarnCode
+                    where prevEarnCode.Worker   == worker.RecId
+                       && prevEarnCode.Position == currentPosAssignment.Position
+                    join earnCodeDefPrev
+                        where earnCodeDefPrev.RecId       == prevEarnCode.EarningCode
+                           && earnCodeDefPrev.EarningCode == "Additional Salary";
+
+                    additionalSalaryBefore = prevEarnCode.RecId ? prevEarnCode.Formula : 0;
+                }
+            }
+
+            // ============================================================================
+            // Insert into NVOrderStaging
+            // ============================================================================
+            NVOrderStaging staging;
+            staging.BatchId          = batchId;
+            staging.UserId           = curUserId();
+            staging.WorkerRecId      = worker.RecId;
+            staging.EmploymentRecId  = employment.RecId;
+            staging.OrderType        = _filter.OrderType;
+            staging.OrderDate        = dateNull();
+            staging.StartDate        = DateTimeUtil::date(employment.ValidFrom);
+            staging.EndDate          = DateTimeUtil::date(employment.ValidTo);
+            staging.TransactionDate  = DateTimeUtil::date(employment.ValidFrom);
+            staging.ContractDate     = DateTimeUtil::date(employment.ValidFrom);
+            staging.IsSelected       = NoYes::Yes;
+            staging.IsConsolidated   = NoYes::No;
+            staging.PositionRecId    = currentPosAssignment.Position;
+            staging.DepartmentRecId  = posDetail.RecId ? posDetail.Department : 0;
+            staging.BaseSalary       = baseSalary;
+            staging.AdditionalSalary = additionalSalary;
+            staging.HazardousConditionsPercent = hazardousPercent;
+            staging.EmployeeName     = person.Name;
+            staging.PersonnelNumber  = worker.PersonnelNumber;
+            staging.EmployeeFIN      = identNum.RecId ? identNum.IdentificationNumber : '';
+            staging.DepartmentName   = department.RecId ? department.Name : '';
+            staging.PositionDescription =
+            (posDetail.RecId && strLen(posDetail.Description) > 0)
+                ? posDetail.Description
+                : position.PositionId;
+            staging.GovernmentGrade  = posDetail.RecId ? posDetail.NVLegalGrade : '';
+
+            // FIX 2: BU/Group names read directly from HcmPositionDetail custom fields
+            staging.NVDepartBU     = buName;
+            staging.NVDepartGroup1 = group1Name;
+            staging.NVDepartGroup2 = group2Name;
+
+            // FIX 3: StaffUnitBefore = previous POSITION DESCRIPTION (not department)
+            staging.PreviousDepartmentRecId = 0; // No longer used for new architecture
+            staging.ChangeDate              = changeDate;
+            staging.StaffUnitBefore         = prevPositionDescription; // FIX 3
+
+            staging.WorkSchedule            = workCalTable.RecId ? workCalTable.Name : '';
+            staging.AdditionalSalaryBefore  = additionalSalaryBefore;
+            staging.OrderGroupRecId         = _filter.OrderGroupRecId;
+            staging.insert();
+
+            recordCount++;
+        }
+
+        return recordCount;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="">
+			<Control>
+				<Name>OrderGroup</Name>
+				<Type>String</Type>
+				<Methods>
+					<Method>
+						<Name>lookup</Name>
+						<Source><![CDATA[
+        public void lookup()
+        {
+            NVTempGroupLookup tmpGroupLookup;
+            NVOrderTypeGroup  orderTypeGroup;
+            SysTableLookup    sysTableLookup;
+
+            delete_from tmpGroupLookup;
+
+            while select orderTypeGroup
+                order by orderTypeGroup.SortOrder
+            {
+                tmpGroupLookup.clear();
+                tmpGroupLookup.GroupRecId   = orderTypeGroup.RecId;
+                tmpGroupLookup.GroupName    = orderTypeGroup.GroupName;
+                tmpGroupLookup.Description  = orderTypeGroup.Description;
+                tmpGroupLookup.SortOrder    = orderTypeGroup.SortOrder;
+                tmpGroupLookup.insert();
+            }
+
+            sysTableLookup = SysTableLookup::newParameters(tableNum(NVTempGroupLookup), this);
+            sysTableLookup.addLookupfield(fieldNum(NVTempGroupLookup, GroupName));
+            sysTableLookup.addLookupfield(fieldNum(NVTempGroupLookup, Description));
+            sysTableLookup.parmTmpBuffer(tmpGroupLookup);
+            sysTableLookup.performFormLookup();
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>modified</Name>
+						<Source><![CDATA[
+        public boolean modified()
+        {
+            boolean            ret = super();
+            TempNVFilters      filter = TempNVFilters_ds.cursor();
+            NVOrderTypeGroup   orderTypeGroup;
+            FormStringControl  orderTypeCtrl;
+
+            if (filter)
+            {
+                str selectedGroupName = this.text();
+
+                if (selectedGroupName)
+                {
+                    select firstonly orderTypeGroup
+                        where orderTypeGroup.GroupName == selectedGroupName;
+
+                    if (orderTypeGroup.RecId)
+                    {
+                        filter.OrderGroupRecId = orderTypeGroup.RecId;
+                        filter.OrderType       = NVOrderType::None;
+                        filter.update();
+                        TempNVFilters_ds.refresh();
+
+                        orderTypeCtrl = element.design().controlName('OrderType');
+                        if (orderTypeCtrl)
+                        {
+                            orderTypeCtrl.text('');
+                            orderTypeCtrl.enabled(true);
+                        }
+                    }
+                }
+                else
+                {
+                    filter.OrderGroupRecId = 0;
+                    filter.OrderType       = NVOrderType::None;
+                    filter.update();
+                    TempNVFilters_ds.refresh();
+
+                    orderTypeCtrl = element.design().controlName('OrderType');
+                    if (orderTypeCtrl)
+                    {
+                        orderTypeCtrl.text('');
+                        orderTypeCtrl.enabled(false);
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>OrderType</Name>
+				<Type>String</Type>
+				<Methods>
+					<Method>
+						<Name>lookup</Name>
+						<Source><![CDATA[
+        public void lookup()
+        {
+            NVTempOrderTypeLookup tmpLookup;
+            NVOrderTypeTable      orderTypeTable;
+            SysTableLookup        sysTableLookup;
+            TempNVFilters         filter = TempNVFilters_ds.cursor();
+            Query                 q = new Query();
+            QueryBuildDataSource  qbds;
+
+            if (!filter || !filter.OrderGroupRecId)
+            {
+                warning("Please select Order Group first!");
+                return;
+            }
+
+            delete_from tmpLookup;
+
+            qbds = q.addDataSource(tableNum(NVOrderTypeTable));
+            qbds.addRange(fieldNum(NVOrderTypeTable, GroupRecId)).value(queryValue(filter.OrderGroupRecId));
+            qbds.addRange(fieldNum(NVOrderTypeTable, IsActive)).value(SysQuery::value(NoYes::Yes));
+            qbds.addOrderByField(fieldNum(NVOrderTypeTable, SortOrder));
+
+            QueryRun qr = new QueryRun(q);
+            while (qr.next())
+            {
+                orderTypeTable = qr.get(tableNum(NVOrderTypeTable));
+
+                tmpLookup.clear();
+                tmpLookup.OrderTypeEnum = orderTypeTable.OrderType;
+                tmpLookup.OrderTypeName = orderTypeTable.TypeName;
+                tmpLookup.Description   = orderTypeTable.Description;
+                tmpLookup.SortOrder     = orderTypeTable.SortOrder;
+                tmpLookup.insert();
+            }
+
+            sysTableLookup = SysTableLookup::newParameters(tableNum(NVTempOrderTypeLookup), this);
+            sysTableLookup.addLookupfield(fieldNum(NVTempOrderTypeLookup, OrderTypeName));
+            sysTableLookup.addLookupfield(fieldNum(NVTempOrderTypeLookup, Description));
+            sysTableLookup.parmTmpBuffer(tmpLookup);
+            sysTableLookup.performFormLookup();
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>modified</Name>
+						<Source><![CDATA[
+        public boolean modified()
+        {
+            boolean              ret = super();
+            TempNVFilters        filter = TempNVFilters_ds.cursor();
+            NVOrderTypeTable     orderTypeTable;
+            Query                q = new Query();
+            QueryBuildDataSource qbds;
+
+            if (filter)
+            {
+                str selectedTypeName = this.text();
+
+                if (selectedTypeName)
+                {
+                    qbds = q.addDataSource(tableNum(NVOrderTypeTable));
+                    qbds.addRange(fieldNum(NVOrderTypeTable, TypeName)).value(SysQuery::value(selectedTypeName));
+                    qbds.addRange(fieldNum(NVOrderTypeTable, GroupRecId)).value(queryValue(filter.OrderGroupRecId));
+
+                    QueryRun qr = new QueryRun(q);
+                    if (qr.next())
+                    {
+                        orderTypeTable   = qr.get(tableNum(NVOrderTypeTable));
+                        filter.OrderType = orderTypeTable.OrderType;
+                        filter.update();
+                        TempNVFilters_ds.refresh();
+                    }
+                }
+                else
+                {
+                    filter.OrderType = NVOrderType::None;
+                    filter.update();
+                    TempNVFilters_ds.refresh();
+                }
+            }
+
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>EmployeeName</Name>
+				<Type>String</Type>
+				<Methods>
+					<Method>
+						<Name>lookup</Name>
+						<Source><![CDATA[
+        public void lookup()
+        {
+            NVTempEmployeeLookup tmpLookup;
+            HcmWorker            worker;
+            DirPerson            person;
+
+            delete_from tmpLookup;
+
+            while select worker
+                join person
+                    where person.RecId == worker.Person
+            {
+                tmpLookup.clear();
+                tmpLookup.WorkerRecId  = worker.RecId;
+                tmpLookup.EmployeeName = person.Name;
+                tmpLookup.insert();
+            }
+
+            SysTableLookup sysTableLookup = SysTableLookup::newParameters(tableNum(NVTempEmployeeLookup), this);
+            sysTableLookup.addLookupfield(fieldNum(NVTempEmployeeLookup, EmployeeName));
+            sysTableLookup.parmTmpBuffer(tmpLookup);
+            sysTableLookup.performFormLookup();
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>modified</Name>
+						<Source><![CDATA[
+        public boolean modified()
+        {
+            boolean       ret = super();
+            TempNVFilters filter = TempNVFilters_ds.cursor();
+
+            if (filter)
+            {
+                str name = strLTrim(strRTrim(this.valueStr()));
+                filter.EmployeeName = name;
+
+                if (strLen(name) > 0 && strLen(filter.EmployeeFIN) > 0)
+                    filter.EmployeeFIN = '';
+
+                filter.update();
+                element.syncEmployeeFilterInputs();
+            }
+
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>EmployeeFIN</Name>
+				<Type>String</Type>
+				<Methods>
+					<Method>
+						<Name>lookup</Name>
+						<Source><![CDATA[
+        public void lookup()
+        {
+            NVTempEmployeeLookup          tmpLookup;
+            HcmWorker                     worker;
+            DirPerson                     person;
+            HcmIdentificationType         idType;
+            HcmPersonIdentificationNumber identNum;
+
+            delete_from tmpLookup;
+
+            select firstonly idType
+                where idType.IdentificationTypeId == 'FIN';
+
+            if (!idType.RecId)
+            {
+                warning("FIN identification type not found.");
+                return;
+            }
+
+            while select worker
+                join person
+                    where person.RecId == worker.Person
+                join identNum
+                    where identNum.Person             == person.RecId
+                       && identNum.IdentificationType == idType.RecId
+            {
+                tmpLookup.clear();
+                tmpLookup.WorkerRecId  = worker.RecId;
+                tmpLookup.EmployeeName = person.Name;
+                tmpLookup.EmployeeFIN  = identNum.IdentificationNumber;
+                tmpLookup.insert();
+            }
+
+            SysTableLookup sysTableLookup = SysTableLookup::newParameters(tableNum(NVTempEmployeeLookup), this);
+            sysTableLookup.addLookupfield(fieldNum(NVTempEmployeeLookup, EmployeeFIN));
+            sysTableLookup.addLookupfield(fieldNum(NVTempEmployeeLookup, EmployeeName));
+            sysTableLookup.parmTmpBuffer(tmpLookup);
+            sysTableLookup.performFormLookup();
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>modified</Name>
+						<Source><![CDATA[
+        public boolean modified()
+        {
+            boolean       ret = super();
+            TempNVFilters filter = TempNVFilters_ds.cursor();
+
+            if (filter)
+            {
+                str fin = strLTrim(strRTrim(this.valueStr()));
+                filter.EmployeeFIN = fin;
+
+                if (strLen(fin) > 0 && strLen(filter.EmployeeName) > 0)
+                    filter.EmployeeName = '';
+
+                filter.update();
+                element.syncEmployeeFilterInputs();
+            }
+
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>OK</Name>
+				<Type>CommandButton</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            element.OK_clicked();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>Cancel</Name>
+				<Type>CommandButton</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            TempNVFilters_ds.delete();
+            element.close();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources>
+		<AxFormDataSource xmlns="">
+			<Name>TempNVFilters</Name>
+			<Table>TempNVFilters</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>DataAreaId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmployeeFIN</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmployeeName</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EndDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderGroupRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderType</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>StartDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+		<AxFormDataSource xmlns="">
+			<Name>NVOrderStaging</Name>
+			<Table>NVOrderStaging</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>AdditionalSalary</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>BaseSalary</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>BatchId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ContractDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>CreatedDateTime</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>DepartmentName</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>DepartmentRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmployeeFIN</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmployeeName</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmploymentRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EndDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>GovernmentGrade</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HazardousConditionsPercent</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>IsConsolidated</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>IsSelected</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderType</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PersonnelNumber</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PositionDescription</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PositionRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ProbationPeriod</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>StartDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TransactionDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>UserId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>WorkerRecId</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+	</DataSources>
+	<Design>
+		<Caption xmlns="">Generate Order</Caption>
+		<DialogSize xmlns="">Medium</DialogSize>
+		<Pattern xmlns="">Dialog</Pattern>
+		<PatternVersion xmlns="">1.2</PatternVersion>
+		<Style xmlns="">Dialog</Style>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>DialogContent</Name>
+				<HeightMode>SizeToAvailable</HeightMode>
+				<Pattern>Custom</Pattern>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormGroupControl">
+						<Name>FiltersGroup</Name>
+						<Type>Group</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>OrderGroup</Name>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataSource>TempNVFilters</DataSource>
+								<Label>Order Group</Label>
+								<Text>Order Group</Text>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>OrderType</Name>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataSource>TempNVFilters</DataSource>
+								<Label>Order Type</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>EmployeeName</Name>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>EmployeeName</DataField>
+								<DataSource>TempNVFilters</DataSource>
+								<Label>Employee Name</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>EmployeeFIN</Name>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>EmployeeFIN</DataField>
+								<DataSource>TempNVFilters</DataSource>
+								<Label>Employee FIN</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormDateControl">
+								<Name>StartDate</Name>
+								<Type>Date</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>StartDate</DataField>
+								<DataSource>TempNVFilters</DataSource>
+								<Label>Start Date</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormDateControl">
+								<Name>EndDate</Name>
+								<Type>Date</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>EndDate</DataField>
+								<DataSource>TempNVFilters</DataSource>
+								<Label>End Date</Label>
+							</AxFormControl>
+						</Controls>
+						<Columns>2</Columns>
+					</AxFormControl>
+				</Controls>
+				<Style>DialogContent</Style>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>ButtonGroup</Name>
+				<Type>ButtonGroup</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormCommandButtonControl">
+						<Name>OK</Name>
+						<Type>CommandButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Big>Yes</Big>
+						<Command>OK</Command>
+						<DefaultButton>Yes</DefaultButton>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormCommandButtonControl">
+						<Name>Cancel</Name>
+						<Type>CommandButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Big>Yes</Big>
+						<Command>Cancel</Command>
+						<SaveRecord>No</SaveRecord>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>HorizontalRight</ArrangeMethod>
+				<Style>DialogCommitContainer</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

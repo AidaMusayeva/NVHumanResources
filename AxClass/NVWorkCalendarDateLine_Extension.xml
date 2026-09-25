@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkCalendarDateLine_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(WorkCalendarDateLine))]
+final class NVWorkCalendarDateLine_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>insert</Name>
+				<Source><![CDATA[
+    public void insert()
+    {
+        if(this.NVOrder == 0)
+        {
+            WorkCalendarDateLine locWorkCalendarDateLine;
+
+            select maxOF(NVOrder) from locWorkCalendarDateLine
+            where locWorkCalendarDateLine.CalendarId == this.CalendarId
+                && locWorkCalendarDateLine.TransDate == this.TransDate;
+
+            this.NVOrder = locWorkCalendarDateLine.NVOrder + 1;
+        }
+        
+        next insert();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>duration</Name>
+				<Source><![CDATA[
+    public Seconds duration()
+    {
+        #TimeConstants
+        Seconds totalSec = next duration();
+
+        if(this.ToTime > this.FromTime)
+            return totalSec;
+
+        Seconds firstSec    = #secondsPerDay - this.FromTime;
+        Seconds lastSec     = this.ToTime;
+
+        return firstSec + lastSec;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    public boolean validateWrite()
+    {
+        #TimeConstants
+        boolean     revert = false;
+        FromTime    locFromTime;
+        ToTime      locToTime;
+
+        if (this.FromTime > this.ToTime)
+        {
+            revert = true;
+            locFromTime = this.FromTime;
+            locToTime   = this.ToTime;
+
+            this.ToTime = #secondsPerDay;
+        }
+        
+        boolean ret = next validateWrite();
+
+        if(revert)
+        {
+            this.FromTime   = locFromTime;
+            this.ToTime     = locToTime;
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>isWithinNight</Name>
+				<Source><![CDATA[
+    public boolean isWithinNight()
+    {
+        boolean isNight;
+
+        WorkCalendarTable workCalendarTable = WorkCalendarTable::find(this.CalendarId);
+        if (workCalendarTable.NVNightTimeFrom <= workCalendarTable.NVNightTimeTo)
+        {
+            isNight =
+            (this.FromTime >= workCalendarTable.NVNightTimeFrom && this.FromTime <= workCalendarTable.NVNightTimeTo) &&
+            (this.ToTime   >= workCalendarTable.NVNightTimeFrom && this.ToTime   <= workCalendarTable.NVNightTimeTo);
+        }
+        else
+        {
+            isNight =
+            ((this.FromTime >= workCalendarTable.NVNightTimeFrom || this.FromTime <= workCalendarTable.NVNightTimeTo) &&
+             (this.ToTime   >= workCalendarTable.NVNightTimeFrom || this.ToTime   <= workCalendarTable.NVNightTimeTo));
+        }
+
+        return isNight;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

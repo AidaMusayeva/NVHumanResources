@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityRole xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderSuperUser</Name>
+	<Description>Grants full workflow visibility and work item reassignment
+             rights for HR employment orders.
+</Description>
+	<Label>Employment Order Super User</Label>
+	<DirectAccessPermissions />
+	<Duties>
+		<AxSecurityDutyReference>
+			<Name>NVOrderSuperUserDuty</Name>
+		</AxSecurityDutyReference>
+	</Duties>
+	<Privileges />
+	<SubRoles />
+</AxSecurityRole>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxWorkflowApproval xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V2">
+	<Name>NVTrvWorkerExpenseReqApproval</Name>
+	<CanceledEventHandler>NVTrvWorkerExpenseReqApprovalEventHandler</CanceledEventHandler>
+	<DelegateMenuItem>NVTrvWorkerExpenseReqApprovalDelegateMenuItem</DelegateMenuItem>
+	<Document>NVTrvWorkerExpenseReqWFTypeDocument</Document>
+	<DocumentMenuItem>NVTrvWorkerExpenseRequest</DocumentMenuItem>
+	<HelpText>Worker travel expense workflow approval</HelpText>
+	<Label>Approval</Label>
+	<ResubmitMenuItem>NVTrvWorkerExpenseReqApprovalResubmitMenuItem</ResubmitMenuItem>
+	<StartedEventHandler>NVTrvWorkerExpenseReqApprovalEventHandler</StartedEventHandler>
+	<WorkItemsCreatedEventHandler>NVTrvWorkerExpenseReqApprovalEventHandler</WorkItemsCreatedEventHandler>
+	<Approve>
+		<Name xmlns="">Approve</Name>
+		<ActionMenuItem xmlns="">NVTrvWorkerExpenseReqApprovalApprove</ActionMenuItem>
+		<EventHandler xmlns="">NVTrvWorkerExpenseReqApprovalEventHandler</EventHandler>
+	</Approve>
+	<Deny>
+		<Name xmlns="">Deny</Name>
+		<ActionMenuItem xmlns="">NVTrvWorkerExpenseReqApprovalDeny</ActionMenuItem>
+		<EventHandler xmlns="">NVTrvWorkerExpenseReqApprovalEventHandler</EventHandler>
+		<Type xmlns="">Deny</Type>
+	</Deny>
+	<Reject>
+		<Name xmlns="">Reject</Name>
+		<ActionMenuItem xmlns="">NVTrvWorkerExpenseReqApprovalReject</ActionMenuItem>
+		<EventHandler xmlns="">NVTrvWorkerExpenseReqApprovalEventHandler</EventHandler>
+		<Type xmlns="">Return</Type>
+	</Reject>
+	<RequestChange>
+		<Name xmlns="">RequestChange</Name>
+		<ActionMenuItem xmlns="">NVTrvWorkerExpenseReqApprovalRequestChange</ActionMenuItem>
+		<EventHandler xmlns="">NVTrvWorkerExpenseReqApprovalEventHandler</EventHandler>
+		<Type xmlns="">RequestChange</Type>
+	</RequestChange>
+</AxWorkflowApproval>

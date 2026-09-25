@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>LeaveBankTransaction.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copywmwd4wl01</Name>
+			<FormControl xmlns=""
+				i:type="AxFormComboBoxControl">
+				<Name>LeaveBankTransaction_NVLeaveCategory</Name>
+				<Type>ComboBox</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVLeaveCategory</DataField>
+				<DataSource>LeaveBankTransaction</DataSource>
+				<Items />
+			</FormControl>
+			<Parent>Grid</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copygdo4w0cg1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormIntegerControl">
+				<Name>LeaveBankTransaction_NVTransactionYear</Name>
+				<Type>Integer</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVTransactionYear</DataField>
+				<DataSource>LeaveBankTransaction</DataSource>
+			</FormControl>
+			<Parent>Grid</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

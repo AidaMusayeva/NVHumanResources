@@ -1,0 +1,960 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerSelfService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerSelfService
+{
+    #define.SuccessCode(200)
+    #define.NotFound(404)
+    #define.BadRequest(400)
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getEmployeeDetailsByEmail</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getEmployeeDetailsByEmail(str email)
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List workerList = new List(Types::Class);
+        if(email == "")
+        {
+            errorsList.addEnd("Email must specified.");
+            errorCode = #BadRequest;
+        }
+        else
+        {
+            workerList = NVHcmGetWorkerDetails::construct("", email).getWorkers();
+            if(workerList.empty())
+            {
+                errorsList.addEnd(strFmt("No record(s) found against email '%1'.", email));
+                errorCode = #NotFound;
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(workerList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getManagerTeam</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getManagerTeam(str managerWorker, str nameFilter = "", int pageNumber = 0, int recordCountPerPage = 0)
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List workerList = new List(Types::Class);
+        if(managerWorker == "")
+        {
+            errorsList.addEnd("Manager worker Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(HcmWorker::findByPersonnelNumber(managerWorker).RecId == 0)
+        {
+            errorsList.addEnd(strFmt("No record(s) found against worker Id '%1'.", managerWorker));
+            errorCode = #BadRequest;
+        }
+        else
+        {
+            workerList = NVHcmGetWorkerDetails::construct("", "", pageNumber, recordCountPerPage, managerWorker).getWorkerTeam(nameFilter);
+            /*if(workerList.empty())
+            {
+                errorsList.addEnd(strFmt("No record(s) found against manager worker Id '%1'.", managerWorker));
+                errorCode = #NotFound;
+            }*/
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(workerList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getLeaveTypes</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getLeaveTypes(str workerId)
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List leaveTypeList = new List(Types::Class);
+        
+        HcmWorker worker = HcmWorker::findByPersonnelNumber(workerId);
+        if(workerId == "")
+        {
+            errorsList.addEnd("Worker Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(worker.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Worker not found against worker Id  '%1'.", workerId));
+            errorCode = #NotFound;
+        }
+        else
+        {
+            Query query = new Query(queryStr(LeaveTypeLookupForWorker));
+            query.allowCrossCompany(true);
+            QueryBuildDataSource enrollmentLeaveDS = query.dataSourceTable(tableNum(LeaveEnrollmentByTypeView));
+            enrollmentLeaveDS.addRange(fieldNum(LeaveEnrollmentByTypeView, Worker)).value(SysQuery::value(worker.RecId));
+            enrollmentLeaveDS.addRange(fieldNum(LeaveEnrollmentByTypeView, RequestType)).value(SysQuery::value(LeaveTypeRequestType::TimeOff));
+            QueryRun queryRun = new QueryRun(query);
+            while(queryRun.next())
+            {
+                LeaveEnrollmentByTypeView leaveEnrollmentByTypeView = queryRun.get(tableNum(LeaveEnrollmentByTypeView));
+                LeaveType leaveType = LeaveType::findCrossCompany(leaveEnrollmentByTypeView.Type);
+                NVHcmWorkerLeaveTypeContract leaveTypeContract = new NVHcmWorkerLeaveTypeContract();
+
+                leaveTypeContract.parmLeaveTypeId(leaveType.Type);
+                leaveTypeContract.parmDescription(leaveType.Description);
+                leaveTypeContract.parmCompany(leaveType.DataAreaId);
+                leaveTypeContract.parmIsAttachmentRequired(leaveType.IsAttachmentRequired);
+                leaveTypeContract.parmHideLeaveBalances(leaveType.HideLeaveBalances);
+
+                NVLeavePlanTypeBalanceView leavePlanTypeBalanceView;
+                select crosscompany sum(Balance), sum(Used), sum(TotalBalance) from leavePlanTypeBalanceView
+                    where leavePlanTypeBalanceView.Worker       == worker.RecId
+                        && leavePlanTypeBalanceView.DataAreaId  == leaveType.DataAreaId
+                        && leavePlanTypeBalanceView.LeaveType   == leaveType.RecId;
+                leaveTypeContract.parmLeaveUsedDays(leavePlanTypeBalanceView.Used);
+                leaveTypeContract.parmLeaveRemainingBalance(leavePlanTypeBalanceView.Balance);
+                leaveTypeContract.parmLeaveBalance(leavePlanTypeBalanceView.TotalBalance);
+                leaveTypeContract.parmBalanceRenewalDate(mkDate(1, 1, 2026));
+                
+                leaveTypeList.addEnd(leaveTypeContract);
+            }
+
+            if(leaveTypeList.empty())
+            {
+                errorsList.addEnd(strFmt("No leave type(s) assigned against worker Id  '%1'.", workerId));
+                errorCode = #NotFound;
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(leaveTypeList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextWorkingDay</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getNextWorkingDay(str workerId, date leaveEndingDate)
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List nextWorkingDate = new List(Types::Date);
+        date nextDate = leaveEndingDate;
+
+        HcmWorker worker = HcmWorker::findByPersonnelNumber(workerId);
+
+        if(leaveEndingDate == dateNull())
+        {
+            errorsList.addEnd("Leave ending date must be specified.");
+            errorCode = #BadRequest;
+        }
+
+        if(workerId == "")
+        {
+            errorsList.addEnd("Worker Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(worker.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Worker not found against worker Id  '%1'.", workerId));
+            errorCode = #NotFound;
+        }
+        else
+        {
+            nextDate = worker.findNextWorkingDate(nextDate);
+            nextWorkingDate.addEnd(nextDate);
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(nextWorkingDate);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pushLeaveRequest</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract pushLeaveRequest(NVWorkerLeaveRequestContract request)
+    {
+        int errorCode   = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List retList    = new List(Types::String);
+              
+        HcmWorker worker = HcmWorker::findByPersonnelNumber(request.parmWorkerId());
+
+        if(request.parmWorkerId() == "")
+        {
+            errorsList.addEnd("Worker Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(worker.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Worker not found against worker Id  '%1'.", request.parmWorkerId()));
+            errorCode = #NotFound;
+        }
+        
+        LeaveType leaveType = LeaveType::findByTypeCrossCompany(request.parmLeaveTypeId());        
+        if(request.parmLeaveTypeId() == "")
+        {
+            errorsList.addEnd("Leave type Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(leaveType.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Leave not found against leave type '%1'.", request.parmLeaveTypeId()));
+            errorCode = #NotFound;
+        }
+
+        if(request.parmStartDate() > request.parmEndDate())
+        {
+            errorsList.addEnd(strFmt("Leave start date must be before or equal to end date."));
+            errorCode = #BadRequest;
+        }
+                
+        if(request.parmEndDate() > request.parmWorkResumeDate())
+        {
+            errorsList.addEnd(strFmt("Leave end date must be before work resume date."));
+            errorCode = #BadRequest;
+        }
+        
+        HcmEmployment   employment;
+        if(errorCode == #SuccessCode)
+        {
+            utcdatetime requestDateTime = DateTimeUtil::newDateTime(request.parmStartDate(), 0);
+            
+            LeaveEnrollment enrollment;
+            select employment
+                order by employment.ModifiedDateTime desc
+                where employment.Worker         == worker.RecId
+                    && employment.ValidFrom     <= requestDateTime
+                    && employment.ValidTo       >= requestDateTime;
+
+            while (employment.RecId != 0 && enrollment.RecId == 0)
+            {
+                changecompany(CompanyInfo::findRecId(employment.LegalEntity).DataArea)
+                {
+                    enrollment = LeaveEnrollment::findByWorkerType(worker.RecId, leaveType.RecId);
+                }
+                
+                if(!enrollment)
+                {
+                    next employment;
+                }
+            }
+
+            if(employment.RecId == 0 || enrollment.RecId == 0)
+            {
+                errorsList.addEnd(strFmt("No employment or leave setup found for worker '%1'.", request.parmWorkerId()));
+                errorCode = #NotFound;
+            }
+        }
+
+        if(errorCode == #SuccessCode)
+        {            
+            changecompany(CompanyInfo::findRecId(employment.LegalEntity).DataArea)
+            {
+                ttsbegin;
+                LeaveRequest leaveRequest;
+                leaveRequest.RequestDate                    = request.parmStartDate();
+                leaveRequest.Worker                         = worker.RecId;
+                leaveRequest.SubmittedByUser                = curUserId();
+                leaveRequest.LeaveClassification            = LeaveClassification::TimeOff;
+                leaveRequest.NVLeaveAppliedDate             = request.parmApplicationDate();
+                leaveRequest.NVWorkResumeDate               = request.parmWorkResumeDate();
+                leaveRequest.Comment                        = request.parmComment();
+                leaveRequest.IsSubmittedByHumanResources    = UnknownNoYes::No;
+                leaveRequest.Status                         = LeaveRequestApprovalStatus::Completed;
+                leaveRequest.insert();
+                
+                if(leaveRequest)
+                {
+                    NVTimesheetChangeHandler::insertNewRef(leaveRequest.Worker, leaveRequest.TableId, leaveRequest.RecId);
+                }
+
+                LeavePlanRecId leanPlan = NVLeavePlanEventHandler::getPlanForLeaveType(leaveType.RecId, worker.RecId).RecId;
+                date leaveDate = request.parmStartDate();
+                while(leaveDate <= request.parmEndDate())
+                {
+                    LeaveRequestDetail leaveRequestDetail;
+                    leaveRequestDetail.Request      = leaveRequest.recid;
+                    leaveRequestDetail.Amount       = 1;
+                    leaveRequestDetail.LeaveDate    = leaveDate;
+                    leaveRequestDetail.LeaveType    = leaveType.RecId;
+                    leaveRequestDetail.insert();
+
+                    LeaveBankTransaction leaveBankTransaction;
+                    leaveBankTransaction.clear();
+                    leaveBankTransaction.Worker             = worker.RecId;
+                    leaveBankTransaction.LeavePlan          = leanPlan;
+                    leaveBankTransaction.LeaveType          = leaveType.RecId;
+                    leaveBankTransaction.TransactionDate    = leaveDate;
+                    leaveBankTransaction.TransactionType    = LeaveTransactionType::Request;
+                    leaveBankTransaction.Amount             = -1;
+                    leaveBankTransaction.Comment            = leaveRequest.Comment;
+
+                    leaveBankTransaction.insert();
+
+                    leaveDate++;
+                }
+
+                if(request.parmAttachment() != null)
+                {
+                    DocuType docuType = DocuType::findGroup(DocuTypeGroup::File);
+                    ListIterator attachmentListIter = new ListIterator(request.parmAttachment());
+                    int counter = 1;
+                    while(attachmentListIter.more())
+                    {
+                        NVWorkerLeaveRequestAttachmentContract attachment = attachmentListIter.value();
+                        Filename fileName = strFmt("%1-%2.%3", leaveRequest.RequestId, counter, attachment.parmExtension());
+                                
+                        DocuRef docuRef;
+                        docuRef.initValue();
+                        docuRef.RefTableId      = leaveRequest.TableId;
+                        docuRef.RefRecId        = leaveRequest.RecId;
+                        docuRef.RefCompanyId    = leaveRequest.DataAreaId;
+                        docuRef.Name            = fileName;
+                        docuRef.TypeId          = docuType.TypeId;
+                        docuRef.insert();
+
+                        DocuAction docuAction = DocuAction::newDocuRef(docuRef);
+                        if (docuAction is DocuActionFile)
+                        {
+                            System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(System.Convert::FromBase64String(attachment.parmFile()));
+
+                            if (memoryStream != null)
+                            {
+                                using (System.IO.MemoryStream fileStream = memoryStream)
+                                {
+                                    DocuAction action = docuRef.docuAction();
+                                    action.attachFile(docuRef, fileName, '', fileStream);
+                                }
+                            }
+                        }
+                        counter++;
+                    
+                        attachmentListIter.next();
+                    }
+                }
+
+                ttscommit;
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(retList);
+        
+        return responseContract;
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkerPayPeriod</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getWorkerPayPeriod(str workerId)
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List payPeriodList = new List(Types::Class);
+
+        HcmWorker worker = HcmWorker::findByPersonnelNumber(workerId);
+        if(workerId == "")
+        {
+            errorsList.addEnd("Worker Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(worker.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Worker not found against worker Id  '%1'.", workerId));
+            errorCode = #NotFound;
+        }
+        else
+        {
+            Query query = new Query();
+            query.allowCrossCompany(true);
+            QueryBuildDataSource workerDS = query.addDataSource(tableNum(HcmWorker));
+
+            if(workerId != "")
+            workerDS.addRange(fieldNum(HcmWorker, PersonnelNumber)).value(workerId);
+
+            QueryRun queryRun = new QueryRun(query);
+
+            while(queryRun.next())
+            {
+                NVHcmWorkerPayPeriodContract payPeriodContract = new NVHcmWorkerPayPeriodContract();
+
+                payPeriodContract.parmWorkerId(worker.PersonnelNumber);
+                payPeriodContract.parmCompany(curExt());
+                payPeriodContract.parmPayPeriod('June 2025');
+                payPeriodContract.parmPeriodStartDate(mkDate(1,6,2025));
+                payPeriodContract.parmPeriodStartDate(mkDate(30,6,2025));
+            
+                payPeriodList.addEnd(payPeriodContract);
+            }
+        }
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(payPeriodList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkerSalaryDetails</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getWorkerSalaryDetails(str workerId, date periodStartDate, date periodEndDate)
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List salaryDetailsList = new List(Types::Class);
+        
+        if(periodStartDate == dateNull())
+        {
+            errorsList.addEnd("Period start date must specified.");
+            errorCode = #BadRequest;
+        }
+        
+        if(periodEndDate == dateNull())
+        {
+            errorsList.addEnd("Period end date must specified.");
+            errorCode = #BadRequest;
+        }
+
+        HcmWorker worker = HcmWorker::findByPersonnelNumber(workerId);
+        if(workerId == "")
+        {
+            errorsList.addEnd("Worker Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(worker.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Worker not found against worker Id  '%1'.", workerId));
+            errorCode = #NotFound;
+        }
+        
+        if(errorCode == #SuccessCode)
+        {
+            Query query = new Query();
+            query.allowCrossCompany(true);
+            QueryBuildDataSource workerDS = query.addDataSource(tableNum(HcmWorker));
+
+            workerDS.addRange(fieldNum(HcmWorker, PersonnelNumber)).value(workerId);
+
+            QueryRun queryRun = new QueryRun(query);
+
+            while(queryRun.next())
+            {
+                NVHcmWorkerSalaryDetailsContract salaryDetails = new NVHcmWorkerSalaryDetailsContract();
+
+                salaryDetails.parmWorkerId(worker.PersonnelNumber);
+                salaryDetails.parmWorkerName(worker.name());
+                salaryDetails.parmCompany(curExt());
+            
+                salaryDetailsList.addEnd(salaryDetails);
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(salaryDetailsList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTrvLocations</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getTrvLocations()
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List trvLocationList = new List(Types::Class);
+                
+        if(errorCode == #SuccessCode)
+        {
+            Query query = new Query();
+            QueryBuildDataSource trvWorkerLocationDS = query.addDataSource(tableNum(NVTrvWorkerLocation));
+
+            QueryRun queryRun = new QueryRun(query);
+
+            while(queryRun.next())
+            {
+                NVTrvWorkerLocation         location    = queryRun.get(tableNum(NVTrvWorkerLocation));
+                NVTrvWorkerLocationContract contract    = new NVTrvWorkerLocationContract();
+
+                contract.parmLocationId(location.LocationId);
+                contract.parmDescription(location.Description);
+            
+                trvLocationList.addEnd(contract);
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(trvLocationList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTrvLocationsPerDiem</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract getTrvLocationsPerDiem(str fromLocation)
+    {
+        int errorCode = #SuccessCode;
+        List errorsList = new List(Types::String);
+        List trvLocationList = new List(Types::Class);
+                
+        if(fromLocation == "")
+        {
+            errorsList.addEnd("From location must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(NVTrvWorkerLocation::find(fromLocation).RecId == 0)
+        {
+            errorsList.addEnd(strFmt("From location not found against Id  '%1'.", fromLocation));
+            errorCode = #NotFound;
+        }
+
+        if(errorCode == #SuccessCode)
+        {
+            Query query = new Query();
+            QueryBuildDataSource trvWorkerLocationDS = query.addDataSource(tableNum(NVTrvWorkerLocationPerDiem));
+
+            trvWorkerLocationDS.addRange(fieldNum(NVTrvWorkerLocationPerDiem, FromLocation)).value(fromLocation);
+
+            QueryRun queryRun = new QueryRun(query);
+
+            while(queryRun.next())
+            {
+                NVTrvWorkerLocationPerDiem  locationPerDiem = queryRun.get(tableNum(NVTrvWorkerLocationPerDiem));
+                NVTrvWorkerLocation         fromTrvLocation = NVTrvWorkerLocation::find(locationPerDiem.FromLocation);
+                NVTrvWorkerLocation         toTrvLocation   = NVTrvWorkerLocation::find(locationPerDiem.ToLocation);
+
+                NVTrvWorkerLocationPerDiemContract contract = new NVTrvWorkerLocationPerDiemContract();
+
+                contract.parmFromLocationId(locationPerDiem.FromLocation);
+                contract.parmFromLocationDescription(fromTrvLocation.Description);
+                contract.parmToLocationId(locationPerDiem.ToLocation);
+                contract.parmToLocationDescription(toTrvLocation.Description);
+                contract.parmCurrency(locationPerDiem.CurrencyCode);
+                contract.parmPurpose(enum2Str(locationPerDiem.DefaultPurpose));
+                contract.parmPerDiem(locationPerDiem.PerDiem);
+                contract.parmHotelPercentage(locationPerDiem.HotelPercent);
+                contract.parOtherAllowancePercentage(locationPerDiem.OtherAllowancePercent);
+            
+                trvLocationList.addEnd(contract);
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(trvLocationList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTravelCalculationDetails</Name>
+				<Source><![CDATA[
+    [AifCollectionTypeAttribute('request', Types::Class, classStr(NVTrvWorkerCalcRequestContract))]
+    public NVAPIResponseContract getTravelCalculationDetails(List request)
+    {
+        int                         errorCode   = #SuccessCode;
+        List                        errorsList  = new List(Types::String);
+        List                        retList     = new List(Types::Class);
+        ListIterator                requestIter = new ListIterator(request);
+
+        while(requestIter.more())
+        {
+            NVTrvWorkerCalcRequestContract requestContract = requestIter.value();
+            if(requestContract.parmESSRequest() == "")
+            {
+                NVTrvWorkerLocation fromLocation = NVTrvWorkerLocation::find(requestContract.parmFromLocation());
+                if(requestContract.parmFromLocation() == "")
+                {
+                    errorsList.addEnd("From location must specified.");
+                    errorCode = #BadRequest;
+                }
+                else if(fromLocation.RecId == 0)
+                {
+                    errorsList.addEnd(strFmt("From location not found against Id  '%1'.", requestContract.parmFromLocation()));
+                    errorCode = #NotFound;
+                }
+
+                NVTrvWorkerLocation toLocation = NVTrvWorkerLocation::find(requestContract.parmToLocation());
+                if(requestContract.parmToLocation() == "")
+                {
+                    errorsList.addEnd("To location must specified.");
+                    errorCode = #BadRequest;
+                }
+                else if(toLocation.RecId == 0)
+                {
+                    errorsList.addEnd(strFmt("To location not found against Id  '%1'.", requestContract.parmToLocation()));
+                    errorCode = #NotFound;
+                }
+
+                if(requestContract.parmFromDate() > requestContract.parmToDate())
+                {
+                    errorsList.addEnd(strFmt("From date must be before or equal to To date."));
+                    errorCode = #BadRequest;
+                }
+            }
+
+            requestIter.next();
+        }
+
+        if(errorCode == #SuccessCode)
+        {
+            requestIter = new ListIterator(request);
+            while(requestIter.more())
+            {
+                NVTrvWorkerCalcRequestContract  requestContract = requestIter.value();
+                NVTrvWorkerExpenseRequest       travelRequest   = NVTrvWorkerExpenseRequest::findESSRequest(requestContract.parmESSRequest());
+
+                if(travelRequest.RecId == 0)
+                {
+                    travelRequest.setTmp();
+
+                    travelRequest.FromLocation          = requestContract.parmFromLocation();
+                    travelRequest.ToLocation            = requestContract.parmToLocation();
+                    travelRequest.FromDate              = requestContract.parmFromDate();
+                    travelRequest.ToDate                = requestContract.parmToDate();
+                    travelRequest.IncludeLastDayHotel   = requestContract.parmIncludeLastDayHotel();
+                    travelRequest.RequestCreatedDate    = DateTimeUtil::getSystemDate(DateTimeUtil::getCompanyTimeZone());
+
+                    travelRequest.modifiedField(fieldNum(NVTrvWorkerExpenseRequest, ToLocation));
+                    travelRequest.doInsert();
+                }
+
+                NVTrvWorkerCalcResponseContract responseContract = new NVTrvWorkerCalcResponseContract();
+
+                responseContract.parmESSRequest(requestContract.parmESSRequest());
+                responseContract.parmTotalDays(travelRequest.totalDays());
+                responseContract.parmPerDiem(travelRequest.PerDiem);
+                responseContract.parmCurrency(travelRequest.CurrencyCode);
+                responseContract.parmHotelAllowancePerc(travelRequest.HotelPercent);
+                responseContract.parmHotelAllowanceAmount(travelRequest.hotelAllowance() * responseContract.parmTotalDays());
+                responseContract.parmOtherAllowancePerc(travelRequest.OtherAllowancePercent);
+                responseContract.parmOtherAllowanceAmount(travelRequest.otherAllowance() * responseContract.parmTotalDays());
+                responseContract.parmTotalValue(travelRequest.TotalValue);
+                responseContract.parmExchangeRate(travelRequest.exchangeRateMST());
+                responseContract.parmTotalValueReportingCurrency(travelRequest.amountMST());
+                responseContract.parmReportingCurrency(Ledger::reportingCurrency());
+               
+                retList.addEnd(responseContract);
+                requestIter.next();
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(retList);
+        
+        return responseContract;
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pushWorkerTravelRequest</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract pushWorkerTravelRequest(NVTrvWorkerRequestContract request)
+    {
+        int     errorCode   = #SuccessCode;
+        List    errorsList  = new List(Types::String);
+        List    retList     = new List(Types::String);
+              
+        HcmWorker worker = HcmWorker::findByPersonnelNumber(request.parmWorkerId());
+        if(request.parmWorkerId() == "")
+        {
+            errorsList.addEnd("Worker Id must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(worker.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Worker not found against worker Id  '%1'.", request.parmWorkerId()));
+            errorCode = #NotFound;
+        }
+
+        if(request.parmEssRequest() == "")
+        {
+            errorsList.addEnd(strFmt("ESS request Id must be specified"));
+            errorCode = #NotFound;
+        }
+        else if(NVTrvWorkerExpenseRequest::findESSRequest(request.parmEssRequest()).RecId != 0)
+        {
+            errorsList.addEnd(strFmt("Travel request with Id '%1' already exist.", request.parmEssRequest()));
+            errorCode = #BadRequest;
+        }
+
+        if(request.parmFromDate() > request.parmToDate())
+        {
+            errorsList.addEnd(strFmt("Travel from date must be before or equal to To date."));
+            errorCode = #BadRequest;
+        }    
+    
+        NVTrvWorkerLocation fromLocation = NVTrvWorkerLocation::find(request.parmFromLocation());
+        if(request.parmFromLocation() == "")
+        {
+            errorsList.addEnd("From location must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(fromLocation.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("From location not found against Id  '%1'.", request.parmFromLocation()));
+            errorCode = #NotFound;
+        }
+
+        NVTrvWorkerLocation toLocation = NVTrvWorkerLocation::find(request.parmToLocation());
+        if(request.parmToLocation() == "")
+        {
+            errorsList.addEnd("To location must specified.");
+            errorCode = #BadRequest;
+        }
+        else if(toLocation.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("To location not found against Id  '%1'.", request.parmToLocation()));
+            errorCode = #NotFound;
+        }
+
+        if(errorCode == #SuccessCode)
+        {
+            NVTrvWorkerExpenseRequest       travelRequest;
+
+            travelRequest.initValue();
+
+            travelRequest.Worker                = worker.RecId;
+            travelRequest.FromLocation          = request.parmFromLocation();
+            travelRequest.ToLocation            = request.parmToLocation();
+            travelRequest.FromDate              = request.parmFromDate();
+            travelRequest.ToDate                = request.parmToDate();
+            travelRequest.IncludeLastDayHotel   = request.parmIncludeLastDayHotel();
+            travelRequest.IsBudgeted            = request.parmIsBudgeted();
+            travelRequest.ESSRequestId          = request.parmEssRequest();
+            travelRequest.OrderNumber           = request.parmOrderNumber();
+            travelRequest.DocumentNumber        = request.parmDocumentNumber();
+            travelRequest.DocumentEntryDate     = request.parmDocumentEntryDate();
+            travelRequest.Comment               = request.parmComment();
+            travelRequest.ManagerComment        = request.parmManagerComment();
+            travelRequest.RequestCreatedDate    = request.parmRequestCreatedDate();
+
+            travelRequest.modifiedField(fieldNum(NVTrvWorkerExpenseRequest, ToLocation));
+            travelRequest.insert();
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(retList);
+        
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateTimesheet</Name>
+				<Source><![CDATA[
+    public NVAPIResponseContract updateTimesheet(NVTimesheetContract request)
+    {
+        int     errorCode  = #SuccessCode;
+        List    errorsList = new List(Types::String);
+        List    retList    = new List(Types::String);
+
+        PayrollPayCycle payCycle = PayrollPayCycle::findByPayCycle(request.parmPayCycle());
+
+        if (payCycle.RecId == 0)
+        {
+            errorsList.addEnd(strFmt("Payroll cycle not found against pay cycle '%1'.", request.parmPayCycle()));
+            errorCode = #NotFound;
+        }
+
+        PayrollPayPeriod payPeriod;
+
+        if (errorCode == #SuccessCode)
+        {
+            payPeriod = PayrollPayPeriod::findByPayCycleAndDateRange(
+            payCycle.RecId,
+            request.parmPayPeriodStartDate());
+
+            if (payPeriod.RecId == 0)
+            {
+                errorsList.addEnd(strFmt(
+                "Payroll period not found for pay cycle '%1' and start date %2.",
+                request.parmPayCycle(),
+                request.parmPayPeriodStartDate()));
+
+                errorCode = #NotFound;
+            }
+        }
+
+        if (errorCode == #SuccessCode)
+        {
+            List            lines     = request.parmLines();
+            ListIterator    linesIter = new ListIterator(lines);
+
+            while (linesIter.more())
+            {
+                NVTimesheetLineContract lineContract = linesIter.value();
+
+                NVTimeSheetHeader timesheetHeaderCheck;
+                NVTimeSheetLines  timesheetLineCheck;
+
+                select firstonly crosscompany timesheetLineCheck
+                join timesheetHeaderCheck
+                    where timesheetHeaderCheck.RecId        == timesheetLineCheck.TimeSheetHeader
+                       && timesheetHeaderCheck.DataAreaId   == timesheetLineCheck.DataAreaId
+                       && timesheetHeaderCheck.PayCycleId   == payCycle.PayCycleId
+                       && timesheetHeaderCheck.PayPeriod    == payPeriod.RecId
+                       && timesheetLineCheck.EmpId          == lineContract.parmWorkerId();
+
+                if (timesheetLineCheck.RecId == 0)
+                {
+                    errorsList.addEnd(strFmt(
+                        "Timesheet line not found for pay cycle '%1', period %2 to %3 and worker %4.",
+                        request.parmPayCycle(),
+                        request.parmPayPeriodStartDate(),
+                        request.parmPayPeriodEndDate(),
+                        lineContract.parmWorkerId()));
+
+                    errorCode = #NotFound;
+                }
+
+                linesIter.next();
+            }
+        }
+
+        if (errorCode == #SuccessCode)
+        {
+            List            lines     = request.parmLines();
+            ListIterator    linesIter = new ListIterator(lines);
+
+            while (linesIter.more())
+            {
+                NVTimesheetLineContract lineContract = linesIter.value();
+
+                NVTimeSheetHeader timesheetHeaderFound;
+                NVTimeSheetLines  timesheetLineFound;
+
+                select firstonly crosscompany timesheetLineFound
+                    join timesheetHeaderFound
+                        where timesheetHeaderFound.RecId        == timesheetLineFound.TimeSheetHeader
+                           && timesheetHeaderFound.DataAreaId   == timesheetLineFound.DataAreaId
+                           && timesheetHeaderFound.PayCycleId   == payCycle.PayCycleId
+                           && timesheetHeaderFound.PayPeriod    == payPeriod.RecId
+                           && timesheetLineFound.EmpId          == lineContract.parmWorkerId();
+
+                changecompany(timesheetLineFound.DataAreaId)
+                {
+                    NVTimeSheetLines timesheetLineUpdate;
+
+                    ttsbegin;
+
+                    select firstonly forupdate timesheetLineUpdate
+                    where timesheetLineUpdate.RecId == timesheetLineFound.RecId;
+
+                    if (timesheetLineUpdate.RecId == 0)
+                    {
+                        ttsabort;
+
+                        errorsList.addEnd(strFmt(
+                            "Timesheet line could not be selected for update for worker %1.",
+                            lineContract.parmWorkerId()));
+
+                        errorCode = #NotFound;
+                        break;
+                    }
+
+                    timesheetLineUpdate.OvertimeHours = lineContract.parmOvertimeHours();
+                    timesheetLineUpdate.NightHours    = lineContract.parmNightHours();
+
+                    List dailyEntryList = lineContract.parmDailyEntries();
+
+                    if (dailyEntryList)
+                    {
+                        ListIterator dailyEntryIter = new ListIterator(dailyEntryList);
+
+                        while (dailyEntryIter.more())
+                        {
+                            NVTimesheetWorkerDailyEntryContract dailyEntryContract = dailyEntryIter.value();
+
+                            timesheetLineUpdate.setValueToDayColumn(
+                            dailyEntryContract.parmTransDate(),
+                            dailyEntryContract.parmValue());
+
+                            dailyEntryIter.next();
+                        }
+                    }
+
+                    timesheetLineUpdate.Status = lineContract.parmStatus();
+                    timesheetLineUpdate.update();
+
+                    ttscommit;
+                }
+
+                if (errorCode != #SuccessCode)
+                {
+                    break;
+                }
+
+                linesIter.next();
+            }
+        }
+
+        NVAPIResponseContract responseContract = new NVAPIResponseContract();
+        responseContract.parmStatusCode(errorCode);
+        responseContract.parmErrorDetails(errorsList);
+        responseContract.parmBody(retList);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

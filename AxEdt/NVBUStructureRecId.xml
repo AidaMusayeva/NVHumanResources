@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEdt xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
+	i:type="AxEdtInt64">
+	<Name>NVBUStructureRecId</Name>
+	<HelpText>Business unit structure reference</HelpText>
+	<Label>BU Structure</Label>
+	<ReferenceTable>OMOperatingUnit</ReferenceTable>
+	<ArrayElements />
+	<Relations />
+	<TableReferences>
+		<AxEdtTableReference>
+			<RelatedField>RecId</RelatedField>
+			<Table>OMOperatingUnit</Table>
+		</AxEdtTableReference>
+	</TableReferences>
+</AxEdt>

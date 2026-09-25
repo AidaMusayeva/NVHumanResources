@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVTrvWorkerExpReqWFStatus</Name>
+	<ConfigurationKey>LogisticsBasic</ConfigurationKey>
+	<Label>@SYS109898</Label>
+	<UseEnumValue>No</UseEnumValue>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>NotSubmitted</Name>
+			<Label>@SYS109900</Label>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Submitted</Name>
+			<Label>@SYS109901</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>InProgress</Name>
+			<Label>In progress</Label>
+			<Value>3</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Cancelled</Name>
+			<Label>Cancelled</Label>
+			<Value>4</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>ChangeRequest</Name>
+			<Label>@SYS109906</Label>
+			<Value>5</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Approved</Name>
+			<Label>@SYS109904</Label>
+			<Value>7</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Rejected</Name>
+			<Label>Rejected</Label>
+			<Value>8</Value>
+		</AxEnumValue>
+	</EnumValues>
+	<IsExtensible>true</IsExtensible>
+</AxEnum>

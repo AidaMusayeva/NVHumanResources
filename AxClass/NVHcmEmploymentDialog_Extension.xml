@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmEmploymentDialog_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formstr(HcmEmploymentDialog))]
+internal final class NVHcmEmploymentDialog_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        next init();
+
+        switch (this.args().parmEnum())
+        {
+            case HcmEmploymentAction::Add:
+                NVHcmWorkerRehireReasonId.visible(true);
+                break;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>closeOk</Name>
+				<Source><![CDATA[
+    public void closeOk()
+    {
+        switch (this.args().parmEnum())
+        {
+            case HcmEmploymentAction::Add:
+                NVHcmWorkerHireReasonId rehireReasonId = NVHcmWorkerRehireReasonId.text();
+                if(rehireReasonId != "")
+                {
+                    HcmWorker locWorker = HcmWorker::find(hcmWorker.RecId, true);
+                    if(locWorker)
+                    {
+                        ttsbegin;
+                        locWorker.NVHcmWorkerRehireReasonId = rehireReasonId;
+                        locWorker.doUpdate();
+                        ttscommit;
+                    }
+                }
+                break;
+        }
+
+        next closeOk();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

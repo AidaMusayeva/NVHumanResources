@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTableExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>DirPersonName.NVHumanResources</Name>
+	<FieldGroupExtensions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>NVEnglishName</Name>
+			<Label>English name</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>NVEngFirstName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>NVEngMiddleName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>NVEngLastName</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<FieldModifications />
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVEngLastName</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>LastName</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVEngFirstName</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>FirstName</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVEngMiddleName</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>MiddleName</ExtendedDataType>
+			<Label>Father name</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>NVHeight</Name>
+			<Label>Height</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVEyeColor</Name>
+			<Label>Eye color</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>NVBloodType</Name>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<PropertyModifications />
+	<RelationExtensions />
+	<RelationModifications />
+	<Relations />
+</AxTableExtension>

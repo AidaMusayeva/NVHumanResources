@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderTemplate</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Table class for NVOrderTemplate - Order template configuration records.
+/// Templates define report mappings and serve as a bridge between order headers and order types.
+/// </summary>
+/// <remarks>
+/// Relationships:
+/// - Links to NVOrderTypeTable for order type classification
+/// - Referenced by NVOrderHeader via TemplateId
+/// - Provides report configuration (ReportName, ReportDesign)
+///
+/// Purpose: Allows flexible report assignment per order type without hardcoding report names.
+/// </remarks>
+public class NVOrderTemplate extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>shouldThrowExceptionOnZeroDelete</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines if concurrent deletes should throw an exception.
+    /// </summary>
+    /// <returns>True if exception should be thrown on concurrent delete, otherwise false</returns>
+    public boolean shouldThrowExceptionOnZeroDelete()
+    {
+        boolean ret;
+    
+        ret = super();
+    
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>orderType</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the related NVOrderTypeTable record.
+    /// </summary>
+    /// <returns>NVOrderTypeTable record linked to this template</returns>
+    public NVOrderTypeTable orderType()
+    {
+        return NVOrderTypeTable::find(this.OrderTypeRecId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>group</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrieves the NVOrderTypeGroup record through the order type relationship.
+    /// Navigates: Template → OrderType → Group
+    /// </summary>
+    /// <returns>NVOrderTypeGroup record, or null if order type not found</returns>
+    public NVOrderTypeGroup group()
+    {
+        NVOrderTypeTable orderTypeTable = this.orderType();
+        return orderTypeTable.RecId ? orderTypeTable.group() : null;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Finds an NVOrderTemplate record by RecId.
+    /// </summary>
+    /// <param name="_recId">RecId of the template to find</param>
+    /// <param name="_forUpdate">If true, selects the record for update</param>
+    /// <returns>NVOrderTemplate record, or empty record if not found</returns>
+    public static NVOrderTemplate find(RecId _recId, boolean _forUpdate = false)
+    {
+        NVOrderTemplate template;
+    
+        if (!_recId)
+        {
+            return template;
+        }
+    
+        if (_forUpdate)
+        {
+            template.selectForUpdate(_forUpdate);
+        }
+    
+        select firstonly template
+            where template.RecId == _recId;
+    
+        return template;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>exist</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a template record exists by RecId.
+    /// Lightweight existence check without retrieving the full record.
+    /// </summary>
+    /// <param name="_recId">RecId of the template to check</param>
+    /// <returns>True if the template exists, otherwise false</returns>
+    public static boolean exist(RecId _recId)
+    {
+        return _recId && (select firstonly RecId from NVOrderTemplate
+                      where NVOrderTemplate.RecId == _recId).RecId != 0;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>TemplateId</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>RecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>TemplateName</Name>
+			<Mandatory>Yes</Mandatory>
+			<StringSize>50</StringSize>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>OrderTypeRecId</Name>
+			<ExtendedDataType>RecId</ExtendedDataType>
+			<HelpText>Reference to NVOrderTypeTable</HelpText>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Order Type</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>ReportName</Name>
+			<Label>Report Name</Label>
+			<Mandatory>Yes</Mandatory>
+			<StringSize>100</StringSize>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>IsActive</Name>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Description</Name>
+			<ExtendedDataType>Description</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<Relations>
+		<AxTableRelation>
+			<Name>NVOrderTypeTable</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<RelatedTable>NVOrderTypeTable</RelatedTable>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>OrderTypeRecId</Name>
+					<Field>OrderTypeRecId</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

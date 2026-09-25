@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveBankTransaction_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(LeaveBankTransaction))]
+internal final class NVLeaveBankTransaction_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>insert</Name>
+				<Source><![CDATA[
+    public void insert()
+    {
+        if(!this.NVTransactionYear)
+        {
+            this.NVTransactionYear = year(this.TransactionDate);
+        }
+
+        next insert();
+
+        if (!this.isTempDb())
+        {
+            this.calcAdditionalAccrual();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>calcAdditionalAccrual</Name>
+				<Source><![CDATA[
+    public void calcAdditionalAccrual()
+    {
+        if(this.TransactionType == LeaveTransactionType::Accrual
+            && this.LeavePlan
+            && this.NVLeaveCategory == NVLeaveCategory::None)
+        {
+            NVLeaveAccrualAdditionalProcess additionalAccrualProcess  = NVLeaveAccrualAdditionalProcess::construct();
+
+            additionalAccrualProcess.initBankTransaction(this);
+            additionalAccrualProcess.process();
+        }
+        
+        if(this.TransactionType == LeaveTransactionType::Request)
+        {
+            NVLeaveRequestAdditionalProcess additionalRequestProcess = NVLeaveRequestAdditionalProcess::construct();
+
+            additionalRequestProcess.initBankTransaction(this);
+            additionalRequestProcess.process();
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

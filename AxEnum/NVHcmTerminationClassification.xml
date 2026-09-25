@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmTerminationClassification</Name>
+	<Label>Termination classification</Label>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>None</Name>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Voluntary</Name>
+			<Label>Voluntary</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Involuntary</Name>
+			<Label>Involuntary</Label>
+			<Value>2</Value>
+		</AxEnumValue>
+	</EnumValues>
+</AxEnum>

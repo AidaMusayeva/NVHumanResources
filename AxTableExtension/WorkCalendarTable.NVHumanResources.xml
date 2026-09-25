@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTableExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>WorkCalendarTable.NVHumanResources</Name>
+	<FieldGroupExtensions />
+	<FieldGroups />
+	<FieldModifications />
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>NVNightHoursCap</Name>
+			<ExtendedDataType>TimeInMS</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Night hours Cap</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldTime">
+			<Name>NVNightTimeFrom</Name>
+			<ExtendedDataType>FromTime</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Night time start</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldTime">
+			<Name>NVNightTimeTo</Name>
+			<ExtendedDataType>ToTime</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Night time end</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes />
+	<Mappings />
+	<PropertyModifications />
+	<RelationExtensions />
+	<RelationModifications />
+	<Relations />
+</AxTableExtension>

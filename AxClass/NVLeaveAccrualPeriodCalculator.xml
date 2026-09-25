@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveAccrualPeriodCalculator</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// <c>NVLeaveAccrualPeriodCalculator</c> handles calculations of <c>LeaveAccrualPeriod</c>.
+/// </summary>
+internal class NVLeaveAccrualPeriodCalculator
+{
+    private LeavePlan plan;
+    private LeaveEnrollment enrollment;
+    private LeaveDate accrualDateBasis;
+    private LeavePlanAccrualFrequency accrualFrequency;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new()
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initFromPlanEnrollment</Name>
+				<Source><![CDATA[
+    private void initFromPlanEnrollment(LeavePlan _plan, LeaveEnrollment _enrollment)
+    {
+        plan.data(_plan);
+        enrollment.data(_enrollment);
+
+        accrualFrequency = _plan.AccrualFrequency;
+        accrualDateBasis = NVLeaveAccrualPeriodCalculator::calculateAccrualDateBasis(_plan, _enrollment);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accrualPeriodEndDate</Name>
+				<Source><![CDATA[
+    private LeaveDate accrualPeriodEndDate(LeaveDate _startDate)
+    {
+        return _startDate == dateNull() ? dateNull() : this.nextAccrualDate(_startDate) - 1;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>nextAccrualDate</Name>
+				<Source><![CDATA[
+    private LeaveDate nextAccrualDate(LeaveDate _startDate)
+    {
+        return _startDate == dateNull() ? dateNull() : NVLeaveAccrualPeriodUtil::getNextAccrualDate(_startDate, accrualFrequency);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getAccrualDateBasis</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets the accrual date basis. 
+    /// </summary>
+    /// <returns>
+    /// The accrual date basis that is used for calculating accrual periods.
+    /// </returns>
+    public LeaveDate getAccrualDateBasis()
+    {
+        return accrualDateBasis;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getAccrualStartingDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets the date on which accruals should start.
+    /// </summary>
+    /// <returns>
+    /// The starting date of accruals.
+    /// </returns>
+    /// <remarks>
+    /// This date might not align to an accrual period.
+    /// </remarks>
+    public LeaveDate getAccrualStartingDate()
+    {
+        LeaveDate accrualStartingDate = max(plan.StartDate, enrollment.AccrualStartDate);
+
+        return accrualStartingDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>calculateFirstAccrualPeriod</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Calculates the first accrual period of an enrollment.
+    /// </summary>
+    /// <returns>
+    /// The first accrual period of an enrollment.
+    /// </returns>
+    public LeaveAccrualPeriod calculateFirstAccrualPeriod()
+    {
+        LeaveDate accrualStartingDate = this.getAccrualStartingDate();
+        LeaveAccrualPeriod firstAccrualPeriod = this.getAccrualPeriod(accrualStartingDate);
+
+        return firstAccrualPeriod;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>calculateUpcomingAwardDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Calculates the upcoming award date of an enrollment.
+    /// </summary>
+    /// <param name = "_asOfDate">
+    /// The effective date in consideration.
+    /// </param>
+    /// <returns>
+    /// The upcoming award date of an enrollment.
+    /// </returns>
+    /// <remarks>
+    /// The award date of the first accrual period is returned if the enrollment-plan combination is not yet active,
+    /// otherwise, the next award date on or after the effective date is returned. 
+    /// </remarks>
+    public LeaveDate calculateUpcomingAwardDate(LeaveDate _asOfDate = HcmDateTimeUtil::companyCurrentDate())
+    {
+        LeaveAccrualPeriod currentAccrualPeriod = this.getAccrualPeriod(_asOfDate);
+        LeaveAccrualPeriod firstAccrualPeriod = this.calculateFirstAccrualPeriod();
+
+        LeaveAccrualPeriod firstOrCurrentAccrualPeriod =
+            currentAccrualPeriod.getStartDate() > firstAccrualPeriod.getEndDate()
+            ? currentAccrualPeriod
+            : firstAccrualPeriod;
+
+        //
+        // Since award date occurs at the end of the accrual period,
+        // the award date of the current accrual period will always be the next award date.
+        //
+        return this.getAwardDate(firstOrCurrentAccrualPeriod);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>nextAccrualPeriod</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines the next accrual period after the provided accrual period.
+    /// </summary>
+    /// <param name = "_period">
+    /// An accrual period.
+    /// </param>
+    /// <returns>
+    /// The next accrual period.
+    /// </returns>
+    public LeaveAccrualPeriod nextAccrualPeriod(LeaveAccrualPeriod _period)
+    {
+        LeaveDate nextAccrualDate = this.nextAccrualDate(_period.getStartDate());
+        LeaveAccrualPeriod nextAccrualPeriod = this.getAccrualPeriod(nextAccrualDate);
+
+        return nextAccrualPeriod;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getAwardDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines the award date of an accrual period.
+    /// </summary>
+    /// <param name = "_period">
+    /// An accrual period.
+    /// </param>
+    /// <returns>
+    /// The award date of the accrual period.
+    /// </returns>
+    public LeaveDate getAwardDate(LeaveAccrualPeriod _period)
+    {
+        LeaveDate awardDate;
+
+        if (plan.AccrualAwardDateBasis == LeaveAccrualAwardDateBasis::AccrualPeriodEndDate)
+        {
+            awardDate = min(_period.getEndDate(), enrollment.EndDate);
+        }
+        else
+        {
+            awardDate = max(_period.getStartDate(), this.getAccrualStartingDate());
+        }
+
+        return awardDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getAccrualPeriod</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines the accrual period for a given date.
+    /// </summary>
+    /// <param name = "_date">
+    /// A date to find the accrual period for.
+    /// </param>
+    /// <returns>
+    /// The accrual period that contains the date.
+    /// </returns>
+    public LeaveAccrualPeriod getAccrualPeriod(LeaveDate _date)
+    {
+        LeaveDate startDate = NVLeaveAccrualPeriodUtil::getLastAccrualDateRelativeTo(
+            _date,
+            accrualDateBasis,
+            accrualFrequency);
+        LeaveDate endDate = this.accrualPeriodEndDate(startDate);
+
+        return LeaveAccrualPeriod::newPeriod(startDate, endDate);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newForPlanEnrollment</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates a <c>NVLeaveAccrualPeriodCalculator</c> instance for the given plan and enrollment.
+    /// </summary>
+    /// <param name = "_plan">
+    /// A leave plan record.
+    /// </param>
+    /// <param name = "_enrollment">
+    /// A leave enrollment record.
+    /// </param>
+    /// <returns>
+    /// A <c>NVLeaveAccrualPeriodCalculator</c> instance.
+    /// </returns>
+    public static NVLeaveAccrualPeriodCalculator newForPlanEnrollment(LeavePlan _plan, LeaveEnrollment _enrollment)
+    {
+        NVLeaveAccrualPeriodCalculator accrualPeriodCalculator = new NVLeaveAccrualPeriodCalculator();
+        accrualPeriodCalculator.initFromPlanEnrollment(_plan, _enrollment);
+
+        return accrualPeriodCalculator;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>calculateAccrualDateBasis</Name>
+				<Source><![CDATA[
+    public static LeaveDate calculateAccrualDateBasis(LeavePlan _plan, LeaveEnrollment _enrollment)
+    {
+        return _plan.AccrualPeriodBasis == LeavePlanAccrualPeriodBasis::PlanStartDate
+            ? _plan.StartDate
+            : _enrollment.AccrualDateBasis;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

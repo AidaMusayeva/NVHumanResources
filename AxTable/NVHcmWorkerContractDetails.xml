@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerContractDetails</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerContractDetails extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    public boolean validateWrite()
+    {
+        boolean ret;
+    
+        ret = super();
+    
+        ret = this.validateContractDates() && ret;
+        ret = this.validateProbationDates() && ret;
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateContractDates</Name>
+				<Source><![CDATA[
+    private boolean validateContractDates()
+    {
+        if (this.StartDate > this.EndDate)
+        {
+            return checkFailed("Contract end date cannot be earlier than the contract start date.");
+            
+        }
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateProbationDates</Name>
+				<Source><![CDATA[
+    private boolean validateProbationDates()
+    {
+        if (this.ProbationStartDate > this.ProbationEndDate)
+        {
+            return checkFailed("Probation end date cannot be earlier than the probation start date.");
+            
+        }
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initValue</Name>
+				<Source><![CDATA[
+    public void initValue()
+    {
+        super();
+
+        this.LegalEntityDataAreaId = curExt();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>modifiedField</Name>
+				<Source><![CDATA[
+    public void modifiedField(FieldId _fieldId)
+    {
+        super(_fieldId);
+
+        switch(_fieldId)
+        {
+            case fieldNum(NVHcmWorkerContractDetails, StartDate):
+                this.ProbationStartDate = this.StartDate;
+            case fieldNum(NVHcmWorkerContractDetails, ProbationStartDate):
+                this.ProbationEndDate = DateTimeUtil::date(DateTimeUtil::addMonths(DateTimeUtil::newDateTime(this.ProbationStartDate, 0), HRMParameters::findByCompany(this.LegalEntityDataAreaId).NVWorkerProbationMonthEnd));
+            case fieldNum(NVHcmWorkerContractDetails, ProbationEndDate):
+                this.updateProbationEndDate();
+                break;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateProbationEndDate</Name>
+				<Source><![CDATA[
+    private void updateProbationEndDate()
+    {
+        NVHcmWorkerContractDetails contractDetails;
+        select firstonly maxof(ProbationEndDate) from contractDetails
+            where contractDetails.Worker    == this.Worker
+            && contractDetails.LegalEntityDataAreaId == this.LegalEntityDataAreaId;
+        TransDate probationEndDate = contractDetails.ProbationEndDate;
+        if(probationEndDate < this.ProbationEndDate)
+            probationEndDate = this.ProbationEndDate;
+
+        HcmEmployment employment;
+        HcmEmploymentEmployee employmentEmployee;
+        utcdatetime now = DateTimeUtil::utcNow();
+
+        select ValidTimeState(now) employmentEmployee
+            order by ValidFrom desc
+            exists join employment
+                order by ValidTo desc
+            where employment.RecId == employmentEmployee.Employment
+                && employment.Worker == this.Worker
+                && employment.LegalEntity == CompanyInfo::findDataArea(this.LegalEntityDataAreaId).RecId;
+        
+        if(employmentEmployee)
+        {
+            ttsbegin;
+            employmentEmployee.selectForUpdate(true);
+            employmentEmployee.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+            employmentEmployee.ProbationEndDate = probationEndDate;
+            employmentEmployee.update();
+            ttscommit;
+        }
+        else
+        {
+            select ValidTimeState(now) employment
+                order by ValidTo desc
+            where employment.Worker == this.Worker
+                && employment.LegalEntity == CompanyInfo::findDataArea(this.LegalEntityDataAreaId).RecId;
+        
+            if(employment)
+            {
+                employmentEmployee.validTimeStateUpdateMode(ValidTimeStateUpdate::CreateNewTimePeriod);
+                employmentEmployee.ValidFrom        = employment.ValidFrom;
+                employmentEmployee.ValidTo          = employment.ValidTo;
+                employmentEmployee.Employment       = employment.RecId;
+                employmentEmployee.ProbationEndDate = probationEndDate;
+                employmentEmployee.insert();
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<FormRef>NVHcmWorkerContractDetails</FormRef>
+	<Label>Worker contract details</Label>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>Worker</TitleField1>
+	<TitleField2>ContractType</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CacheLookup>EntireTable</CacheLookup>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<Modules>HumanResource</Modules>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>ContractType</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Administration</Name>
+			<Label>@SYS9853</Label>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>LegalEntityDataAreaId</Name>
+			<ExtendedDataType>HcmLegalEntityDataAreaId</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>ContractType</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>NVHcmWorkerContractTypeId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>SysRowVersionNumber</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>SysRowVersionNumber</ExtendedDataType>
+			<Null>Yes</Null>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>Worker</Name>
+			<ExtendedDataType>HcmWorkerRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Comments</Name>
+			<ExtendedDataType>HcmComments</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Comments</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Reason</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>NVHcmWorkerContractReasonId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Contract change reason</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>StartDate</Name>
+			<ExtendedDataType>StartDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Contract start date</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>EndDate</Name>
+			<ExtendedDataType>EndDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Contract end date</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>ProbationEndDate</Name>
+			<ExtendedDataType>EndDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Probation end date</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>ProbationStartDate</Name>
+			<ExtendedDataType>StartDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Probation start date</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldDate">
+			<Name>WorkPermitExpiry</Name>
+			<ExtendedDataType>TransDate</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Expiry of work permit</Label>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>ContractIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>LegalEntityDataAreaId</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>ContractType</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>Worker</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>StartDate</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>EndDate</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation>
+			<Name>NVHcmWorkerContractType</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVHcmWorkerContractType</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>ContractType</Name>
+					<Field>ContractType</Field>
+					<RelatedField>Id</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation xmlns=""
+			i:type="AxTableRelationForeignKey">
+			<Name>HcmWorker</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Cascade</OnDelete>
+			<RelatedTable>HcmWorker</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Worker</Name>
+					<Field>Worker</Field>
+					<RelatedField>RecId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+			<Index>RecId</Index>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>NVHcmWorkerContractReason</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>NVHcmWorkerContractReason</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>Reason</Name>
+					<Field>Reason</Field>
+					<RelatedField>Id</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerNewWorker_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[extensionof(formstr(hcmworkernewworker))]
+internal final class nvhcmworkernewworker_extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>nvhcmworkereducationtype_onlookup</Name>
+				<Source><![CDATA[
+    [formcontroleventhandler(formcontrolstr(hcmworkernewworker, nvhcmworkereducationtype), formcontroleventtype::lookup)]
+    public static void nvhcmworkereducationtype_onlookup(formcontrol sender, formcontroleventargs e)
+    {
+        nvhcmworkereducationtype::workereducationtypelookup(sender);
+
+        formcontrolcancelablesupereventargs cancelsuper = e as formcontrolcancelablesupereventargs;
+        cancelsuper.cancelsupercall();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>tryhire</Name>
+				<Source><![CDATA[
+    protected final boolean tryhire(companyinfo _companyinfo)
+    {
+        boolean success = next tryhire(_companyinfo);
+
+        if (success)
+        {
+            nvhcmworkerhirereasonid     hirereasonid        = nvhcmworkerhirereasonid.text();
+            nvhcmworkerpid              workerpid           = nvhcmworkerpid.text();
+            nvhcmworkereducationtypeid  educationtype       = nvhcmworkereducationtype.text();
+            hcmpersonnelnumberid        workerpersonnelnum  = personnelnumber.text();
+            noyesid                     isexpatriate        = nvhcmisexpatriate.value();
+
+            hcmworker locworker = hcmworker::findbypersonnelnumber(workerpersonnelnum, true);
+
+            if (locworker)
+            {
+                ttsbegin;
+
+                locworker.nvhcmworkerhirereasonid       = hirereasonid;
+                locworker.nvhcmworkerpid                = workerpid;
+                locworker.nvhcmworkereducationtypeid    = educationtype;
+                locworker.nvisexpatriate                = isexpatriate;
+
+                locworker.doupdate();
+
+
+                dirperson person = locworker.dirperson();
+
+                if (person)
+                {
+                    dirpersonname personname = dirpersonname::find(person.recid, true);
+
+                    personname.validtimestateupdatemode(validtimestateupdate::correction);
+                    personname.nvengfirstname  = nvenglishfirstname.text();
+                    personname.nvengmiddlename = nvenglishmiddlename.text();
+                    personname.nvenglastname   = nvenglishlastname.text();
+
+                    personname.doupdate();
+
+                    if (this.args() &&
+                    this.args().parmObject() &&
+                    this.args().parmObject() is NVWorkerHireContract)
+                    {
+                        NVWorkerHireContract contract =
+                         this.args().parmObject() as NVWorkerHireContract;
+
+                        NVWorkerHireResponse response = contract.parmResponse();
+                       
+
+                        //FormDataSource hcmWorker_ds = this.dataSource(1);
+                        //HcmWorker newlyCreatedWorker = hcmWorker_ds.cursor();
+                        HcmWorker newlyCreatedWorker;
+                        
+ 
+                        select firstOnly newlyCreatedWorker
+                            where newlyCreatedWorker.PersonnelNumber == workerpersonnelnum;
+
+                        if (newlyCreatedWorker && newlyCreatedWorker.RecId)
+                        {
+                            DirPerson newlyCreatedPerson = DirPerson::find(newlyCreatedWorker.Person);
+
+                            if (newlyCreatedPerson)
+                            {
+
+                                HcmPersonPrivateDetails privateDetails;
+
+                                select firstOnly forUpdate privateDetails
+                                     where privateDetails.Person == person.RecId;
+
+                                if (!privateDetails.RecId)
+                                {
+                                    privateDetails.Person = person.RecId;
+                                    privateDetails.insert();
+
+                                    select firstOnly forUpdate privateDetails
+                                         where privateDetails.Person == person.RecId;
+                                }
+
+                                
+                                if (response.parmBirthDate())
+                                {
+                                    privateDetails.BirthDate =str2Date(response.parmBirthDate(), 123);
+                                }
+                                if (response.parmCitizenship())
+                                {
+                                    privateDetails.NVCitizenship = response.parmCitizenship();
+                                }
+                                if (response.parmBirthAddress())
+                                {
+                                    container birthAddress = str2con(response.parmBirthAddress(), ",");
+
+                                    privateDetails.PersonBirthCountryRegion = conPeek(birthAddress, 1);
+                                    privateDetails.PersonBirthCity          = conPeek(birthAddress, 2);
+                                }
+                              
+                              
+                                if (response.parmGender())
+                                {
+                                    switch (response.parmGender())
+                                    {
+                                        case "Kişi":
+                                            privateDetails.Gender = HcmPersonGender::Male;
+                                            break;
+
+                                        case "Qadın":
+                                            privateDetails.Gender = HcmPersonGender::Female;
+                                            break;
+
+                                        case "Qeyri-spesifik":
+                                            privateDetails.Gender = HcmPersonGender::NonSpecific;
+                                            break;
+
+                                        default:
+                                            privateDetails.Gender = HcmPersonGender::None;
+                                            break;
+                                    }
+                                }
+                                privateDetails.update();
+                               
+                                DirPartyPostalAddressView addressView;
+
+                                if (response.parmRegistrationAddress())
+                                {
+                                    addressView.clear();
+
+                                    addressView.Party           = newlyCreatedWorker.Person;
+                                    addressView.LocationName    = "Home";
+                                    addressView.Street          = response.parmRegistrationAddress();
+                                    addressView.CountryRegionId = "AZE";
+                                    addressView.IsPrimary       = NoYes::Yes;
+                                    addressView.IsPrivate       = NoYes::Yes;
+
+                                    DirParty::constructFromPartyRecId(newlyCreatedWorker.Person).createOrUpdatePostalAddress(addressView);
+                                }
+                                
+                                // =========================
+                                // DirPersonName
+                                // =========================
+
+                                
+
+                                if (personName.RecId)
+                                {
+                                    if (response.parmEyeColor())
+                                    {
+                                        personName.NVEyeColor = response.parmEyeColor();
+                                    }
+                        
+                                    if (response.parmHeight())
+                                    {
+                                        personName.NVHeight = response.parmHeight();
+                                    }
+                                    if (response.parmBloodType())
+                                    {
+                                        personName.NVBloodType= response.parmBloodType(); 
+                                    }
+
+                                    personName.update();
+                                }
+                                HcmPersonIdentificationNumber identification;
+
+                                select firstOnly forUpdate identification
+                                    where identification.Person == person.RecId;
+
+                                if (!identification.RecId)
+                                {
+                                    identification.Person = person.RecId;
+
+                                    // lazım olsa identification type ver
+                                    // identification.IdentificationType = ...;
+
+                                    identification.insert();
+
+                                    select firstOnly forUpdate identification
+                                        where identification.Person == person.RecId;
+                                }
+
+                                if (response.parmDocumentNumber())
+                                {
+                                    identification.IdentificationNumber = response.parmDocumentNumber();
+                                }
+
+                              
+                                if (response.parmGivenOrganization())
+                                {
+                                    identification.NVGivenOrganization= response.parmGivenOrganization();
+                                }
+                                if (response.parmActivationDate())
+                                {
+                                    identification.NVActivationDate = str2Date(response.parmActivationDate(), 123);
+                                }
+                                if (response.parmGivenDate())
+                                {
+                                    identification.IssuedDate = str2Date(response.parmGivenDate(),123);
+                                }
+                                if (response.parmExpireDate())
+                                {
+                                    identification.ExpirationDate = str2Date(response.parmExpireDate(),123);
+                                }
+                                identification.update();
+
+
+                                // =========================
+                                // HcmPersonDetails
+                                // =========================
+
+                                HcmPersonDetails personDetails;
+
+                                select firstOnly forUpdate personDetails
+                                  where personDetails.Person == person.RecId;
+
+                                if (personDetails.RecId)
+                                {
+                                    personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+
+                                    if (response.parmMaritalStatus())
+                                    {
+                                        switch (strLwr(strLRTrim(response.parmMaritalStatus())))
+                                        {
+                                            case "subay":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Single;
+                                                break;
+
+                                            case "evli":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Married;
+                                                break;
+
+                                            case "widowed":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Widowed;
+                                                break;
+
+                                            case "divorced":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Divorced;
+                                                break;
+
+                                            case "birlikdə yaşamaq":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Cohabiting;
+                                                break;
+
+                                            case "qeydiyyatdan keçmiş tərəfdaşlıq":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::RegisteredPartnership;
+                                                break;
+
+                                            case "ayrılmış":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Separated;
+                                                break;
+
+                                            case "vətəndaşlıq tərəfdaşlığı":
+                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::CivilPartnership;
+                                                break;
+
+                                            default:
+                warning(strFmt(
+                    "Unknown marital status received from API: '%1'",
+                    response.parmMaritalStatus()));
+                                                break;
+                                        }
+                                    }
+
+                                    personDetails.update();
+                                }
+                                else
+                                {
+                                    warning(strFmt(
+        "HcmPersonDetails record not found for Person RecId %1.",
+        person.RecId));
+                                }
+
+                              
+                                if (response.parmImage())
+                                {
+                                    HcmPersonImage personImage;
+
+                                    System.Byte[] imageBytes = System.Convert::FromBase64String(response.parmImage());
+
+                                    System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(imageBytes);
+
+                                    Binary binaryImage = Binary::constructFromMemoryStream(memoryStream);
+
+                                    personImage.Person = newlyCreatedPerson.RecId;
+
+                                    personImage.Image = binaryImage.getContainer();
+
+                                    personImage.insert();
+                                }
+    
+                            }
+                        }
+                    }
+                
+
+                    ttscommit;
+                }
+
+            }
+
+        }
+        return success;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>closeOk</Name>
+				<Source><![CDATA[
+    public void closeOk()
+    {
+        
+        next closeOk();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        next init();
+
+        Args args = this.args();
+
+        if (args && args.parmObject())
+        {
+            NVWorkerHireContract contract =
+            args.parmObject() as NVWorkerHireContract;
+
+            if (contract)
+            {
+                NVWorkerHireResponse response =
+                contract.parmResponse();
+
+                // MAIN NAME
+                dirPersonName.FirstName  = response.parmName();
+                dirPersonName.MiddleName = response.parmPatronymic();
+                dirPersonName.LastName   = response.parmSurname();
+
+                FirstName.text(response.parmName());
+                MiddleName.text(response.parmPatronymic());
+                LastName.text(response.parmSurname());
+
+                // ENGLISH NAME
+                NVEnglishFirstName.text(response.parmNameEn());
+                NVEnglishMiddleName.text(response.parmPatronymic());
+                NVEnglishLastName.text(response.parmSurnameEn());
+
+                // FIN
+                NVHcmWorkerPID.text(response.parmPIN());
+
+                
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

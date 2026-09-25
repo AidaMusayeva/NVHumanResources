@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxQuery xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
+	i:type="AxQuerySimple">
+	<Name>NVTimesheetGenerationQuery</Name>
+	<SourceCode>
+		<Methods>
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Query]
+public class NVTimesheetGenerationQuery extends QueryRun
+{
+}
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<DataSources>
+		<AxQuerySimpleRootDataSource>
+			<Name>PayrollStatementGenerationView</Name>
+			<DynamicFields>Yes</DynamicFields>
+			<Table>PayrollStatementGenerationView</Table>
+			<DataSources>
+				<AxQuerySimpleEmbeddedDataSource>
+					<Name>HcmWorker</Name>
+					<DynamicFields>Yes</DynamicFields>
+					<Table>HcmWorker</Table>
+					<DataSources />
+					<DerivedDataSources />
+					<Fields />
+					<Ranges>
+						<AxQuerySimpleDataSourceRange>
+							<Name>PersonnelNumber</Name>
+							<Field>PersonnelNumber</Field>
+						</AxQuerySimpleDataSourceRange>
+					</Ranges>
+					<Relations>
+						<AxQuerySimpleDataSourceRelation>
+							<Name>Worker</Name>
+							<Field>Worker</Field>
+							<JoinDataSource>PayrollStatementGenerationView</JoinDataSource>
+							<RelatedField>RecId</RelatedField>
+						</AxQuerySimpleDataSourceRelation>
+					</Relations>
+				</AxQuerySimpleEmbeddedDataSource>
+				<AxQuerySimpleEmbeddedDataSource>
+					<Name>HcmPosition</Name>
+					<DynamicFields>Yes</DynamicFields>
+					<Table>HcmPosition</Table>
+					<DataSources />
+					<DerivedDataSources />
+					<Fields />
+					<Ranges>
+						<AxQuerySimpleDataSourceRange>
+							<Name>PositionId</Name>
+							<Field>PositionId</Field>
+						</AxQuerySimpleDataSourceRange>
+					</Ranges>
+					<Relations>
+						<AxQuerySimpleDataSourceRelation>
+							<Name>Position</Name>
+							<Field>Position</Field>
+							<JoinDataSource>PayrollStatementGenerationView</JoinDataSource>
+							<RelatedField>RecId</RelatedField>
+						</AxQuerySimpleDataSourceRelation>
+					</Relations>
+				</AxQuerySimpleEmbeddedDataSource>
+				<AxQuerySimpleEmbeddedDataSource>
+					<Name>HcmPositionDetail</Name>
+					<DynamicFields>Yes</DynamicFields>
+					<Table>HcmPositionDetail</Table>
+					<DataSources />
+					<DerivedDataSources />
+					<Fields />
+					<Ranges>
+						<AxQuerySimpleDataSourceRange>
+							<Name>Department</Name>
+							<Field>Department</Field>
+						</AxQuerySimpleDataSourceRange>
+						<AxQuerySimpleDataSourceRange>
+							<Name>Job</Name>
+							<Field>Job</Field>
+						</AxQuerySimpleDataSourceRange>
+					</Ranges>
+					<Relations>
+						<AxQuerySimpleDataSourceRelation>
+							<Name>Position</Name>
+							<Field>Position</Field>
+							<JoinDataSource>PayrollStatementGenerationView</JoinDataSource>
+							<RelatedField>Position</RelatedField>
+						</AxQuerySimpleDataSourceRelation>
+					</Relations>
+				</AxQuerySimpleEmbeddedDataSource>
+			</DataSources>
+			<DerivedDataSources />
+			<Fields />
+			<Ranges />
+			<GroupBy />
+			<Having />
+			<OrderBy />
+		</AxQuerySimpleRootDataSource>
+	</DataSources>
+</AxQuery>

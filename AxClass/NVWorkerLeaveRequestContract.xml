@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkerLeaveRequestContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVWorkerLeaveRequestContract  
+{
+    str workerId;
+    str leaveTypeId;
+    str comment;
+    date startDate;
+    date endDate;
+    date applicationDate;
+    date workResumeDate;
+    List attachments;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmWorkerId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("WorkerId")]
+    public str parmWorkerId(str _parm = workerId)
+    {
+        workerId = _parm;
+        return workerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLeaveTypeId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("LeaveTypeId")]
+    public str parmLeaveTypeId(str _parm = leaveTypeId)
+    {
+        leaveTypeId = _parm;
+        return leaveTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmComment</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Comment")]
+    public str parmComment(str _parm = comment)
+    {
+        comment = _parm;
+        return comment;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmStartDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("StartDate")]
+    public date parmStartDate(date _parm = startDate)
+    {
+        startDate = _parm;
+        return startDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmEndDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("EndDate")]
+    public date parmEndDate(date _parm = endDate)
+    {
+        endDate = _parm;
+        return endDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmApplicationDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("ApplicationDate")]
+    public date parmApplicationDate(date _parm = applicationDate)
+    {
+        applicationDate = _parm;
+        return applicationDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmWorkResumeDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("WorkResumeDate")]
+    public date parmWorkResumeDate(date _parm = workResumeDate)
+    {
+        workResumeDate = _parm;
+        return workResumeDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAttachment</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Attachment"),
+        DataCollection(Types::Class, classStr(NVWorkerLeaveRequestAttachmentContract)),
+        AifCollectionTypeAttribute('_attachment', Types::Class, classStr(NVWorkerLeaveRequestAttachmentContract)),
+        AifCollectionTypeAttribute('return', Types::Class, classStr(NVWorkerLeaveRequestAttachmentContract))]
+    public List parmAttachment(List _attachment = attachments)
+    {
+        attachments = _attachment;
+        return _attachment;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

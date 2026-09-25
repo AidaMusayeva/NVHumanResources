@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVWorkerHireService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class to handle real HTTP REST API integration for worker retrieval.
+/// <summary>
+public class NVWorkerHireService
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getWorkerData</Name>
+				<Source><![CDATA[
+    public NVWorkerHireContract getWorkerData(
+        str _fin,
+        str _serialNumber)
+    {
+        
+        str apiUrl;
+        str jsonResponse;
+
+        System.Net.HttpWebRequest request;
+        System.Net.WebResponse webResponse;
+        System.IO.Stream stream;
+        System.IO.StreamReader reader;
+
+        NVWorkerHireContract contract;
+       
+
+        apiUrl = strFmt(
+           "https://d365asanfinans-g5afdxh7b6g7cvcb.westeurope-01.azurewebsites.net/personal-info?pin=%1&docNumber=%2",
+            _fin,
+            _serialNumber);
+        
+        new InteropPermission(
+            InteropKind::ClrInterop).assert();
+
+        request =
+            System.Net.WebRequest::Create(apiUrl)
+                as System.Net.HttpWebRequest;
+
+        request.Method = "GET";
+        request.ContentType = "application/json";
+
+        webResponse = request.GetResponse();
+
+        stream = webResponse.GetResponseStream();
+
+        reader = new System.IO.StreamReader(stream);
+
+        jsonResponse = reader.ReadToEnd();
+        Info(jsonResponse);
+        
+        CodeAccessPermission::revertAssert();
+
+        contract =
+            FormJsonSerializer::deserializeObject(
+                classNum(NVWorkerHireContract),
+                jsonResponse)
+                    as NVWorkerHireContract;
+
+        return contract;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

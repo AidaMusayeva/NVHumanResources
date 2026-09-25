@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmManagerTeamResponseContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContractAttribute]
+public class NVHcmManagerTeamResponseContract  
+{
+    int totalRecords;
+    int pageNumber;
+    int totalRecordsPerPage;
+    private List workers;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmTotalRecords</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("TotalRecords")]
+    public int parmTotalRecords(int _parm = totalRecords)
+    {
+        totalRecords = _parm;
+        return totalRecords;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPageNumber</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("PageNumber")]
+    public int parmPageNumber(int _parm = pageNumber)
+    {
+        pageNumber = _parm;
+        return pageNumber;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTotalRecordsPerPage</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("TotalRecordsPerPage")]
+    public int parmTotalRecordsPerPage(int _parm = totalRecordsPerPage)
+    {
+        totalRecordsPerPage = _parm;
+        return totalRecordsPerPage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmWorkers</Name>
+				<Source><![CDATA[
+    [DataMember("Workers"), AifCollectionTypeAttribute("Workers", Types::Class)]
+    public List parmWorkers(List _parm = workers)
+    {
+        workers = _parm;
+        return workers;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

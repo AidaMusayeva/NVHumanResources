@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerContractEvents</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVHcmWorkerContractEvents
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>PayrollWorkerPositionEarningCode_onInsertedUpdated</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(PayrollWorkerPositionEarningCode), DataEventType::Inserted)]
+    public static void PayrollWorkerPositionEarningCode_onInsertedUpdated(Common sender, DataEventArgs e)
+    {
+        PayrollWorkerPositionEarningCode workerPosEarning = sender as PayrollWorkerPositionEarningCode;
+
+        if(PayrollEarningCode::find(workerPosEarning.EarningCode).NVUpdateContract == NoYes::Yes)
+        {
+            NVHcmWorkerContractDetails  contractDetails;
+            HcmWorkerPayrollInfo        workerPayrollInfo;
+
+            select firstonly workerPayrollInfo
+                where workerPayrollInfo.Worker          == workerPosEarning.Worker
+                    && workerPayrollInfo.LegalEntity    == CompanyInfo::find().RecId;
+            if(workerPayrollInfo)
+            {
+                select firstonly workerPayrollInfo
+                    where workerPayrollInfo.Worker          == workerPosEarning.Worker;
+            }
+            LegalEntityDataAreaId       legalEntity = CompanyInfo::findRecId(workerPayrollInfo.LegalEntity).DataArea;
+            select contractDetails
+                where contractDetails.LegalEntityDataAreaId     == legalEntity
+                    && contractDetails.Worker                   == workerPosEarning.Worker
+                    && contractDetails.StartDate                <= workerPosEarning.ValidFrom
+                    && contractDetails.EndDate                  >= workerPosEarning.ValidFrom;
+            if(!contractDetails)
+            {
+                select contractDetails
+                    where contractDetails.LegalEntityDataAreaId     == legalEntity
+                        && contractDetails.Worker                   == workerPosEarning.Worker
+                        && contractDetails.EndDate                  >= workerPosEarning.ValidFrom;
+            }
+
+            if(contractDetails)
+            {
+                NVHcmWorkerContractAdjustment contractAdjustment;
+
+                contractAdjustment.Contract = contractDetails.RecId;
+                contractAdjustment.Earning  = workerPosEarning.RecId;
+
+                contractAdjustment.insert();
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmPositionWorkerAssignment_onInsertedUpdated</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(HcmPositionWorkerAssignment), DataEventType::Inserted)]
+    public static void HcmPositionWorkerAssignment_onInsertedUpdated(Common sender, DataEventArgs e)
+    {
+        HcmPositionWorkerAssignment positionWorkerAssignment = sender as HcmPositionWorkerAssignment;
+
+        if(positionWorkerAssignment)
+        {
+            date validFrom   = DateTimeUtil::date(positionWorkerAssignment.ValidFrom);
+            date validTo     = DateTimeUtil::date(positionWorkerAssignment.ValidTo);
+
+            NVHcmWorkerContractDetails  contractDetails;
+            while select contractDetails
+                where contractDetails.Worker                == positionWorkerAssignment.Worker
+                    && contractDetails.EndDate              >= validFrom
+            {
+                NVHcmWorkerContractAdjustment contractAdjustment;
+
+                contractAdjustment.Contract             = contractDetails.RecId;
+                contractAdjustment.PositionAssignment   = positionWorkerAssignment.RecId;
+
+                contractAdjustment.insert();
+            }
+
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

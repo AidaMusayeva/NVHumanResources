@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveRequest_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(LeaveRequest))]
+internal final class NVLeaveRequest_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>initBalanceDetails</Name>
+				<Source><![CDATA[
+    public void initBalanceDetails()
+    {
+        LeaveRequest        request = LeaveRequest_ds.cursor();
+        LeaveRequestDetail  requestDetail;
+        select firstonly requestDetail 
+            where requestDetail.Request == request.RecId;
+
+        LeaveTypeRecId currrentLeaveType = requestDetail.LeaveType;
+        real totalDays = request.getTotalAmount();
+        NVLeaveBalanceDetailsTmp detailsTmp = NVLeaveBalanceDetailsTmp::balanceByLeaveType(request.Worker, request.getStartDate() - 1, currrentLeaveType, request.getStartDate(), totalDays);
+
+        NVLeaveBalanceDetailsTmp.setTmpData(detailsTmp);
+        NVLeaveBalanceDetailsTmp_ds.executeQuery();
+        NVLeaveBalanceDetailsTmp_ds.research(true);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

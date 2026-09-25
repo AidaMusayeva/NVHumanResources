@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerV2.NVLeave</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlhjb5mvjv1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuFunctionButtonControl">
+				<Name>NVLeaveAccrualAdditionalAdjustment</Name>
+				<Type>MenuFunctionButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataSource>HcmWorker</DataSource>
+				<MenuItemName>NVLeaveAccrualAdditionalAdjustment</MenuItemName>
+				<MenuItemType>Action</MenuItemType>
+				<NeedsRecord>Yes</NeedsRecord>
+			</FormControl>
+			<Parent>LeaveManageButtonGroup</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>ActionPane_LeaveAccrual</PreviousSibling>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>OMOperatingUnit.NVHumanResources</Name>
+	<ControlModifications>
+		<AxExtensionModification xmlns="">
+			<Name>OMOperatingUnit_NameAlias</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>English name of the structure</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</ControlModifications>
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControl4d3de0h21</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVDepartmentGroup</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>Group</Type>
+				<Visible>No</Visible>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormComboBoxControl">
+						<Name>OMOperatingUnit_NVDepartmentHierarchy</Name>
+						<Type>ComboBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVDepartmentHierarchy</DataField>
+						<DataSource>OMOperatingUnit</DataSource>
+						<Items />
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormReferenceGroupControl">
+						<Name>OMOperatingUnit_NVParentDepartmentRecId</Name>
+						<Type>ReferenceGroup</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls />
+						<DataSource>OMOperatingUnit</DataSource>
+						<ReferenceField>NVParentDepartmentRecId</ReferenceField>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormReferenceGroupControl">
+						<Name>OMOperatingUnit_NVAddress</Name>
+						<Type>ReferenceGroup</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls />
+						<DataSource>OMOperatingUnit</DataSource>
+						<ReferenceField>NVAddress</ReferenceField>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>OMOperatingUnit_NVDepartOrderNum</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVDepartOrderNum</DataField>
+						<DataSource>OMOperatingUnit</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormRealControl">
+						<Name>OMOperatingUnit_NVCoefficient</Name>
+						<Type>Real</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVCoefficient</DataField>
+						<DataSource>OMOperatingUnit</DataSource>
+					</AxFormControl>
+				</Controls>
+				<Caption>Department</Caption>
+			</FormControl>
+			<Parent>GeneralTab</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlbnxpqvoj1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuFunctionButtonControl">
+				<Name>NVOMDepartmentGradeCoefficient</Name>
+				<Type>MenuFunctionButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataSource>OMOperatingUnit</DataSource>
+				<MenuItemName>NVOMDepartmentGradeCoefficient</MenuItemName>
+			</FormControl>
+			<Parent>RelatedForms</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>DepartmentTotals</PreviousSibling>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

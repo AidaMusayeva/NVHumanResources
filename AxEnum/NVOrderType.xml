@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderType</Name>
+	<Help>Type of employment order</Help>
+	<Label>Order Types</Label>
+	<UseEnumValue>No</UseEnumValue>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>None</Name>
+			<Label>None</Label>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>EmpWithAllow</Name>
+			<Label>İşə qəbul əmri əlavəli</Label>
+			<Value>2</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>EmpWithAllowHarmful</Name>
+			<Label>İşə qəbul əmri əlavəli+zərərli</Label>
+			<Value>3</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>EmpWithoutAllow</Name>
+			<Label>İşə qəbul əmri əlavəsiz</Label>
+			<Value>4</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>EmpWithoutAllowHarmful</Name>
+			<Label>İşə qəbul əmri əlavəsiz+zərərli</Label>
+			<Value>5</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>PosChange</Name>
+			<Label>Vəzifə dəyişikliyi əmri</Label>
+			<Value>6</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>PosChangeFlight</Name>
+			<Label>Vəzifə dəyişikliyi SAŞ (Uçuş və kabinə heyəti)</Label>
+			<Value>7</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SalaryAllowChange</Name>
+			<Label>Əmək haqqının əlavəsinin dəyişikliyi əmri</Label>
+			<Value>8</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SalaryChange</Name>
+			<Label>Əmək haqqının dəyişikliyi əmri</Label>
+			<Value>9</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SalaryChangePilot</Name>
+			<Label>Əmək haqqı dəyişikliyi SAŞ (pilot)</Label>
+			<Value>10</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SalaryChangePilotLong</Name>
+			<Label>Əmək haqqı dəyişikliyi SAŞ (pilot) uzunmüddətli xidmət</Label>
+			<Value>11</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SalaryChangeP6C3</Name>
+			<Label>Əmək haqqı dəyişikliyi (SAŞ) P6 və C3 kateqoriyası</Label>
+			<Value>12</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term68_2a</Name>
+			<Label>Xitam 68.2a tərəflərdən birinin təşəbbüsü</Label>
+			<Value>13</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term68_2b</Name>
+			<Label>Xitam 68.2b əmək müqaviləsinin müddətinin qurtarması</Label>
+			<Value>14</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term68_2e</Name>
+			<Label>Xitam 68.2e tərəflərin əmək müqaviləsində müəyyən etdiyi hal</Label>
+			<Value>15</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term69_3</Name>
+			<Label>Xitam 69.3 başqa işəgötürənlə əmək müqaviləsi bağladıqda</Label>
+			<Value>16</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term70_b</Name>
+			<Label>Xitam 70.b işçilərin sayı və ya ştatları ixtisar edildikdə</Label>
+			<Value>17</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term70_c</Name>
+			<Label>Xitam 70.ç işçi özünün əmək funksiyasını və ya əmək müqaviləsi üzrə öhdəliklərini yerinə yetirmədikdə</Label>
+			<Value>18</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term70_d</Name>
+			<Label>Xitam 70.d sınaq müddəti ərzində işçi özünü doğrultmadıqda</Label>
+			<Value>19</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term74_1a</Name>
+			<Label>Xitam 74.1a işçi hərbi və ya alternativ xidmətə çağırıldıqda</Label>
+			<Value>20</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term74_1c</Name>
+			<Label>Xitam 74.1c işçi əmək funksiyasını yerinə yetirə bilmədikdə</Label>
+			<Value>21</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term74_1ch</Name>
+			<Label>Xitam 74.1ç məhkəmənin hökmü qanuni qüvvəyə mindikdə</Label>
+			<Value>22</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Term74_1e</Name>
+			<Label>Xitam 74.1e işçi vəfat etdikdə</Label>
+			<Value>23</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>AvgSalMilitary</Name>
+			<Label>Hərbi Çağırış Haqqında əmri</Label>
+			<Value>24</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>AvgSalSports</Name>
+			<Label>İdman yarışı barədə əmr</Label>
+			<Value>25</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>AvgSalCourt</Name>
+			<Label>Məhkəməyə çağırılma Haqqında əmri</Label>
+			<Value>26</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>AvgSalBloodDonor</Name>
+			<Label>Qan donuru ödənişli məzuniyyət əmri</Label>
+			<Value>27</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>AvgSalElection</Name>
+			<Label>Seçki ilə ödənişli məzuniyyət əmri</Label>
+			<Value>28</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>AvgSalCourseRecall</Name>
+			<Label>MAA Kursdan geri çağrılma haqqında əmr</Label>
+			<Value>29</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Maternity14Days</Name>
+			<Label>14 təqvim günü uzadılma əmri</Label>
+			<Value>30</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Maternity126Days</Name>
+			<Label>126 təqvim günü əmri</Label>
+			<Value>31</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>TripCancel</Name>
+			<Label>Ezam əmrin ləğv edilməsi barədə</Label>
+			<Value>32</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>TripChange</Name>
+			<Label>Ezam əmrinə dəyişiklik edilməsi barədə</Label>
+			<Value>33</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>TripExtension</Name>
+			<Label>Ezam tarixinin uzadılması barədə</Label>
+			<Value>34</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>TripDomestic</Name>
+			<Label>İşçilərin ezam olunması barədə daxili</Label>
+			<Value>35</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>TripForeign</Name>
+			<Label>İşçilərin ezam olunması barədə xarici</Label>
+			<Value>36</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>PaidLeave</Name>
+			<Label>Əmək məzuniyyəti əmri</Label>
+			<Value>37</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SocialLeavePartial</Name>
+			<Label>Qismən ödənişli sosial məzuniyyət əmri</Label>
+			<Value>38</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SocialLeaveEarlyReturn</Name>
+			<Label>Sosial məzuniyyətdən vaxtından əvvəl qayıtma əmri</Label>
+			<Value>39</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>EducationLeave</Name>
+			<Label>Təhsil məzuniyyəti əmri</Label>
+			<Value>40</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>UnpaidLeave</Name>
+			<Label>Ödənişsiz məzuniyyət əmri
+</Label>
+			<Value>41</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>OvertimeHoliday</Name>
+			<Label>İstirahət və bayram günlərində işə cəlb edilmə barədə</Label>
+			<Value>42</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>FlightUnfit</Name>
+			<Label>Uçuş işinə yararsız əmri</Label>
+			<Value>43</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>FlightFit</Name>
+			<Label>Uçuş işinə yararlı əmri</Label>
+			<Value>44</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SurnameChange</Name>
+			<Label>Soyadın dəyişdirilməsi əmri</Label>
+			<Value>45</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>ReducedTimeMinorShift</Name>
+			<Label>Qısaldılmış iş vaxtı azyaşlı uşağa görə (növbəli) əmri</Label>
+			<Value>46</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>ReducedTimeMinor5Day</Name>
+			<Label>Qısaldılmış iş vaxtı azyaşlı uşağa görə (5 günlük) əmri</Label>
+			<Value>47</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>ReducedTimeShift</Name>
+			<Label>Qısaldılmış iş vaxtı (növbəli) əmri</Label>
+			<Value>48</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>ReducedTime5Day</Name>
+			<Label>Qısaldılmış iş vaxtı (5 günlük) əmri</Label>
+			<Value>49</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>WorkScheduleChange</Name>
+			<Label>İş rejimin dəyişikliyi əmri</Label>
+			<Value>50</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>ContractExtension</Name>
+			<Label>Əmək müqaviləsinin müddətinin uzadılması əmri</Label>
+			<Value>51</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>DutyPerformance</Name>
+			<Label>Əmək funksiyalarının icrası barədə əmr</Label>
+			<Value>52</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Assignment</Name>
+			<Label>Həvalə əmri</Label>
+			<Value>53</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>MilitaryReturn</Name>
+			<Label>Hərbi Çağırışdan qayıtma Haqqında əmri</Label>
+			<Value>54</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SportsRecall</Name>
+			<Label>İdman yarışından geri çağrılma haqqında əmri</Label>
+			<Value>55</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Suspension</Name>
+			<Label>İşçinin işdən kənar edilməsi haqqında əmri</Label>
+			<Value>56</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Compensation</Name>
+			<Label>Kompensasiyanın verilməsi əmri</Label>
+			<Value>57</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>LeaveCancel</Name>
+			<Label>Məzuniyyət əmrinin ləğvi əmri</Label>
+			<Value>58</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>LeaveRecall</Name>
+			<Label>Məzuniyyətdən geri çağrılma haqqında əmri</Label>
+			<Value>59</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>SickLeaveExtension</Name>
+			<Label>Xəstəlik vərəqəsinin uzadılması əmri</Label>
+			<Value>60</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>TrainingCourse</Name>
+			<Label>MAA İşçilərin ixtisasartırma kursuna göndərilməsi əmri</Label>
+			<Value>61</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>CourseRecall</Name>
+			<Label>Kursdan geri çağrılma əmri</Label>
+			<Value>62</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Employment</Name>
+			<Label>Employment</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+	</EnumValues>
+	<IsExtensible>true</IsExtensible>
+</AxEnum>

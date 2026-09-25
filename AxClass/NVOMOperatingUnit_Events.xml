@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOMOperatingUnit_Events</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVOMOperatingUnit_Events
+{
+    
+        
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>OMOperatingUnit_NVParentDepartment_OnLookup</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(OMOperatingUnit, OMOperatingUnit_NVParentDepartmentRecId), FormControlEventType::Lookup)]
+    public static void OMOperatingUnit_NVParentDepartment_OnLookup(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun         formRun             = sender.formRun() as FormRun;
+        FormDataSource  operatingUnit_ds    = formRun.dataSource(formDataSourceStr(OMOperatingUnit, OMOperatingUnit));
+        OMOperatingUnit operatingUnit       = operatingUnit_ds.cursor() as OMOperatingUnit;
+
+        NVOMOperatingUnit_Events::departmentLookup(sender, operatingUnit.RecId, operatingUnit.NVDepartmentHierarchy);
+        
+        FormControlCancelableSuperEventArgs cancelSuper = e as FormControlCancelableSuperEventArgs;
+        cancelSuper.CancelSuperCall();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>departmentLookup</Name>
+				<Source><![CDATA[
+    public static void departmentLookup(FormControl sender, RecId _currentDepartment, NVDepartmentHierarchy currentDepartmentHierarchy)
+    {
+        NVDepartmentHierarchy departmentTokLook = currentDepartmentHierarchy == NVDepartmentHierarchy::None? 0: currentDepartmentHierarchy - 1;
+
+        Query query = new Query();
+        QueryBuildDataSource qbds = query.addDataSource(tableNum(OMOPeratingUnit));
+        
+        QueryBuildRange qbr1 = qbds.addRange(fieldNum(OMOPeratingUnit, OMOperatingUnitType));
+        qbr1.value(SysQueryRangeUtil::value(OMOperatingUnitType::OMDepartment));
+        qbr1.status(RangeStatus::Locked);
+
+        QueryBuildRange qbr2 = qbds.addRange(fieldNum(OMOPeratingUnit, RecId));
+        qbr2.value(SysQuery::valueNot(_currentDepartment));
+        qbr2.status(RangeStatus::Locked);
+        
+        QueryBuildRange qbr3 = qbds.addRange(fieldNum(OMOPeratingUnit, NVDepartmentHierarchy));
+        qbr3.value(SysQueryRangeUtil::value(departmentTokLook));
+        qbr3.status(RangeStatus::Locked);
+
+        SysReferenceTableLookup  sysTableLookup = SysReferenceTableLookup::newParameters(tableNum(OMOPeratingUnit), sender);
+        sysTableLookup.addSelectionField(fieldNum(OMOPeratingUnit, RecId));
+
+        sysTableLookup.addLookupField(fieldNum(OMOPeratingUnit, OMOperatingUnitNumber));
+        sysTableLookup.addLookupField(fieldNum(OMOPeratingUnit, Name));
+        sysTableLookup.addLookupField(fieldNum(OMOPeratingUnit, OMOperatingUnitType));
+        sysTableLookup.addLookupField(fieldNum(OMOPeratingUnit, NVDepartmentHierarchy));
+
+        sysTableLookup.parmQuery(query);
+        sysTableLookup.performFormLookup();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getParentDepartment</Name>
+				<Source><![CDATA[
+    public static OMDepartmentRecId getParentDepartment(OMDepartmentRecId _currentOperatingUnit)
+    {
+        OMOperatingUnit operatingUnit;
+
+        select firstonly operatingUnit
+            where operatingUnit.RecId == _currentOperatingUnit
+                && operatingUnit.OMOperatingUnitType == OMOperatingUnitType::OMDepartment;
+
+        return operatingUnit.NVParentDepartmentRecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>findNameHierarchy</Name>
+				<Source><![CDATA[
+    public static OMOperatingUnit findNameHierarchy(str _partyName,
+                                       OMOperatingUnitType _ouType,
+                                       NVDepartmentHierarchy _hierarchy)
+    {
+        OMOperatingUnit  operatingUnit = null;
+        
+        if (_partyName)
+        {
+            select firstonly operatingUnit
+                where operatingUnit.Name == _partyName &&
+                    operatingUnit.omOperatingUnitType == _ouType &&
+                    operatingUnit.NVDepartmentHierarchy == _hierarchy;
+        }
+
+        return operatingUnit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>OMOperatingUnit_onValidatingWrite</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(OMOperatingUnit), DataEventType::ValidatingWrite)]
+    public static void OMOperatingUnit_onValidatingWrite(Common sender, DataEventArgs e)
+    {
+        OMOperatingUnit operatingUnit = sender as OMOperatingUnit;
+
+        if(operatingUnit.OMOperatingUnitType == OMOperatingUnitType::OMDepartment)
+        {
+            if(operatingUnit.NVDepartmentHierarchy == NVDepartmentHierarchy::None)
+            {
+                ValidateEventArgs eventArgs = e as ValidateEventArgs;
+                eventArgs.parmValidateResult(false);
+                throw Error(strFmt("%1 must be filled in.", fieldPName(OMOperatingUnit, NVDepartmentHierarchy)));
+            }
+            else
+            {
+                if(operatingUnit.NVParentDepartmentRecId == 0 && operatingUnit.NVDepartmentHierarchy != NVDepartmentHierarchy::Level1)
+                {
+                    ValidateEventArgs eventArgs = e as ValidateEventArgs;
+                    eventArgs.parmValidateResult(false);
+                    throw Error(strFmt("%1 must be filled in.", fieldPName(OMOperatingUnit, NVParentDepartmentRecId)));
+                }
+                OMOperatingUnit dupOperatingUnit;
+
+                select firstonly dupOperatingUnit
+                    where dupOperatingUnit.RecId != operatingUnit.RecId
+                        && dupOperatingUnit.NVDepartmentHierarchy == operatingUnit.NVDepartmentHierarchy
+                        && dupOperatingUnit.Name == operatingUnit.Name
+                        && dupOperatingUnit.NVParentDepartmentRecId == operatingUnit.NVParentDepartmentRecId;
+
+                if(dupOperatingUnit)
+                {
+                    ValidateEventArgs eventArgs = e as ValidateEventArgs;
+                    eventArgs.parmValidateResult(false);
+                    throw Error("Department with same name already exist in selected hierarchy.");
+                }
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>NVDepartmentHierarchy_OnModified</Name>
+				<Source><![CDATA[
+    [FormDataFieldEventHandler(formDataFieldStr(OMOperatingUnit, OMOperatingUnit, NVDepartmentHierarchy), FormDataFieldEventType::Modified)]
+    public static void NVDepartmentHierarchy_OnModified(FormDataObject sender, FormDataFieldEventArgs e)
+    {
+        FormDataSource  operatingUnitDS = sender.datasource();
+        OMOperatingUnit operatingUnit   = operatingUnitDS.cursor() as OMOperatingUnit;
+        FormRun         formRun         = operatingUnitDS.formRun();
+        
+        NVDepartmentHierarchy departmentHierarchy = operatingUnit.NVDepartmentHierarchy;
+        operatingUnitDS.object(fieldNum(OMOperatingUnit, NVParentDepartmentRecId)).enabled(departmentHierarchy > NVDepartmentHierarchy::Level1);
+        if(departmentHierarchy <= NVDepartmentHierarchy::Level1)
+        {
+            operatingUnitDS.object(fieldNum(OMOperatingUnit, NVParentDepartmentRecId)).setValue(0);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>OMOperatingUnit_OnActivated</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(OMOperatingUnit, OMOperatingUnit), FormDataSourceEventType::Activated)]
+    public static void OMOperatingUnit_OnActivated(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        OMOperatingUnit operatingUnit   = sender.cursor() as OMOperatingUnit;
+        FormRun         formRun         = sender.formRun();
+        
+        NVDepartmentHierarchy departmentHierarchy = operatingUnit.NVDepartmentHierarchy;
+        sender.object(fieldNum(OMOperatingUnit, NVParentDepartmentRecId)).enabled(departmentHierarchy > NVDepartmentHierarchy::Level1);
+        if(departmentHierarchy <= NVDepartmentHierarchy::Level1)
+        {
+            sender.object(fieldNum(OMOperatingUnit, NVParentDepartmentRecId)).setValue(0);
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

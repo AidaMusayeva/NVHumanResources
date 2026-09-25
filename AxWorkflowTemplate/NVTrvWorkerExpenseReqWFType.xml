@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxWorkflowTemplate xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V2">
+	<Name>NVTrvWorkerExpenseReqWFType</Name>
+	<AssociationType>Global</AssociationType>
+	<CancelMenuItem>NVTrvWorkerExpenseReqWFTypeCancelMenuItem</CancelMenuItem>
+	<CanceledEventHandler>NVTrvWorkerExpenseReqWFTypeEventHandler</CanceledEventHandler>
+	<Category>NVTrvWorkerExpenseReqWFCat</Category>
+	<CompletedEventHandler>NVTrvWorkerExpenseReqWFTypeEventHandler</CompletedEventHandler>
+	<Document>NVTrvWorkerExpenseReqWFTypeDocument</Document>
+	<DocumentMenuItem>NVTrvWorkerExpenseRequest</DocumentMenuItem>
+	<HelpText>Worker travel expense workflow type</HelpText>
+	<Label>Worker travel expense workflow type</Label>
+	<StartedEventHandler>NVTrvWorkerExpenseReqWFTypeEventHandler</StartedEventHandler>
+	<SubmitToWorkflowMenuItem>NVTrvWorkerExpenseReqWFTypeSubmitMenuItem</SubmitToWorkflowMenuItem>
+	<LineItemWorkflows />
+	<SupportedElements>
+		<AxWorkflowElementReference xmlns="">
+			<Name>NVTrvWorkerExpenseReqApproval</Name>
+			<ElementName>NVTrvWorkerExpenseReqApproval</ElementName>
+		</AxWorkflowElementReference>
+	</SupportedElements>
+</AxWorkflowTemplate>

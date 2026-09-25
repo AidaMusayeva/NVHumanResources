@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVPayrollReplacementMethod</Name>
+	<Label>Replacement method</Label>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>Fixed</Name>
+			<Label>Fixed</Label>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Percentage</Name>
+			<Label>Percentage</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Difference</Name>
+			<Label>Difference</Label>
+			<Value>2</Value>
+		</AxEnumValue>
+	</EnumValues>
+</AxEnum>

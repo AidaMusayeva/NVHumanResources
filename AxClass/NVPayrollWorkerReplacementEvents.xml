@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVPayrollWorkerReplacementEvents</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVPayrollWorkerReplacementEvents
+{
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>ReplacementMethod_OnModified</Name>
+				<Source><![CDATA[
+    [FormDataFieldEventHandler(formDataFieldStr(HcmWorkerPayroll, NVPayrollWorkerReplaceEarningCode, ReplacementMethod), FormDataFieldEventType::Modified)]
+    public static void ReplacementMethod_OnModified(FormDataObject sender, FormDataFieldEventArgs e)
+    {
+        NVPayrollReplacementMethod  replacementMethod           = sender.getValue();
+        FormDataSource              workerReplaceEarningCode_ds = sender.datasource();
+    
+        workerReplaceEarningCode_ds.object(fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacementMethodPerc)).allowEdit(replacementMethod == NVPayrollReplacementMethod::Percentage);
+        workerReplaceEarningCode_ds.object(fieldNum(NVPayrollWorkerReplaceEarningCode, Formula)).allowEdit(replacementMethod == NVPayrollReplacementMethod::Fixed);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>NVPayrollWorkerReplaceEarningCode_OnSelectionChanged</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(HcmWorkerPayroll, NVPayrollWorkerReplaceEarningCode), FormDataSourceEventType::SelectionChanged)]
+    public static void NVPayrollWorkerReplaceEarningCode_OnSelectionChanged(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        FormDataSource                      workerReplaceEarningCode_ds = sender;
+        NVPayrollWorkerReplaceEarningCode   workerReplaceEarningCode    = workerReplaceEarningCode_ds.cursor();
+        NVPayrollReplacementMethod          replacementMethod           = workerReplaceEarningCode.ReplacementMethod;
+
+        workerReplaceEarningCode_ds.object(fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacementMethodPerc)).allowEdit(replacementMethod == NVPayrollReplacementMethod::Percentage);
+        workerReplaceEarningCode_ds.object(fieldNum(NVPayrollWorkerReplaceEarningCode, Formula)).allowEdit(replacementMethod == NVPayrollReplacementMethod::Fixed);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

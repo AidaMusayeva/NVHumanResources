@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVOvertimeHeader</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Form]
+public class NVOvertimeHeader extends FormRun
+{
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateControls</Name>
+				<Source><![CDATA[
+    void updateControls()
+    {
+        NVEmpOvertimeHeader_DS.allowEdit(NVEmpOvertimeHeader.Status == NVTimeSheetStatus::Draft);
+        NVEmpOvertimeHeader_DS.allowDelete(NVEmpOvertimeHeader.Status == NVTimeSheetStatus::Draft);
+        NVEmpOvertimeImport.enabled(NVEmpOvertimeHeader.Status == NVTimeSheetStatus::Draft);
+        Lock.enabled(NVEmpOvertimeHeader.Status == NVTimeSheetStatus::Draft);
+        UnLock.enabled(NVEmpOvertimeHeader.Status != NVTimeSheetStatus::Draft);
+
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="">
+			<DataSource>
+				<Name>NVEmpOvertimeHeader</Name>
+				<Methods>
+					<Method>
+						<Name>create</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name = "_append"></param>
+        public void create(boolean _append = false)
+        {
+            {
+                NVOvertimeId overtimeId;
+                NumberSequenceReference numberSequenceReference;
+
+                super(_append);
+
+                numberSequenceReference = NumberSeqReference::findReference(extendedTypeNum(NVOvertimeId));
+                if (numberSequenceReference)
+                {
+                    overtimeId = NumberSeq::newGetNum(numberSequenceReference).num();
+                    NVEmpOvertimeHeader.OvertimeId = overtimeId;
+                }
+            }
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>active</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
+        public int active()
+        {
+            int ret;
+        
+            ret = super();
+            element.updateControls();
+            
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+				<Fields>
+					<Field>
+						<DataField>PayPeriod</DataField>
+						<Methods>
+							<Method>
+								<Name>lookup</Name>
+								<Source><![CDATA[
+            /// <summary>
+            ///
+            /// </summary>
+            /// <param name = "_formControl"></param>
+            /// <param name = "_filterStr"></param>
+            public void lookup(FormControl _formControl, str _filterStr)
+            {
+
+                Query query = new Query();
+                QueryBuildDataSource queryBuildDataSource;
+                QueryBuildRange queryBuildRange;
+  
+                
+              
+                
+                SysTableLookup sysTableLookup = SysTableLookup::newParameters(tableNum(PayrollPayPeriod), _formControl);
+                sysTableLookup.addLookupfield(fieldNum(PayrollPayPeriod, RecId));
+                sysTableLookup.addLookupfield(fieldNum(PayrollPayPeriod, PeriodStartDate));
+                sysTableLookup.addLookupfield(fieldNum(PayrollPayPeriod, PeriodEndDate));
+                sysTableLookup.addSelectionField(fieldNum(PayrollPayPeriod, RecId));
+
+                queryBuildDataSource = query.addDataSource(tableNum(PayrollPayPeriod));
+  
+                queryBuildRange = queryBuildDataSource.addRange(fieldNum(PayrollPayPeriod, PayCycle));
+                queryBuildRange.value(queryValue(PayrollPayCycle::findByPayCycle(NVEmpOvertimeHeader.PayCycleId).RecId));
+                
+                queryBuildDataSource.addRange(fieldNum(PayrollPayPeriod, PeriodStatus)).value(queryValue(PayrollPeriodStatus::Open));
+
+                sysTableLookup.parmQuery(query);
+                sysTableLookup.performFormLookup();
+
+                //super(_formControl, _filterStr);
+        
+            }
+
+]]></Source>
+							</Method>
+						</Methods>
+					</Field>
+				</Fields>
+			</DataSource>
+		</DataSources>
+		<DataControls xmlns="">
+			<Control>
+				<Name>Lock</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        public void clicked()
+        {
+            super();
+            NVEmpOvertimeHeader.Status = NVTimeSheetStatus::Closed;
+            element.updateControls();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>Unlock</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        /// <summary>
+        ///
+        /// </summary>
+        public void clicked()
+        {
+            super();
+            NVEmpOvertimeHeader.Status = NVTimeSheetStatus::Draft;
+            element.updateControls();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources>
+		<AxFormDataSource xmlns="">
+			<Name>NVEmpOvertimeHeader</Name>
+			<Table>NVEmpOvertimeHeader</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>DataAreaId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OvertimeId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PayCycleId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PayPeriod</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Status</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+	</DataSources>
+	<Design>
+		<Caption xmlns="">Cabin crew flight hours</Caption>
+		<Pattern xmlns="">SimpleList</Pattern>
+		<PatternVersion xmlns="">1.1</PatternVersion>
+		<Style xmlns="">SimpleList</Style>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormActionPaneControl">
+				<Name>ActionPane</Name>
+				<Type>ActionPane</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormActionPaneTabControl">
+						<Name>ActionPaneTab</Name>
+						<Type>ActionPaneTab</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormButtonGroupControl">
+								<Name>GeneralButtonGroup</Name>
+								<Type>ButtonGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls>
+									<AxFormControl xmlns=""
+										i:type="AxFormMenuFunctionButtonControl">
+										<Name>NVEmpOvertimeImport</Name>
+										<AutoDeclaration>Yes</AutoDeclaration>
+										<Type>MenuFunctionButton</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataSource>NVEmpOvertimeHeader</DataSource>
+										<MenuItemName>NVEmpOvertimeImport</MenuItemName>
+										<MenuItemType>Action</MenuItemType>
+										<NeedsRecord>Yes</NeedsRecord>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormMenuFunctionButtonControl">
+										<Name>NVEmpOvertimeLine</Name>
+										<Type>MenuFunctionButton</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<MenuItemName>NVEmpOvertimeLine</MenuItemName>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormMenuFunctionButtonControl">
+										<Name>NVEmpOvertimeSummary</Name>
+										<Type>MenuFunctionButton</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<MenuItemName>NVEmpOvertimeSummary</MenuItemName>
+									</AxFormControl>
+								</Controls>
+								<Caption>General</Caption>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormButtonGroupControl">
+								<Name>MaintainButtonGroup</Name>
+								<Type>ButtonGroup</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls>
+									<AxFormControl xmlns=""
+										i:type="AxFormButtonControl">
+										<Name>Lock</Name>
+										<AutoDeclaration>Yes</AutoDeclaration>
+										<Type>Button</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<Text>Lock Overtime</Text>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormButtonControl">
+										<Name>Unlock</Name>
+										<AutoDeclaration>Yes</AutoDeclaration>
+										<Type>Button</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<Text>Unlock Overtime</Text>
+									</AxFormControl>
+								</Controls>
+								<Caption>Maintain</Caption>
+							</AxFormControl>
+						</Controls>
+						<Caption>Action</Caption>
+					</AxFormControl>
+				</Controls>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>CustomFilterGroup</Name>
+				<Pattern>CustomAndQuickFilters</Pattern>
+				<PatternVersion>1.1</PatternVersion>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl>
+						<Name>QuickFilter</Name>
+						<FormControlExtension>
+							<Name>QuickFilterControl</Name>
+							<ExtensionComponents />
+							<ExtensionProperties>
+								<AxFormControlExtensionProperty>
+									<Name>targetControlName</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+								<AxFormControlExtensionProperty>
+									<Name>placeholderText</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+								<AxFormControlExtensionProperty>
+									<Name>defaultColumnName</Name>
+									<Type>String</Type>
+								</AxFormControlExtensionProperty>
+							</ExtensionProperties>
+						</FormControlExtension>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>HorizontalLeft</ArrangeMethod>
+				<FrameType>None</FrameType>
+				<Style>CustomFilter</Style>
+				<ViewEditMode>Edit</ViewEditMode>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormGridControl">
+				<Name>Grid</Name>
+				<Type>Grid</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEmpOvertimeHeader_OvertimeId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>OvertimeId</DataField>
+						<DataSource>NVEmpOvertimeHeader</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>NVEmpOvertimeHeader_PayCycleId</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>PayCycleId</DataField>
+						<DataSource>NVEmpOvertimeHeader</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormInt64Control">
+						<Name>NVEmpOvertimeHeader_PayPeriod</Name>
+						<Type>Int64</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>PayPeriod</DataField>
+						<DataSource>NVEmpOvertimeHeader</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormReferenceGroupControl">
+						<Name>PayPeriod_ListGrid</Name>
+						<AllowEdit>No</AllowEdit>
+						<Type>ReferenceGroup</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls />
+						<DataSource>NVEmpOvertimeHeader</DataSource>
+						<ReferenceField>PayPeriod</ReferenceField>
+						<ReplacementFieldGroup>Period</ReplacementFieldGroup>
+					</AxFormControl>
+				</Controls>
+				<DataSource>NVEmpOvertimeHeader</DataSource>
+				<Style>Tabular</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

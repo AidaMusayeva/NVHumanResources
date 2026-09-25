@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>LeaveAbsenceParameters.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyir3amin11</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVLeaveConsumption</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>Group</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormComboBoxControl">
+						<Name>NVLeaveConsumptionPriority</Name>
+						<Type>ComboBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVLeaveConsumptionPriority</DataField>
+						<DataSource>LeaveAbsenceParameters</DataSource>
+						<Items />
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormDateControl">
+						<Name>NVLeaveConsumptionApplyDate</Name>
+						<Type>Date</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVLeaveConsumptionApplyDate</DataField>
+						<DataSource>LeaveAbsenceParameters</DataSource>
+					</AxFormControl>
+				</Controls>
+				<Caption>Leave consumption setup</Caption>
+			</FormControl>
+			<Parent>TOCGeneralBody</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>AbsenceHierarchy</PreviousSibling>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

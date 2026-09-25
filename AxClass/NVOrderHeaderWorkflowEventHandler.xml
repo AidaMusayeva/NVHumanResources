@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderHeaderWorkflowEventHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// The NVOrderHeaderWorkflowEventHandler workflow event handler.
+/// </summary>
+public class  NVOrderHeaderWorkflowEventHandler implements WorkflowCanceledEventHandler,  
+	WorkflowCompletedEventHandler,
+	WorkflowStartedEventHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>started</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Fired when workflow instance starts (user submitted the order).
+    /// Transitions status: Draft/Rejected -> PendingApproval.
+    /// </summary>
+    public void started(WorkflowEventArgs _workflowEventArgs)
+	{
+        try
+        {
+            NVOrderHeader::updateWorkflowStatus(
+                _workflowEventArgs.parmWorkflowContext().parmRecId(),
+                NVOrderStatus::PendingApproval);
+        }
+        catch (Exception::Error)
+        {
+            error("NVOrderHeaderWorkflow: Failed to set status PendingApproval.");
+            throw;
+        }
+	}
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>canceled</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Fired when workflow is cancelled (user clicked Recall).
+    /// Transitions status back to Draft to allow editing and resubmission.
+    /// </summary>
+    public void canceled(WorkflowEventArgs _workflowEventArgs)
+	{
+        try
+        {
+            NVOrderHeader::updateWorkflowStatus(
+                _workflowEventArgs.parmWorkflowContext().parmRecId(),
+                NVOrderStatus::Draft);
+        }
+        catch (Exception::Error)
+        {
+            error("NVOrderHeaderWorkflow: Failed to set status Draft.");
+            throw;
+        }
+	}
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>completed</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Fired when all approval stages complete successfully.
+    /// 1) Captures final approver from WorkflowTrackingTable.
+    /// 2) Transitions status: PendingApproval -> Approved.
+    /// Single execution point — fires exactly once at end of entire workflow.
+    /// </summary>
+    public void completed(WorkflowEventArgs _workflowEventArgs)
+    {
+        RefRecId                    headerRecId;
+        WorkflowCorrelationId       correlationId;
+        WorkflowTrackingStatusTable trackingStatus;
+        WorkflowTrackingTable       trackingRecord;
+        DirPersonUser               personUser;
+        HcmWorker                   approverWorker;
+
+        headerRecId   = _workflowEventArgs.parmWorkflowContext().parmRecId();
+        correlationId = _workflowEventArgs.parmWorkflowContext().parmRootCorrelationId();
+
+        if (!correlationId || correlationId == emptyGuid())
+        {
+            correlationId = _workflowEventArgs
+                .parmWorkflowContext().parmWorkflowCorrelationId();
+        }
+
+        try
+        {
+            // Step 1: Get tracking status record by correlationId
+            select firstonly trackingStatus
+                where trackingStatus.CorrelationId == correlationId;
+
+            if (trackingStatus.RecId)
+            {
+                // Step 2: Get latest Approval action with real user
+                // TrackingType = 8 (Approval) confirmed from DB data
+                // Join via WorkflowTrackingStatusTable.RecId — correct pattern
+                select firstonly trackingRecord
+                    order by trackingRecord.RecId desc
+                    where trackingRecord.WorkflowTrackingStatusTable == trackingStatus.RecId
+                       && trackingRecord.TrackingType == WorkflowTrackingType::Approval
+                       && trackingRecord.User         != '';
+
+                if (trackingRecord.RecId && trackingRecord.User)
+                {
+                    // Step 3: Resolve UserId -> DirPersonUser -> HcmWorker
+                    select firstonly personUser
+                        where personUser.User == trackingRecord.User;
+
+                    if (!personUser.RecId)
+                    {
+                        warning(strFmt(
+                            "Workflow completed: approver '%1' has no DirPersonUser link. " +
+                            "Final approver not stored. Ensure approver is linked to a Worker record.",
+                            trackingRecord.User));
+                    }
+                    else
+                    {
+                        select firstonly approverWorker
+                            where approverWorker.Person == personUser.PersonParty;
+
+                        if (!approverWorker.RecId)
+                        {
+                            warning(strFmt(
+                                "Workflow completed: approver '%1' has no HcmWorker record. " +
+                                "Final approver not stored.",
+                                trackingRecord.User));
+                        }
+                        else
+                        {
+                            NVOrderHeader::updateFinalApprover(
+                                headerRecId,
+                                approverWorker.RecId,
+                                today());
+                        }
+                    }
+                }
+            }
+
+            // Step 5: Update status to Approved — always executes
+            NVOrderHeader::updateWorkflowStatus(
+                headerRecId,
+                NVOrderStatus::Approved);
+        }
+        catch (Exception::Error)
+        {
+            error("NVOrderHeaderWorkflow: Failed to complete workflow post-processing.");
+            throw;
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

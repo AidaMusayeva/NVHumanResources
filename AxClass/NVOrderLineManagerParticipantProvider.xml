@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVOrderLineManagerParticipantProvider</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Workflow participant provider for NVOrderHeaderWorkflow.
+/// Resolves the "Requestor's Line Manager" token to the line manager
+/// of the HR specialist who submitted the order to workflow.
+/// </summary>
+/// <remarks>
+/// Resolution chain:
+/// WorkflowContext.CorrelationId
+///   → WorkflowTrackingStatusTable.Originator (submitter UserId)
+///   → DirPersonUser → HcmWorker (submitter worker)
+///   → HcmWorkerHelper::getManagerForWorker()
+///   → DirPersonUser → UserId (manager)
+///   → WorkflowUserList
+/// </remarks>
+public class NVOrderLineManagerParticipantProvider
+    implements WorkflowParticipantProvider
+{
+    // Token identifier used in Workflow Designer
+    private const WorkflowParticipantToken LineManagerToken = 'LineManager';
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getParticipantTokens</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the list of participant tokens supported by this provider.
+    /// Called by Workflow Designer UI when admin configures participant assignment.
+    /// </summary>
+    /// <returns>WorkflowParticipantTokenList with one token: Requestor's Line Manager</returns>
+    public WorkflowParticipantTokenList getParticipantTokens()
+    {
+        WorkflowParticipantTokenList    tokenList;
+        WorkflowParticipantToken        token;
+
+        tokenList = WorkflowParticipantTokenList::construct();
+
+        token = LineManagerToken;
+        tokenList.add(token, "Requestor's Line Manager");
+
+        return tokenList;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>resolve</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Resolves the LineManager token to the actual line manager user
+    /// of the HR specialist who submitted this order.
+    /// </summary>
+    /// <param name="_context">Workflow context containing correlation ID and document RecId</param>
+    /// <param name="_participantTokenName">Must be 'LineManager'</param>
+    /// <returns>WorkflowUserList containing the manager's UserId</returns>
+    public WorkflowUserList resolve(
+        WorkflowContext         _context,
+        WorkflowParticipantToken _participantTokenName)
+    {
+        WorkflowUserList            userList;
+        WorkflowTrackingStatusTable trackingStatus;
+        DirPersonUser               submitterPersonUser;
+        HcmWorker                   submitterWorker;
+        HcmWorker                   managerWorker;
+        DirPersonUser               managerPersonUser;
+        UserId                      submitterUserId;
+
+        userList = WorkflowUserList::construct();
+
+        // Only handle our token
+        if (_participantTokenName != LineManagerToken)
+        {
+            return userList;
+        }
+
+        // Step 1: Get submitter UserId from workflow tracking
+        // WorkflowTrackingStatusTable.Originator is set by framework at submission time
+        WorkflowCorrelationId correlationId;
+                correlationId = _context.parmRootCorrelationId()
+            ? _context.parmRootCorrelationId()
+            : _context.parmWorkflowCorrelationId();
+
+        select firstonly trackingStatus
+            where trackingStatus.CorrelationId == correlationId;
+
+        if (!trackingStatus.RecId)
+        {
+            throw error(strFmt(
+                "NVOrderLineManagerParticipantProvider: Cannot find workflow tracking record for correlation ID '%1'.",
+                _context.parmWorkflowCorrelationId()));
+        }
+
+        submitterUserId = trackingStatus.Originator;
+
+        if (!submitterUserId)
+        {
+            throw error(strFmt(
+                "NVOrderLineManagerParticipantProvider: Workflow originator is empty for correlation ID '%1'.",
+                _context.parmWorkflowCorrelationId()));
+        }
+
+        // Step 2: Resolve submitter UserId → HcmWorker
+        select firstonly submitterPersonUser
+            where submitterPersonUser.User == submitterUserId;
+
+        if (!submitterPersonUser.RecId)
+        {
+            throw error(strFmt(
+                "NVOrderLineManagerParticipantProvider: User '%1' is not linked to a person record (DirPersonUser).",
+                submitterUserId));
+        }
+
+        select firstonly submitterWorker
+            where submitterWorker.Person == submitterPersonUser.PersonParty;
+
+        if (!submitterWorker.RecId)
+        {
+            throw error(strFmt(
+                "NVOrderLineManagerParticipantProvider: User '%1' is not linked to an HcmWorker record.",
+                submitterUserId));
+        }
+
+        // Step 3: Get line manager via HcmWorkerHelper
+        // Confirmed API: HcmWorkerHelper::getManagerForWorker(HcmWorkerRecId, utcdatetime)
+        managerWorker = HcmWorkerHelper::getManagerForWorker(
+            submitterWorker.RecId,
+            DateTimeUtil::utcNow());
+
+        if (!managerWorker.RecId)
+        {
+            throw error(strFmt(
+                "NVOrderLineManagerParticipantProvider: No line manager found for submitter UserId '%1' (Worker RecId: '%2'). " +
+                "Ensure the worker is assigned to a position with a parent in the position hierarchy.",
+                submitterUserId,
+                submitterWorker.RecId));
+        }
+
+        // Step 4: Resolve manager HcmWorker → UserId
+        select firstonly managerPersonUser
+            where managerPersonUser.PersonParty == managerWorker.Person;
+
+        if (!managerPersonUser.RecId)
+        {
+            throw error(strFmt(
+                "NVOrderLineManagerParticipantProvider: Line manager (HcmWorker RecId: '%1') is not linked to a system user (DirPersonUser).",
+                managerWorker.RecId));
+        }
+
+        if (!managerPersonUser.User)
+        {
+            throw error(strFmt(
+                "NVOrderLineManagerParticipantProvider: Line manager person record exists but has no UserId assigned (DirPersonUser RecId: '%1').",
+                managerPersonUser.RecId));
+        }
+
+        // Step 5: Add manager to result list
+        userList.add(managerPersonUser.User);
+
+        return userList;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

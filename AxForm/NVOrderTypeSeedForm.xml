@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVOrderTypeSeedForm</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+/// <summary>
+/// Developer-only form to seed HR Order Type Groups and Order Types.
+/// Not added to navigation menus; intended to be opened via URL using a Menu Item.
+/// </summary>
+[Form]
+public class NVOrderTypeSeedForm extends FormRun
+{
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the form.
+    /// </summary>
+    public void init()
+    {
+        super();
+
+        // Optional: add any extra runtime checks here if needed.
+        // Example: show current company context to avoid surprises in per-company tables.
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getGroupsCount</Name>
+				<Source><![CDATA[
+    private int getGroupsCount()
+    {
+        // Note: count(RecId) returns in the RecId field of the aggregate buffer.
+        return (select count(RecId) from NVOrderTypeGroup).RecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getTypesCount</Name>
+				<Source><![CDATA[
+    private int getTypesCount()
+    {
+        return (select count(RecId) from NVOrderTypeTable).RecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>confirmRun</Name>
+				<Source><![CDATA[
+    private boolean confirmRun(str _title, str _message, DialogButton _defaultButton = DialogButton::No)
+    {
+        return Box::yesNo(_message, _defaultButton, _title) == DialogButton::Yes;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runFillGroups</Name>
+				<Source><![CDATA[
+    private void runFillGroups()
+    {
+        int existingCount = this.getGroupsCount();
+
+        // Soft warning (do not hard block): let dev decide.
+        if (existingCount >= 12)
+        {
+            if (!this.confirmRun(
+                    "Data already exists",
+                    strFmt("Table NVOrderTypeGroup already contains %1 records.\n\nDo you want to run the job anyway?", existingCount),
+                    DialogButton::No))
+            {
+                return;
+            }
+        }
+
+        if (!this.confirmRun(
+                "Confirm seed (Groups)",
+                strFmt("This will seed Order Type Groups.\n\nCompany: %1\n\nContinue?", curext()),
+                DialogButton::No))
+        {
+            return;
+        }
+
+        try
+        {
+            setPrefix("Seed Order Type Groups");
+
+            // Run the job class (developer tool)
+            NVFillOrderTypeGroups::main(null);
+
+            Box::info("Order Type Groups seed job finished. Check Infolog for details.", "Done");
+        }
+        catch (Exception::Error)
+        {
+            error("Order Type Groups seed job failed. Check Infolog for details.");
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runFillTypes</Name>
+				<Source><![CDATA[
+    private void runFillTypes()
+    {
+        int groupsCount   = this.getGroupsCount();
+        int existingTypes = this.getTypesCount();
+
+        // Prerequisite check
+        if (groupsCount == 0)
+        {
+            Box::warning(
+                "NVOrderTypeGroup is empty.\n\nRun 'Fill Groups' first, then run 'Fill Types'.",
+                "Missing prerequisite");
+            return;
+        }
+
+        if (existingTypes >= 62)
+        {
+            if (!this.confirmRun(
+                    "Data already exists",
+                    strFmt("Table NVOrderTypeTable already contains %1 records.\n\nDo you want to run the job anyway?", existingTypes),
+                    DialogButton::No))
+            {
+                return;
+            }
+        }
+
+        if (!this.confirmRun(
+                "Confirm seed (Types)",
+                strFmt("This will seed Order Types.\n\nCompany: %1\n\nContinue?", curext()),
+                DialogButton::No))
+        {
+            return;
+        }
+
+        try
+        {
+            setPrefix("Seed Order Types");
+
+            // Run the job class (developer tool)
+            NVFillOrderTypes::main(null);
+
+            Box::info("Order Types seed job finished. Check Infolog for details.", "Done");
+        }
+        catch (Exception::Error)
+        {
+            error("Order Types seed job failed. Check Infolog for details.");
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="">
+			<Control>
+				<Name>ExecuteGroupsButton</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            super();
+            element.runFillGroups();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>ExecuteTypesButton</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            super();
+            element.runFillTypes();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>CloseButton</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            super();
+            element.close();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources />
+	<Design>
+		<Pattern xmlns="">Custom</Pattern>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormStaticTextControl">
+				<Name>InfoText</Name>
+				<Type>StaticText</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Text>Click Execute to insert new Data on Table</Text>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>FormButtonGroupControl1</Name>
+				<Type>ButtonGroup</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormButtonControl">
+						<Name>ExecuteGroupsButton</Name>
+						<Type>Button</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Big>Yes</Big>
+						<NormalImage>Upload</NormalImage>
+						<Text>Execute Groups</Text>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormButtonControl">
+						<Name>ExecuteTypesButton</Name>
+						<Type>Button</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Big>Yes</Big>
+						<NormalImage>Upload</NormalImage>
+						<Text>Execute Types</Text>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormButtonControl">
+						<Name>CloseButton</Name>
+						<Type>Button</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Big>Yes</Big>
+						<NormalImage>TakeBreak</NormalImage>
+						<Text>Close</Text>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>Vertical</ArrangeMethod>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

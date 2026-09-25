@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkCalendarGenerationDialog_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formStr(HcmWorkCalendarGenerationDialog))]
+final class NVHcmWorkCalendarGenerationDialog_Extension
+{
+    private HcmWorkCalendarGenerationDetail locWorkCalendarGenerationDetail;
+
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        next init();
+
+        if (this.args()
+            && this.args().dataset() == tableNum(HcmWorkCalendarGenerationDetail)
+            && this.args().record())
+        {
+            locWorkCalendarGenerationDetail = this.args().record() as HcmWorkCalendarGenerationDetail;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>closeOk</Name>
+				<Source><![CDATA[
+    public void closeOk()
+    {
+        next closeOk();
+
+        NVHcmWorkCalendarHolidayUpdate::updateWorkCalendarDaysForHolidays(locWorkCalendarGenerationDetail);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

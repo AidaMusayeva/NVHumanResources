@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveAdjustmentImport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+Using System.IO;
+Using OfficeOpenXml;
+Using OfficeOpenXml.ExcelPackage;
+Using OfficeOpenXml.ExcelRange;
+
+final class NVLeaveAdjustmentImport
+{
+    #Define.TotalColumns(6)
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run(LeaveEnrollment enrollment)
+    {
+        System.IO.Stream            stream;
+        ExcelSpreadsheetName        sheeet;
+        FileUploadBuild             fileUpload;
+        DialogGroup                 dlgUploadGroup;
+        FileUploadBuild             fileUploadBuild;
+        FormBuildControl            formBuildControl;
+        FormBuildButtonControl      FormBuildButtonControl;
+        FormBuildControl            FormBuildMenuButtonControl;
+        MenuItemBuild               MenuItemBuild;
+        Dialog                      dialog = new Dialog("Leave adjustment import");
+ 
+        dlgUploadGroup          = dialog.addGroup("@SYS54759");
+        formBuildControl        = dialog.formBuildDesign().control(dlgUploadGroup.name());
+        fileUploadBuild         = formBuildControl.addControlEx(classstr(FileUpload), "Upload");
+        fileUploadBuild.style(FileUploadStyle::MinimalWithFilename);
+        fileUploadBuild.fileTypesAccepted(".xlsx");
+   
+        if (dialog.run() && dialog.closedOk())
+        {
+            FileUpload fileUploadControl     = dialog.formRun().control(dialog.formRun().controlId("Upload"));
+            FileUploadTemporaryStorageResult fileUploadResult = fileUploadControl.getFileUploadResult();
+ 
+            if (fileUploadResult != null && fileUploadResult.getUploadStatus())
+            {
+                stream = fileUploadResult.openResult();
+                using (ExcelPackage Package = new ExcelPackage(stream))
+                {
+                    int               rowCount, i,j;
+                    Package.Load(stream);
+                    ExcelWorksheet worksheet = package.get_Workbook().get_Worksheets().get_Item(1);
+                
+                    OfficeOpenXml.ExcelRange range       = worksheet.Cells;
+                    rowCount = worksheet.Dimension.End.Row -worksheet.Dimension.Start.Row + 1;
+                    LeavePlan leavePlan = LeavePlan::find(enrollment.Plan);
+
+                    ttsbegin;
+                    RecordInsertList leaveBankInserList = new RecordInsertList(tableNum(LeaveBankTransaction));
+                    boolean insertRecordSet = true;
+                    Set recordSet = new Set(Types::String);
+                    for (i = 2 ; i <= rowCount; i++)
+                    {
+                        container recordCon = conNull();
+                        for(j= 1; j <= #TotalColumns; j++)
+                        {
+                            recordCon += [range.get_Item(i, j).Value ? range.get_Item(i, j).Value.ToString() : ""];
+                        }
+
+                        if(recordCon != conNull())
+                        {
+                            setPrefix(strFmt("Line # %1", i));
+
+                            boolean canInsert = true;
+                            NVLeaveCategory     category;
+                            LeaveType           leaveType   = LeaveType::findByType(conPeek(recordCon, 1));
+                            category    = str2Enum(category, conPeek(recordCon, 2));
+                            HcmWorker   worker      = HcmWorker::findByPersonnelNumber(conPeek(recordCon, 3));
+                            TransDate   transDate   = str2Date(conPeek(recordCon, 4), 213);
+                            int         days        = str2Int(conPeek(recordCon, 5));
+                            str         reason      = conPeek(recordCon, 6);
+
+                            if(enrollment.RecId == 0)
+                                leavePlan = NVLeavePlanEventHandler::getPlanForLeaveType(leaveType.RecId, worker.RecId);
+
+                            LeavePlanTier planTier;
+                            select firstonly planTier
+                                where planTier.Plan     == leavePlan.RecId
+                                    && planTier.Type    == leaveType.RecId;
+                            
+                            if(leaveType.RecId == 0)
+                                canInsert = checkFailed(strFmt("Leave type '%1' not found.", conPeek(recordCon, 1)));
+
+                            if(worker.RecId == 0)
+                                canInsert = checkFailed(strFmt("Worker not found against personnel number '%1'", conPeek(recordCon, 2)));
+
+                            if(leaveType.RecId != 0 && planTier.RecId == 0)
+                                canInsert = checkFailed(strFmt("Leave type '%1' not associated with '%2'.", leaveType.Type, worker.PersonnelNumber));
+
+                            if(days == 0)
+                                canInsert = checkFailed(strFmt("Adjustment days must be filled in."));
+
+                            if(transDate == dateNull())
+                                canInsert = checkFailed("Adjustment date must be filled in.");
+
+                            if(canInsert)
+                            {
+                                LeaveBankTransaction leaveBankTransaction;
+                                leaveBankTransaction.clear();
+
+                                leaveBankTransaction.Worker             = worker.RecId;
+                                leaveBankTransaction.LeavePlan          = leavePlan.RecId;
+                                leaveBankTransaction.LeaveType          = leaveType.RecId;
+                                leaveBankTransaction.NVLeaveCategory    = category;
+                                leaveBankTransaction.TransactionDate    = transDate;
+                                leaveBankTransaction.TransactionType    = LeaveTransactionType::BalanceAdjustment;
+                                leaveBankTransaction.Amount             = days;
+                                leaveBankTransaction.Comment            = reason;
+
+                                str recStr = strFmt("%1%2%3", leaveBankTransaction.Worker, leaveBankTransaction.LeaveType, leaveBankTransaction.TransactionDate);//, leaveBankTransaction.Amount, leaveBankTransaction.Comment);
+                                
+                                if(recordSet.in(recStr))
+                                {
+                                    canInsert = checkFailed("Duplicate record found.");
+                                }
+                                else
+                                {
+                                    recordSet.add(recStr);
+                                    leaveBankInserList.add(leaveBankTransaction);
+                                }
+                            }
+
+                            insertRecordSet = insertRecordSet && canInsert;
+                        }
+                    }
+
+                    if(insertRecordSet)
+                    {
+                        leaveBankInserList.insertDatabase();
+                        info("Operation completed.");
+                    }
+                    else
+                    {
+                        error("Please fix errors in file to proceed.");
+                    }
+                    ttscommit;
+                }
+
+            }
+            else
+            {
+                error("Error occured during upload. Please try again.");
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NVLeaveAdjustmentImport import = new NVLeaveAdjustmentImport();
+        LeaveEnrollment enrollment = _args.record() as LeaveEnrollment;
+        
+        import.run(enrollment);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

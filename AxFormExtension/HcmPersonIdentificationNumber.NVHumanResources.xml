@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmPersonIdentificationNumber.NVHumanResources</Name>
+	<ControlModifications>
+		<AxExtensionModification xmlns="">
+			<Name>IssuingAgency</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Visible</Name>
+					<Value>No</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</ControlModifications>
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControl531k5tai1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormDateControl">
+				<Name>DatesGroup_ActivationDate</Name>
+				<Type>Date</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVActivationDate</DataField>
+				<DataSource>HcmPersonIdentificationNumber</DataSource>
+			</FormControl>
+			<Parent>DetailsTabPage</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>DatesGroup</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControli4p05dsj1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>DatesGroup_GivenOrganization</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVGivenOrganization</DataField>
+				<DataSource>HcmPersonIdentificationNumber</DataSource>
+				<Label>Given Organization</Label>
+			</FormControl>
+			<Parent>DetailsTabPage</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeavePlanEventHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVLeavePlanEventHandler
+{
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>NVHcmManualLeaveAdjustment_OnDialogClosed</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(EssLeaveRequestCalendar, NVHcmManualLeaveAdjustment), FormControlEventType::DialogClosed)]
+    public static void NVHcmManualLeaveAdjustment_OnDialogClosed(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+        FormButtonControl applyButtonControl = formRun.design().controlName(formControlStr(EssLeaveRequestCalendar, Apply));
+    
+        applyButtonControl.clicked();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getPlanForLeaveType</Name>
+				<Source><![CDATA[
+    public static LeavePlan getPlanForLeaveType(LeaveTypeRecId _leaveType, HcmWorkerRecId _workerRecId)
+    {
+        LeavePlanTier planTier;
+        LeavePlan plan;
+        LeaveEnrollment enrollment;
+
+        select firstonly crosscompany planTier
+            where planTier.Type == _leaveType
+            join plan
+                where plan.RecId == planTier.Plan
+            join enrollment
+                where enrollment.Plan == plan.RecId
+                    && enrollment.Worker == _workerRecId
+                    && enrollment.StartDate <= DateTimeUtil::getToday(DateTimeUtil::getCompanyTimeZone())
+                    && enrollment.EndDate >= DateTimeUtil::getToday(DateTimeUtil::getCompanyTimeZone());
+
+        return plan;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>NVLeavePlanAdditionalTier_OnActivated</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(LeavePlan, NVLeavePlanAdditionalTier), FormDataSourceEventType::Activated)]
+    public static void NVLeavePlanAdditionalTier_OnActivated(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        FormRun                     formRun             = sender.formRun();
+        NVLeavePlanAdditionalTier planAdditionalTier    = sender.cursor();
+        
+        boolean canEditQualifyingAmount = planAdditionalTier.Category == NVLeaveCategory::Children 
+            || planAdditionalTier.Category == NVLeaveCategory::ChildDisability
+            || planAdditionalTier.Category == NVLeaveCategory::MOS;
+        sender.object(fieldNum(NVLeavePlanAdditionalTier, QualifyingAmount)).allowEdit(canEditQualifyingAmount);
+                
+        boolean canEditEmployeeGender = planAdditionalTier.Category == NVLeaveCategory::Children
+            || planAdditionalTier.Category == NVLeaveCategory::ChildDisability;
+        sender.object(fieldNum(NVLeavePlanAdditionalTier, EmployeeGender)).allowEdit(canEditEmployeeGender);
+        sender.object(fieldNum(NVLeavePlanAdditionalTier, EmployeeMaritalStatus)).allowEdit(canEditEmployeeGender);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>Category_OnModified</Name>
+				<Source><![CDATA[
+    [FormDataFieldEventHandler(formDataFieldStr(LeavePlan, NVLeavePlanAdditionalTier, Category), FormDataFieldEventType::Modified)]
+    public static void Category_OnModified(FormDataObject sender, FormDataFieldEventArgs e)
+    {
+        FormDataSource              fds                     = sender.datasource();
+        FormRun                     formRun                 = fds.formRun();
+        NVLeavePlanAdditionalTier   planAdditionalTier      = fds.cursor();
+        
+        boolean canEditQualifyingAmount = planAdditionalTier.Category == NVLeaveCategory::Children
+            || planAdditionalTier.Category == NVLeaveCategory::ChildDisability
+            || planAdditionalTier.Category == NVLeaveCategory::MOS;
+        fds.object(fieldNum(NVLeavePlanAdditionalTier, QualifyingAmount)).allowEdit(canEditQualifyingAmount);
+        
+        boolean canEditEmployeeGender = planAdditionalTier.Category == NVLeaveCategory::Children
+            || planAdditionalTier.Category == NVLeaveCategory::ChildDisability;
+        fds.object(fieldNum(NVLeavePlanAdditionalTier, EmployeeGender)).allowEdit(canEditEmployeeGender);
+        fds.object(fieldNum(NVLeavePlanAdditionalTier, EmployeeMaritalStatus)).allowEdit(canEditEmployeeGender);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>PlanBalanceAll_OnClicked</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(LeavePlan, PlanBalanceAll), FormControlEventType::Clicked)]
+    public static void PlanBalanceAll_OnClicked(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun     formRun = sender.formRun();
+        LeavePlan   plan    = formRun.dataSource(formDataSourceStr(LeavePlan, LeavePlan)).cursor();
+
+        if(plan)
+        {
+            NVLeavePlanLeaveBalancePolicy::createAllByPlan(plan);
+
+            formRun.dataSource(formDataSourceStr(LeavePlan, LeavePlan)).research(true);
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

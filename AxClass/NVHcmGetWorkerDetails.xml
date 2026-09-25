@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmGetWorkerDetails</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmGetWorkerDetails
+{
+    #define.ProfileImageExt(".jpeg")
+    str workerId;
+    str email;
+    int pageNumber;
+    int totalRecordsPerPage;
+    str reportsToWorker;
+    int totalRecords;
+    List workerList;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmWorkerId</Name>
+				<Source><![CDATA[
+    public str parmWorkerId(str _parm = workerId)
+    {
+        workerId = _parm;
+        return workerId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmEmail</Name>
+				<Source><![CDATA[
+    public str parmEmail(str _parm = email)
+    {
+        email = _parm;
+        return email;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPageNumber</Name>
+				<Source><![CDATA[
+    public int parmPageNumber(int _parm = pageNumber)
+    {
+        pageNumber = _parm;
+        return pageNumber;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTotalRecordsPerPage</Name>
+				<Source><![CDATA[
+    public int parmTotalRecordsPerPage(int _parm = totalRecordsPerPage)
+    {
+        totalRecordsPerPage = _parm;
+        return totalRecordsPerPage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmReportsToWorker</Name>
+				<Source><![CDATA[
+    public str parmReportsToWorker(str _parm = reportsToWorker)
+    {
+        reportsToWorker = _parm;
+        return reportsToWorker;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static NVHcmGetWorkerDetails construct(str workerId = "", str email = "", int pageNumber = 0, int totalRecordsInPage = 0, str reportsToWorker = "")
+    {
+        NVHcmGetWorkerDetails workerDetails = new NVHcmGetWorkerDetails();
+
+        workerDetails.parmWorkerId(workerId);
+        workerDetails.parmEmail(email);
+        workerDetails.parmPageNumber(pageNumber);
+        workerDetails.parmTotalRecordsPerPage(totalRecordsInPage);
+        workerDetails.parmReportsToWorker(reportsToWorker);
+
+        return workerDetails;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkerTeam</Name>
+				<Source><![CDATA[
+    public List getWorkerTeam(str _nameFilter = "")
+    {
+        workerList = new List(Types::Class);
+        
+        HcmWorker managerWorker = HcmWorker::findByPersonnelNumber(reportsToWorker);
+        if(managerWorker)
+        {
+            utcdatetime             curDateTime = DateTimeUtil::getSystemDateTime();
+            HcmPositionDetail       managerPositionDetail = HcmPositionDetail::findByPrimaryPositionForWorker(managerWorker.RecId);
+            Query                   query = new Query();
+            QueryBuildDataSource    posHierarchyDS = query.addDataSource(tableNum(HcmPositionHierarchy));
+            QueryBuildRange         qbr;
+
+            posHierarchyDS.addGroupByField(fieldNum(HcmPositionHierarchy, Position));
+
+            qbr = posHierarchyDS.addRange(fieldNum(HcmPositionHierarchy, ParentPosition));
+            qbr.value(queryValue(managerPositionDetail.Position));
+
+            qbr = posHierarchyDS.addRange(fieldNum(HcmPositionHierarchy, ValidFrom));
+            qbr.value(strFmt("..%1", curDateTime));
+
+            qbr = posHierarchyDS.addRange(fieldNum(HcmPositionHierarchy, ValidTo));
+            qbr.value(strFmt("%1..", curDateTime));
+                        
+            QueryBuildDataSource workerAssignmentDS = posHierarchyDS.addDataSource(tableNum(HcmPositionWorkerAssignment));
+            workerAssignmentDS.relations(false);
+            workerAssignmentDS.addLink(fieldNum(HcmPositionHierarchy, Position), fieldNum(HcmPositionWorkerAssignment, Position));
+            workerAssignmentDS.joinMode(JoinMode::InnerJoin);
+
+            qbr = workerAssignmentDS.addRange(fieldNum(HcmPositionWorkerAssignment, ValidFrom));
+            qbr.value(strFmt("..%1", curDateTime));
+
+            qbr = workerAssignmentDS.addRange(fieldNum(HcmPositionWorkerAssignment, ValidTo));
+            qbr.value(strFmt("%1..", curDateTime));
+
+            if(_nameFilter != "")
+            {
+                QueryBuildDataSource workerDS = workerAssignmentDS.addDataSource(tableNum(NVHcmWorkerDetailsView));
+                workerDS.relations(false);
+                workerDS.addLink(fieldNum(NVHcmWorkerDetailsView, WorkerRecId), fieldNum(HcmPositionWorkerAssignment, Worker));
+                workerDS.joinMode(JoinMode::InnerJoin);
+
+                qbr = workerDS.addRange(fieldNum(NVHcmWorkerDetailsView, Name));
+                qbr.value(SysQuery::valueLike(_nameFilter));
+            }
+                       
+            QueryRun queryRun = new QueryRun(query);
+            
+            if(pageNumber != 0 && totalRecordsPerPage != 0)
+            {                
+                int countRecords = 0;
+                HcmPositionHierarchy        positionHierarchy;
+                HcmPositionWorkerAssignment childWorkerAssignment;
+                NVHcmWorkerDetailsView      childWorkerDetails;
+                while select Position from positionHierarchy
+                    group by positionHierarchy.Position 
+                    where positionHierarchy.ParentPosition      == managerPositionDetail.Position
+                        && positionHierarchy.ValidFrom          <= curDateTime
+                        && positionHierarchy.ValidTo            >= curDateTime
+                    exists join childWorkerAssignment
+                        where childWorkerAssignment.Position    == positionHierarchy.Position
+                            && childWorkerAssignment.ValidFrom  <= curDateTime
+                            && childWorkerAssignment.ValidTo    >= curDateTime
+                    exists join childWorkerDetails
+                        where childWorkerDetails.WorkerRecId    == childWorkerAssignment.Worker
+                            && (childWorkerDetails.Name         like strFmt('*%1*', _nameFilter) || _nameFilter == '')
+                {
+                    totalRecords++;
+                }
+                
+                queryRun.enablePositionPaging(true);
+                int startingPosition    = (pageNumber - 1) * totalRecordsPerPage + 1;
+                int totalRecordsToFetch = totalRecordsPerPage;
+
+                queryRun.addPageRange(startingPosition, totalRecordsToFetch);
+            }
+
+            while (queryRun.next())
+            {
+                HcmPositionHierarchy positionHierarchy = queryRun.get(tableNum(HcmPositionHierarchy));
+                HcmPositionWorkerAssignment subWorkerAssignement = HcmPositionWorkerAssignment::findByPosition(positionHierarchy.Position);
+                NVHcmWorkerDetailsView worker;
+                select firstonly worker where worker.WorkerRecId == subWorkerAssignement.Worker;
+
+                if(worker.WorkerRecId != 0)
+                {
+                    NVHcmWorkerInfoContract contract = this.getWorkerDetais(worker);
+                    workerList.addEnd(contract);
+                }
+            } 
+        }
+        
+        List responseList = new List(Types::Class);
+
+        if(workerList.elements() != 0)
+        {
+            NVHcmManagerTeamResponseContract response = new NVHcmManagerTeamResponseContract();
+
+            response.parmWorkers(workerList);
+            response.parmPageNumber(pageNumber);
+            response.parmTotalRecords(totalRecords);
+            response.parmTotalRecordsPerPage(totalRecordsPerPage);
+            responseList.addEnd(response);
+        }
+
+        return responseList;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkers</Name>
+				<Source><![CDATA[
+    public List getWorkers()
+    {
+        workerList = new List(Types::Class);
+
+        Query query = new Query();
+        QueryBuildDataSource workerDS = query.addDataSource(tableNum(NVHcmWorkerDetailsView));
+        
+        workerDS.addSortField(fieldNum(NVHcmWorkerDetailsView, PersonnelNumber), SortOrder::Ascending);
+
+        if(workerId != "")
+            workerDS.addRange(fieldNum(NVHcmWorkerDetailsView, PersonnelNumber)).value(workerId);
+    
+        if(email != "")
+            workerDS.addRange(fieldNum(NVHcmWorkerDetailsView, PrimaryEmail)).value(email);
+                
+        QueryRun queryRun = new QueryRun(query);
+        if(pageNumber != 0 && totalRecordsPerPage != 0)
+        {
+            queryRun.enablePositionPaging(true);
+            int startingPosition = (pageNumber - 1) * totalRecordsPerPage + 1;
+            queryRun.addPageRange(startingPosition, totalRecordsPerPage);
+
+            NVHcmWorkerDetailsView totalWorkerCount;
+            select count(RecId) from totalWorkerCount;
+            totalRecords = totalWorkerCount.RecId;
+        }
+
+        while(queryRun.next())
+        {
+            NVHcmWorkerDetailsView worker = queryRun.get(tableNum(NVHcmWorkerDetailsView));
+            NVHcmWorkerInfoContract contract = this.getWorkerDetais(worker);
+            
+            workerList.addEnd(contract);
+        }
+
+        return workerList;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getWorkerDetais</Name>
+				<Source><![CDATA[
+    public NVHcmWorkerInfoContract getWorkerDetais(NVHcmWorkerDetailsView worker)
+    {
+        DirPerson               person                  = DirPerson::findByNum(worker.PartyNumber);
+        DirPersonName           personName              = DirPersonName::find(person.RecId);
+        HcmPersonPrivateDetails personPrivateDetails    = HcmPersonPrivateDetails::findByPerson(person.RecId);
+        HcmPersonDetails        personDetails           = HcmPersonDetails::findByPerson(person.RecId);
+        NVHcmWorkerInfoContract contract                = new NVHcmWorkerInfoContract();
+
+        contract.parmWorkerId(worker.PersonnelNumber);
+        contract.parmFullName(worker.Name);
+        contract.parmFirstName(personName.FirstName);
+        contract.parmMiddleName(personName.MiddleName);
+        contract.parmLastName(personName.LastName);
+        contract.parmfinId(worker.NVHcmWorkerPID);
+        contract.parmDateOfBirth(personPrivateDetails.BirthDate);
+        contract.parmAge(personPrivateDetails.ageAsOf());
+        contract.parmMaritalStatus(enum2Str(personDetails.MaritalStatus));
+        
+        contract.parmEmail(worker.PrimaryEmail);
+        contract.parmPhone(worker.PrimaryPhone);
+        
+        HcmPositionDetail positionDetail = HcmPositionDetail::findByPrimaryPositionForWorker(worker.WorkerRecId);
+        contract.parmPosition(HcmTitle::find(positionDetail.Title).TitleId);
+        contract.parmDepartment(OMOperatingUnit::find(positionDetail.Department, OMOperatingUnitType::OMDepartment).Name);
+        contract.parmJobTitle(HcmJobDetail::findByJob(positionDetail.Job).Description);
+            
+        utcdatetime curDateTime = DateTimeUtil::getSystemDateTime();
+        HcmEmployment employment;
+        select firstonly employment
+            order by employment.ModifiedDateTime desc
+            where employment.Worker         == worker.RecId
+                && employment.ValidFrom     <= curDateTime
+                && employment.ValidTo       >= curDateTime;
+        contract.parmCompany(CompanyInfo::findRecId(employment.LegalEntity).DataArea);
+            
+        List educationList = new List(Types::String);
+        HcmPersonEducation workerEducation;
+        while select workerEducation
+            where workerEducation.Person == person.RecId
+        {
+            educationList.addEnd(workerEducation.Description);
+        }
+        contract.parmEducation(educationList);
+
+        HcmPersonImage personImage = HcmPersonImage::findByPerson(person.RecId);
+        contract.parmProfileImageExtension(#ProfileImageExt);
+        str base64Str = "";
+        if (personImage && conLen(personImage.Image) > 0)
+        {
+            try
+            {
+                base64Str = NVHcmGetWorkerDetails::convertImageToBase64(personImage.Image);
+            }
+            catch (Exception::Error)
+            {
+                warning(strFmt(
+                    "Profile image could not be converted for Person RecId %1. Image will be skipped.",
+                    person.RecId));
+        
+                base64Str = '';
+            }
+            catch (Exception::CLRError)
+            {
+                warning(strFmt(
+                    "CLR error while converting profile image for Person RecId %1. Image will be skipped.",
+                    person.RecId));
+        
+                base64Str = '';
+            }
+        }
+
+        contract.parmProfileImage(base64Str);
+
+        real yearOfService = round(NVHcmTotalExperienceTmp::getTotalExperience(HcmWorker::find(worker.WorkerRecId)), 0.01);
+        contract.parmExperience(yearOfService);
+        contract.parmExperienceString(NVHcmGetWorkerDetails::convertRealToYearsMonths(yearOfService));
+
+        HcmPositionHierarchy positionHierarchy;
+        select ParentPosition from positionHierarchy
+            group by positionHierarchy.ParentPosition
+            where positionHierarchy.Position        == positionDetail.Position
+                && positionHierarchy.ValidFrom      <= curDateTime
+                && positionHierarchy.ValidTo        >= curDateTime;
+        HcmPositionWorkerAssignment managerWorkerAssignement = HcmPositionWorkerAssignment::findByPosition(positionHierarchy.ParentPosition);
+        NVHcmWorkerDetailsView manager;
+        select firstonly manager where manager.WorkerRecId == managerWorkerAssignement.Worker;
+
+        contract.parmManagerId(manager.PersonnelNumber);
+        contract.parmManagerName(manager.Name);
+        contract.parmManagerEmail(manager.PrimaryEmail);
+
+        return contract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>convertRealToYearsMonths</Name>
+				<Source><![CDATA[
+    public static str convertRealToYearsMonths(real value)
+    {
+        int years = real2int(value);
+        int months = real2int(round((value - years) * 12, 0));
+        str result = "";
+
+        if (years > 0)
+        {
+            result += strFmt("%1 year%2", years, years == 1 ? "" : "s");
+        }
+
+        if (months > 0)
+        {
+            if (years > 0)
+            result += " ";
+
+            result += strFmt("%1 month%2", months, months == 1 ? "" : "s");
+        }
+
+        if (result == "")
+        {
+            result = "0 months";
+        }
+
+        return result;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>convertImageToBase64</Name>
+				<Source><![CDATA[
+    public static str convertImageToBase64(Bitmap _image)
+    {
+        BinData binData = new BinData();
+        binData.setData(_image);
+
+        ImageReference ImageReference = ImageReference::constructForBinaryData(binData);
+
+        return strRem(imageReference.parmImageData(), "\n");
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

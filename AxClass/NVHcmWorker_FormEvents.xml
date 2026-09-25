@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorker_FormEvents</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+final class NVHcmWorker_FormEvents
+{     
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>HcmWorker_HcmWorkerTitle_OnInitialized</Name>
+				<Source><![CDATA[
+    [FormDataSourceEventHandler(formDataSourceStr(HcmWorkerV2, HcmWorkerTitle), FormDataSourceEventType::Initialized),
+        FormDataSourceEventHandler(formDataSourceStr(HcmWorker, HcmWorkerTitle), FormDataSourceEventType::Initialized),
+        FormDataSourceEventHandler(formDataSourceStr(HcmWorkerDateManager, HcmWorkerTitle), FormDataSourceEventType::Initialized)]
+    public static void HcmWorker_HcmWorkerTitle_OnInitialized(FormDataSource sender, FormDataSourceEventArgs e)
+    {
+        sender.object(fieldNum(HcmWorkerTitle, SeniorityDate)).allowEdit(false);
+        sender.object(fieldNum(HcmWorkerTitle, OriginalHireDateTime)).allowEdit(false);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmEmploymentDetail_onInsertedUpdated</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(HcmEmploymentDetail), DataEventType::Updated),
+        DataEventHandler(tableStr(HcmEmploymentDetail), DataEventType::Inserted)]
+    public static void HcmEmploymentDetail_onInsertedUpdated(Common sender, DataEventArgs e)
+    {
+        HcmEmploymentDetail employmentDetail    = sender as HcmEmploymentDetail;
+        HcmEmployment       employment          = HcmEmployment::find(employmentDetail.Employment);
+        HcmWorker           worker              = HcmWorker::find(employment.Worker);
+
+        NVHcmWorker_FormEvents::updateHiringDates(worker);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>HcmEmployment_onInsertedUpdated</Name>
+				<Source><![CDATA[
+    [DataEventHandler(tableStr(HcmEmployment), DataEventType::Updated),
+        DataEventHandler(tableStr(HcmEmployment), DataEventType::Inserted)]
+    public static void HcmEmployment_onInsertedUpdated(Common sender, DataEventArgs e)
+    {
+        HcmEmployment   employment      = sender as HcmEmployment;
+        HcmWorker       worker          = HcmWorker::find(employment.Worker);
+
+        NVHcmWorker_FormEvents::updateHiringDates(worker);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateHiringDates</Name>
+				<Source><![CDATA[
+    public static void updateHiringDates(HcmWorker worker)
+    {
+        
+        boolean         continueUpdate  = true;
+        utcdatetime     minDateTime     = DateTimeUtil::minValue();
+        utcdatetime     maxDateTime     = DateTimeUtil::maxValue();
+
+        {
+            HcmEmployment employment;
+            select firstonly ValidTimeState(minDateTime, maxDateTime) employment
+            order by employment.ValidFrom asc
+            where employment.Worker     == worker.RecId
+                && employment.ValidFrom > minDateTime;
+
+            ttsbegin;
+            HcmWorkerTitle workerTitle = HcmWorkerTitle::findByWorker(worker.RecId);
+
+            if(workerTitle)
+            {
+                workerTitle.selectForUpdate(true);
+                workerTitle.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+                workerTitle.OriginalHireDateTime = employment.ValidFrom;
+                workerTitle.update();
+            }
+            else
+            {
+                workerTitle.validTimeStateUpdateMode(ValidTimeStateUpdate::CreateNewTimePeriod);
+                workerTitle.Worker                  = worker.RecId;
+                workerTitle.OriginalHireDateTime    = employment.ValidFrom;
+                workerTitle.SeniorityDate           = employment.ValidFrom;
+                workerTitle.ValidFrom               = DateTimeUtil::UtcNow();
+                workerTitle.ValidTo                 = DateTimeUtil::date(maxDateTime);
+                workerTitle.insert();
+                continueUpdate = false;
+            }
+            ttscommit;
+        }
+
+        if(continueUpdate)
+        {
+            HcmEmployment employment;
+            select firstonly ValidTimeState(minDateTime, maxDateTime) employment
+            order by employment.ValidFrom desc
+            where employment.Worker     == worker.RecId
+                && employment.ValidFrom > minDateTime;
+
+            ttsbegin;
+            HcmWorkerTitle workerTitle = HcmWorkerTitle::findByWorker(worker.RecId);
+
+            if(workerTitle)
+            {
+                workerTitle.selectForUpdate(true);
+                workerTitle.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+                workerTitle.SeniorityDate           = employment.ValidFrom;
+                workerTitle.update();
+            }
+            else
+            {
+                workerTitle.validTimeStateUpdateMode(ValidTimeStateUpdate::CreateNewTimePeriod);
+                workerTitle.Worker              = worker.RecId;
+                workerTitle.SeniorityDate       = employment.ValidFrom;
+                workerTitle.ValidFrom           = DateTimeUtil::UtcNow();
+                workerTitle.ValidTo             = DateTimeUtil::date(maxDateTime);
+                workerTitle.insert();
+            }
+            ttscommit;
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

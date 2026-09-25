@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkCalendarTable.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlu3nvu2d01</Name>
+			<FormControl xmlns=""
+				i:type="AxFormMenuFunctionButtonControl">
+				<Name>NVWorkCalendarCopyRotating</Name>
+				<Type>MenuFunctionButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<AutoRefreshData>Yes</AutoRefreshData>
+				<DataSource>WorkCalendarTable</DataSource>
+				<MenuItemName>NVWorkCalendarCopyRotating</MenuItemName>
+				<MenuItemType>Action</MenuItemType>
+			</FormControl>
+			<Parent>AddDeleteButtonGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copynldd1kmh1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormIntegerControl">
+				<Name>WorkCalendarTable_NVNightHoursCap</Name>
+				<Type>Integer</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVNightHoursCap</DataField>
+				<DataSource>WorkCalendarTable</DataSource>
+			</FormControl>
+			<Parent>CalendarHeaderGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyj1ru2ldh1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormTimeControl">
+				<Name>WorkCalendarTable_NVNightTimeFrom</Name>
+				<Type>Time</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVNightTimeFrom</DataField>
+				<DataSource>WorkCalendarTable</DataSource>
+			</FormControl>
+			<Parent>CalendarHeaderGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copycytsbpnl1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormTimeControl">
+				<Name>WorkCalendarTable_NVNightTimeTo</Name>
+				<Type>Time</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVNightTimeTo</DataField>
+				<DataSource>WorkCalendarTable</DataSource>
+			</FormControl>
+			<Parent>CalendarHeaderGroup</Parent>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyjzw4oovz1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormIntegerControl">
+				<Name>WorkCalendarDateLine_NVOrder</Name>
+				<Type>Integer</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVOrder</DataField>
+				<DataSource>WorkCalendarDateLine</DataSource>
+			</FormControl>
+			<Parent>CalendarWorkScheduleGrid</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

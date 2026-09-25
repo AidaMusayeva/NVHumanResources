@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HRMParameters.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copygbcgk5r31</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVWorkerContractProbation</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>Group</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormIntegerControl">
+						<Name>NVWorkerProbationMonthEnd</Name>
+						<Type>Integer</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVWorkerProbationMonthEnd</DataField>
+						<DataSource>HRMParameters</DataSource>
+					</AxFormControl>
+				</Controls>
+				<Caption>Worker contract probation</Caption>
+				<DataSource>HRMParameters</DataSource>
+			</FormControl>
+			<Parent>TOCGeneralBody</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

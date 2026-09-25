@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVEmploymentOrderController</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Report controller for Employment Order printing and export.
+/// Handles report invocation, parameter setup, and output destination configuration.
+/// </summary>
+/// <remarks>
+/// Report name resolution uses compile-time safe ssrsReportStr() macro via switch on OrderType.
+/// This ensures build-time validation — if a report is renamed or deleted, the build fails.
+/// NVOrderTemplate table is retained as a UI reference (TemplateName, Description, IsActive)
+/// but is no longer used for report name resolution.
+///
+/// To add a new report:
+///   1. Create the Report Object in AOT
+///   2. Add case(s) to getReportNameByOrderType() switch
+///   3. Build and deploy
+///
+/// Output modes:
+///   - Screen preview (default)
+///   - PDF export
+///   - Word export
+/// </remarks>
+public class NVEmploymentOrderController extends SrsReportRunController
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Main entry point for the report controller.
+    /// Resolves report name via compile-time safe switch on OrderType.
+    /// </summary>
+    public static void main(Args _args)
+    {
+        NVEmploymentOrderController controller = new NVEmploymentOrderController();
+
+        controller.parmArgs(_args);
+
+        str reportName = controller.resolveReportName();
+
+        if (!reportName)
+        {
+            error("No report configured for this order type. Contact your system administrator.");
+            return;
+        }
+
+        controller.parmReportName(reportName);
+        controller.startOperation();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>resolveReportName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Resolves the SSRS report name based on the OrderType of the first line
+    /// in the selected NVOrderHeader.
+    /// Uses ssrsReportStr() macro for compile-time safety.
+    /// NVOrderTemplate table is intentionally NOT used here.
+    /// </summary>
+    private str resolveReportName()
+    {
+        Common        rec = this.parmArgs() ? this.parmArgs().record() : null;
+        NVOrderHeader header;
+        NVOrderLine   line;
+
+        if (!rec || rec.TableId != tableNum(NVOrderHeader))
+        {
+            warning("No NVOrderHeader record found in Args.");
+            return '';
+        }
+
+        header = rec as NVOrderHeader;
+
+        select firstonly OrderType from line
+            where line.OrderHeaderRecId == header.RecId;
+
+        if (!line.RecId)
+        {
+            warning(strFmt("No order lines found for order: %1", header.OrderNumber));
+            return '';
+        }
+
+        return NVEmploymentOrderController::getReportNameByOrderType(line.OrderType);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getReportNameByOrderType</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the SSRS report name for a given NVOrderType enum value.
+    /// Compile-time safe via ssrsReportStr() — build fails if report does not exist in AOT.
+    ///
+    /// Report groupings:
+    ///   Group 1  — Recruitment (Types 13-16):     NVEmploymentOrderReport
+    ///   Group 2  — Position Change (Types 17-18): NVPositionChangeOrderReport
+    ///   Group 12 — Flight Duty (Types 54-55):     NVFlightDutyOrderReport
+    ///
+    /// To add a new report: add case(s) here and create the Report Object in AOT.
+    /// </summary>
+    public static str getReportNameByOrderType(NVOrderType _orderType)
+    {
+        switch (_orderType)
+        {
+            // -- Group 1: Recruitment ─────────────────────────────────────────
+            case NVOrderType::EmpWithAllow:
+            case NVOrderType::EmpWithAllowHarmful:
+            case NVOrderType::EmpWithoutAllow:
+            case NVOrderType::EmpWithoutAllowHarmful:
+                return ssrsReportStr(NVEmploymentOrderReport, ReportDesign);
+
+            // -- Group 2: Position Change ─────────────────────────────────────
+            case NVOrderType::PosChange:
+            case NVOrderType::PosChangeFlight:
+                return ssrsReportStr(NVPositionChangeOrderReport, ReportDesign);
+
+            // ── Group 2: Salary Allowance Change ────────────────────────────────
+            case NVOrderType::SalaryAllowChange:
+                return ssrsReportStr(NVSalaryAdjustmentOrderReport, ReportDesign);
+
+            // ── Group 2: Salary Change (all variants) ───────────────────────────
+            case NVOrderType::SalaryChange:
+            case NVOrderType::SalaryChangePilot:
+            case NVOrderType::SalaryChangePilotLong:
+            case NVOrderType::SalaryChangeP6C3:
+                return ssrsReportStr(NVSalaryChangeOrderReport, ReportDesign);
+
+            // ── Group 3: Termination orders ─────────────────────────────────────
+            case NVOrderType::Term68_2a:
+            case NVOrderType::Term68_2b:
+            case NVOrderType::Term68_2e:
+            case NVOrderType::Term69_3:
+            case NVOrderType::Term70_b:
+            case NVOrderType::Term70_c:
+            case NVOrderType::Term70_d:
+            case NVOrderType::Term74_1a:
+            case NVOrderType::Term74_1c:
+            case NVOrderType::Term74_1ch:
+            case NVOrderType::Term74_1e:
+                return ssrsReportStr(NVTerminationOrderReport, ReportDesign);
+
+            // ── Group 4 + 12: Average salary + Sports + Military return ──────────
+            case NVOrderType::AvgSalMilitary:
+            case NVOrderType::AvgSalSports:
+            case NVOrderType::MilitaryReturn:
+            case NVOrderType::SportsRecall:
+                return ssrsReportStr(NVAvgSalaryOrderReport, ReportDesign);
+
+            // ── Group 5: Maternity leave ─────────────────────────────────────────
+            case NVOrderType::Maternity14Days:
+            case NVOrderType::Maternity126Days:
+                return ssrsReportStr(NVMaternityOrderReport, ReportDesign);
+
+            // ── Group 6: Business trip ───────────────────────────────────────────
+            case NVOrderType::TripDomestic:
+            case NVOrderType::TripCancel:
+            case NVOrderType::TripChange:
+            case NVOrderType::TripExtension:
+            case NVOrderType::TripForeign:
+                return ssrsReportStr(NVBusinessTripOrderReport, ReportDesign);
+
+            // ── Group 9: Education leave ─────────────────────────────────────────
+            case NVOrderType::EducationLeave:
+                return ssrsReportStr(NVEducationLeaveOrderReport, ReportDesign);
+
+            // -- Group 12: Flight Duty ────────────────────────────────────────
+            case NVOrderType::FlightUnfit:
+            case NVOrderType::FlightFit:
+                return ssrsReportStr(NVFlightDutyOrderReport, ReportDesign);
+
+            // -- Group 12: Reduced Work Time ────────────────────────────────────────
+            case NVOrderType::ReducedTimeMinorShift:
+            case NVOrderType::ReducedTimeMinor5Day:
+            case NVOrderType::ReducedTimeShift:
+            case NVOrderType::ReducedTime5Day:
+                return ssrsReportStr(NVReducedHoursOrderReport, ReportDesign);
+
+            // ── Group 12: Surname Change ─────────────────────────────────────────
+            case NVOrderType::SurnameChange:
+                return ssrsReportStr(NVSurnameChangeOrderReport, ReportDesign);
+
+            // ── Group 12: Work Schedule Change ──────────────────────────────────
+            case NVOrderType::WorkScheduleChange:
+                return ssrsReportStr(NVWorkScheduleOrderReport, ReportDesign);
+
+            // ── Group 12: Contract Extension ────────────────────────────────────
+            case NVOrderType::ContractExtension:
+                return ssrsReportStr(NVContractExtensionOrderReport, ReportDesign);
+
+            default:
+                return '';
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>prePromptModifyContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Configures the report contract before the dialog is shown.
+    /// </summary>
+    public void prePromptModifyContract()
+    {
+        super();
+
+        this.applyOrderHeaderFromCaller();
+        this.applyDestinationByInvoker();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>applyOrderHeaderFromCaller</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Extracts the NVOrderHeader record from Args and populates the RDP contract.
+    /// </summary>
+    private void applyOrderHeaderFromCaller()
+    {
+        Common rec = this.parmArgs() ? this.parmArgs().record() : null;
+
+        if (rec && rec.TableId == tableNum(NVOrderHeader))
+        {
+            NVOrderHeader             header      = rec as NVOrderHeader;
+            SrsReportDataContract     srsContract = this.parmReportContract();
+            NVEmploymentOrderContract rdpContract = srsContract.parmRdpContract() as NVEmploymentOrderContract;
+
+            if (!rdpContract)
+            {
+                rdpContract = new NVEmploymentOrderContract();
+                srsContract.parmRdpContract(rdpContract);
+            }
+
+            rdpContract.parmOrderHeaderRecId(header.RecId);
+        }
+        else
+        {
+            warning("No NVOrderHeader record found in Args. Report generation may fail.");
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>applyDestinationByInvoker</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Configures print destination based on the invoking Menu Item.
+    /// Menu Items: NVEmploymentOrderPrint / NVEmploymentOrderExportPdf / NVEmploymentOrderExportWord
+    /// </summary>
+    private void applyDestinationByInvoker()
+    {
+        SrsPrintDestinationSettings ps     = this.parmReportContract().parmPrintSettings();
+        str                         miName = this.parmArgs() ? this.parmArgs().menuItemName() : '';
+
+        ps.printMediumType(SRSPrintMediumType::Screen);
+        this.parmShowDialog(false);
+
+        switch (miName)
+        {
+            case 'NVEmploymentOrderExportPdf':
+                ps.printMediumType(SRSPrintMediumType::File);
+                ps.fileFormat(SRSReportFileFormat::PDF);
+                ps.fileName(strFmt('EmploymentOrder_%1.pdf', this.getOrderNumberSafe()));
+                break;
+
+            case 'NVEmploymentOrderExportWord':
+                ps.printMediumType(SRSPrintMediumType::File);
+                ps.fileFormat(SRSReportFileFormat::Word);
+                ps.fileName(strFmt('EmploymentOrder_%1.docx', this.getOrderNumberSafe()));
+                break;
+
+            case 'NVEmploymentOrderPrint':
+            default:
+                ps.printMediumType(SRSPrintMediumType::Screen);
+                break;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getOrderNumberSafe</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns a safe file name based on the Order Number for PDF/Word exports.
+    /// </summary>
+    private str getOrderNumberSafe()
+    {
+        Common rec = this.parmArgs() ? this.parmArgs().record() : null;
+
+        if (rec && rec.TableId == tableNum(NVOrderHeader))
+        {
+            NVOrderHeader header = rec as NVOrderHeader;
+            return header.OrderNumber ? header.OrderNumber : int642Str(header.RecId);
+        }
+
+        return 'Order';
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

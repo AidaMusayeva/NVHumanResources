@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerLeaveTypeContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class NVHcmWorkerLeaveTypeContract  
+{
+    str workerId;
+    str leaveTypeId;
+    str description;
+    str company;
+    NoYes isAttachmentRequired;
+    NoYes hideLeaveBalances;
+    real leaveBalance;
+    real leaveUsedDays;
+    real leaveRemainingBalance;
+    date balanceRenewalDate;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmLeaveTypeId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("LeaveTypeId")]
+    public str parmLeaveTypeId(str _parm = leaveTypeId)
+    {
+        leaveTypeId = _parm;
+        return leaveTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDescription</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Description")]
+    public str parmDescription(str _parm = description)
+    {
+        description = _parm;
+        return description;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCompany</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("Company")]
+    public str parmCompany(str _parm = company)
+    {
+        company = _parm;
+        return company;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmIsAttachmentRequired</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("IsAttachmentRequired")]
+    public NoYes parmIsAttachmentRequired(NoYes _parm = isAttachmentRequired)
+    {
+        isAttachmentRequired = _parm;
+        return isAttachmentRequired;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmHideLeaveBalances</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("HideLeaveBalances")]
+    public NoYes parmHideLeaveBalances(NoYes _parm = hideLeaveBalances)
+    {
+        hideLeaveBalances = _parm;
+        return hideLeaveBalances;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLeaveBalance</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("LeaveBalance")]
+    public real parmLeaveBalance(real _parm = leaveBalance)
+    {
+        leaveBalance = _parm;
+        return leaveBalance;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLeaveUsedDays</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("LeaveUsedDays")]
+    public real parmLeaveUsedDays(real _parm = leaveUsedDays)
+    {
+        leaveUsedDays = _parm;
+        return leaveUsedDays;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLeaveRemainingBalance</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("LeaveRemainingBalance")]
+    public real parmLeaveRemainingBalance(real _parm = leaveRemainingBalance)
+    {
+        leaveRemainingBalance = _parm;
+        return leaveRemainingBalance;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBalanceRenewalDate</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute("BalanceRenewalDate")]
+    public date parmBalanceRenewalDate(date _parm = balanceRenewalDate)
+    {
+        balanceRenewalDate = _parm;
+        return balanceRenewalDate;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,884 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVOrderSelection</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+/// <summary>
+/// Employee selection form for order generation.
+/// Reads from NVOrderStaging (Regular table) filtered by BatchId.
+/// Allows users to select employees and generate employment orders.
+/// </summary>
+/// <remarks>
+/// Form flow: NVGenerateOrder -> NVOrderSelection -> generates orders -> notifies NVOrderList
+///
+/// Data pattern: NVOrderStaging (Regular table), BatchId isolation per session.
+/// No TempDB instance linking required — data visible across all AOS connections.
+/// Cleanup: delete_from NVOrderStaging where BatchId on close().
+/// </remarks>
+[Form]
+public class NVOrderSelection extends FormRun
+{
+    /// <summary>
+    /// Control reference for the consolidation checkbox.
+    /// </summary>
+    FormCheckBoxControl isConsolidateCtrl;
+
+    /// <summary>
+    /// Stores the consolidation mode selection.
+    /// </summary>
+    boolean isConsolidateHeader;
+
+    /// <summary>
+    /// BatchId received from NVGenerateOrder via args.parm().
+    /// Used to filter NVOrderStaging datasource.
+    /// </summary>
+    str batchId;
+
+    /// <summary>
+    /// Label control displaying count of selected employees.
+    /// </summary>
+    FormStringControl selectedCountLabel;
+
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the form, validates BatchId, sets datasource range.
+    /// </summary>
+    public void init()
+    {
+        batchId = element.args() ? element.args().parm() : '';
+
+        if (!batchId)
+        {
+            error("Invalid session. Please reopen from Generate Order.");
+            element.close();
+            return;
+        }
+
+        super();
+
+        // Set range AFTER super() — Microsoft standard pattern (see SalesEditLines.init())
+        // NVOrderStaging is Regular table — standard query range works correctly
+        NVOrderStaging_ds
+            .query()
+            .dataSourceTable(tableNum(NVOrderStaging))
+            .addRange(fieldNum(NVOrderStaging, BatchId))
+            .value(queryValue(batchId));
+
+        NVOrderStaging_ds.executeQuery();
+
+        // Diagnostic: verify records are visible
+        NVOrderStaging checkStaging;
+        select count(RecId) from checkStaging
+            where checkStaging.BatchId == batchId;
+
+        // Initialize selected count label control
+        selectedCountLabel = element.design().controlName('SelectedCountLabel') as FormStringControl;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Runs the form and initializes the selection counter.
+    /// </summary>
+    public void run()
+    {
+        super();
+        this.setDefaultOrderDate();
+        NVOrderStaging_ds.executeQuery();
+        this.updateSelectedCount();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>close</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// On close — delete NVOrderStaging records for this session.
+    /// </summary>
+    public void close()
+    {
+        NVOrderStaging staging;
+
+        if (batchId)
+        {
+            delete_from staging
+                where staging.BatchId == batchId;
+        }
+
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmIsConsolidateHeader</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets or sets the consolidation mode flag.
+    /// </summary>
+    public boolean parmIsConsolidateHeader(boolean _set = false, boolean _value = false)
+    {
+        if (_set)
+            isConsolidateHeader = _value;
+
+        return isConsolidateHeader;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>notifyParentToRefresh</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Notifies NVOrderList to refresh after order generation.
+    /// Caller is NVOrderList directly — NVGenerateOrder passes its own caller in args.
+    /// </summary>
+    private void notifyParentToRefresh()
+    {
+        #Task
+        FormRun parent = element.args() ? element.args().caller() : null;
+
+        if (!parent)
+            return;
+
+        // Standard Microsoft pattern — works regardless of caller type
+        parent.task(#taskRefresh);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>closeOk</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Handles OK button click — validates selection, generates orders, notifies parent.
+    /// </summary>
+    public void closeOk()
+    {
+        if (!this.validateSelection())
+            return;
+
+        this.generateOrders();
+
+        super(); // close form first
+
+        this.notifyParentToRefresh(); // then notify parent
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateSelectedCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Updates the selected employee counter label.
+    /// </summary>
+    public void updateSelectedCount()
+    {
+        NVOrderStaging staging;
+        int            totalCount    = 0;
+        int            selectedCount = 0;
+
+        // Total count for this session
+        select count(RecId) from staging
+            where staging.BatchId == batchId;
+        totalCount = staging.RecId;
+
+        // Selected count via datasource marker
+        staging = NVOrderStaging_ds.getFirst(true);
+        while (staging)
+        {
+            selectedCount++;
+            staging = NVOrderStaging_ds.getNext();
+        }
+
+        if (selectedCountLabel)
+            selectedCountLabel.text(strFmt("Selected: %1 of %2", selectedCount, totalCount));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setDefaultOrderDate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Sets default order date (today) for all staging records in this session.
+    /// </summary>
+    private void setDefaultOrderDate()
+    {
+        NVOrderStaging staging;
+
+        ttsbegin;
+        while select forupdate staging
+            where staging.BatchId == batchId
+        {
+            if (!staging.OrderDate)
+            {
+                staging.OrderDate = today();
+                staging.update();
+            }
+        }
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateSelection</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates employee selection before order generation.
+    /// </summary>
+    private boolean validateSelection()
+    {
+        NVOrderStaging staging;
+        int            selectedCount = 0;
+        NVOrderType    firstOrderType;
+
+        staging = NVOrderStaging_ds.getFirst(true);
+        while (staging)
+        {
+            if (selectedCount == 0)
+                firstOrderType = staging.OrderType;
+            else if (staging.OrderType != firstOrderType)
+            {
+                error("All selected employees must have the same Order Type.");
+                return false;
+            }
+
+            selectedCount++;
+            staging = NVOrderStaging_ds.getNext();
+        }
+
+        if (selectedCount == 0)
+        {
+            error("Please select at least one employee.");
+            return false;
+        }
+
+        staging = NVOrderStaging_ds.getFirst(true);
+        if (!staging.OrderDate || staging.OrderDate == dateNull())
+        {
+            error("Order Date is required.");
+            return false;
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getNextOrderNumberSeed</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Generates sequential order number. Format: ORD-{N}
+    /// </summary>
+    //private str generateOrderNumber()
+    //{
+    //    NVOrderHeader lastOrder;
+    //    int           nextNumber = 1;
+
+    //    select firstonly lastOrder
+    //        order by RecId desc;
+
+    //    if (lastOrder.OrderNumber)
+    //    {
+    //        str numPart = subStr(lastOrder.OrderNumber, 5, strLen(lastOrder.OrderNumber) - 4);
+    //        nextNumber  = str2Int(numPart) + 1;
+    //    }
+
+    //    return strFmt("ORD-%1", int2Str(nextNumber));
+    //}
+
+    /// <summary>
+    /// Gets the starting number for order number generation.
+    /// Called ONCE before the transaction to avoid reading uncommitted data inside tts.
+    /// </summary>
+    private int getNextOrderNumberSeed()
+    {
+        NVOrderHeader lastOrder;
+        NVOrderHeader checkOrder;
+        int           nextNumber = 1;
+
+        select firstonly lastOrder
+        order by RecId desc;
+
+        if (lastOrder.OrderNumber)
+        {
+            str numPart = subStr(lastOrder.OrderNumber, 5, strLen(lastOrder.OrderNumber) - 4);
+            int parsed  = str2Int(numPart);
+
+            if (parsed > 0)
+            nextNumber = parsed + 1;
+        }
+
+        // Verify uniqueness — handles gaps, deleted records, and edge cases
+        // This runs OUTSIDE ttsbegin so all committed records are visible
+        do
+        {
+            select firstonly RecId from checkOrder
+            where checkOrder.OrderNumber == strFmt("ORD-%1", int2Str(nextNumber));
+
+            if (checkOrder.RecId)
+            nextNumber++;
+        }
+        while (checkOrder.RecId);
+
+        return nextNumber;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>formatOrderNumber</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Formats order number from integer seed. Format: ORD-{N}
+    /// </summary>
+    private str formatOrderNumber(int _number)
+    {
+        return strFmt("ORD-%1", int2Str(_number));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>generateOrders</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Generates employment orders based on selection and consolidation mode.
+    /// Consolidated: one header, multiple lines.
+    /// Individual: one header per employee, one line each.
+    /// </summary>
+    private void generateOrders()
+    {
+        NVOrderHeader  header;
+        NVOrderLine    line;
+        NVOrderStaging staging;
+        int            lineCounter  = 0;
+        int            orderCounter = 0;
+        boolean        consolidate  = element.parmIsConsolidateHeader();
+
+        // Read seed BEFORE ttsbegin — inside tts, new uncommitted headers are invisible
+        // to subsequent selects, causing duplicate OrderNumber generation.
+        int nextOrderNumber = this.getNextOrderNumberSeed();
+
+        ttsbegin;
+
+        if (consolidate)
+        {
+            staging = NVOrderStaging_ds.getFirst(true);
+
+            if (!staging)
+            {
+                error("No employees selected.");
+                ttsabort;
+                return;
+            }
+
+            // Single header for all selected employees
+            header.clear();
+            header.initValue();
+            header.OrderNumber    = this.formatOrderNumber(nextOrderNumber);
+            header.OrderDate      = staging.OrderDate;
+            header.StartDate      = staging.StartDate;
+            header.EndDate        = staging.EndDate;
+            header.IsConsolidated = NoYes::Yes;
+            header.Status         = NVOrderStatus::Draft;
+            // Workflow routing fields — populated from staging record (all lines share same group/type)
+            header.OrderGroupRecId = staging.OrderGroupRecId;
+            header.OrderType       = staging.OrderType;
+            header.insert();
+
+            lineCounter = 1;
+            while (staging)
+            {
+                line.clear();
+                line.initValue();
+                line.OrderHeaderRecId = header.RecId;
+                line.OrderType        = staging.OrderType;
+                line.LineNum          = lineCounter;
+                line.WorkerRecId      = staging.WorkerRecId;
+                line.EmploymentRecId  = staging.EmploymentRecId;
+                line.PositionRecId    = staging.PositionRecId;
+                line.DepartmentRecId  = staging.DepartmentRecId;
+                line.StartDate        = staging.StartDate;
+                line.EndDate          = staging.EndDate;
+                line.ProbationPeriod  = staging.ProbationPeriod;
+                line.GovernmentGrade  = staging.GovernmentGrade;
+                line.BaseSalary       = staging.BaseSalary;
+                line.AdditionalSalary = staging.AdditionalSalary;
+                line.HazardousConditionsPercent  = staging.HazardousConditionsPercent;
+                line.ContractDate     = staging.ContractDate;
+                // Position Change fields — populated only for types 17/18, zero/empty for others
+                line.PreviousDepartmentRecId = staging.PreviousDepartmentRecId;
+                line.ChangeDate              = staging.ChangeDate;
+                line.StaffUnitBefore         = staging.StaffUnitBefore;
+                line.WorkSchedule            = staging.WorkSchedule;
+                line.AdditionalSalaryBefore  = staging.AdditionalSalaryBefore;
+                line.NVDepartBU              = staging.NVDepartBU;
+                line.NVDepartGroup1          = staging.NVDepartGroup1;
+                line.NVDepartGroup2          = staging.NVDepartGroup2;
+                line.insert();
+
+                lineCounter++;
+                staging = NVOrderStaging_ds.getNext();
+            }
+
+            orderCounter = 1;
+        }
+        else
+        {
+            // Individual header per employee
+            staging = NVOrderStaging_ds.getFirst(true);
+
+            while (staging)
+            {
+                header.clear();
+                header.initValue();
+                header.OrderNumber    = this.formatOrderNumber(nextOrderNumber);
+                header.OrderDate      = staging.OrderDate;
+                header.StartDate      = staging.StartDate;
+                header.EndDate        = staging.EndDate;
+                header.IsConsolidated = NoYes::No;
+                header.Status         = NVOrderStatus::Draft;
+                // Workflow routing fields — populated from staging record
+                header.OrderGroupRecId = staging.OrderGroupRecId;
+                header.OrderType       = staging.OrderType;
+                header.insert();
+
+                nextOrderNumber++; // Increment after header
+
+                line.clear();
+                line.initValue();
+                line.OrderHeaderRecId = header.RecId;
+                line.OrderType        = staging.OrderType;
+                line.LineNum          = 1;
+                line.WorkerRecId      = staging.WorkerRecId;
+                line.EmploymentRecId  = staging.EmploymentRecId;
+                line.PositionRecId    = staging.PositionRecId;
+                line.DepartmentRecId  = staging.DepartmentRecId;
+                line.StartDate        = staging.StartDate;
+                line.EndDate          = staging.EndDate;
+                line.ProbationPeriod  = staging.ProbationPeriod;
+                line.GovernmentGrade  = staging.GovernmentGrade;
+                line.BaseSalary       = staging.BaseSalary;
+                line.AdditionalSalary = staging.AdditionalSalary;
+                line.HazardousConditionsPercent  = staging.HazardousConditionsPercent;
+                line.ContractDate     = staging.ContractDate;
+                // Position Change fields — populated only for types 17/18, zero/empty for others
+                line.PreviousDepartmentRecId = staging.PreviousDepartmentRecId;
+                line.ChangeDate              = staging.ChangeDate;
+                // NEW: Work Schedule and Previous Additional Salary
+                line.WorkSchedule            = staging.WorkSchedule;
+                line.AdditionalSalaryBefore  = staging.AdditionalSalaryBefore;
+                line.StaffUnitBefore         = staging.StaffUnitBefore;
+                line.NVDepartBU              = staging.NVDepartBU;
+                line.NVDepartGroup1          = staging.NVDepartGroup1;
+                line.NVDepartGroup2          = staging.NVDepartGroup2;
+                line.insert();
+
+                orderCounter++;
+                staging = NVOrderStaging_ds.getNext();
+            }
+        }
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="">
+			<DataSource>
+				<Name>NVOrderStaging</Name>
+				<Methods>
+					<Method>
+						<Name>init</Name>
+						<Source><![CDATA[
+        /// <summary>
+        /// Standard init — no linkPhysicalTableInstance needed.
+        /// NVOrderStaging is Regular table, visible across all AOS connections.
+        /// </summary>
+        public void init()
+        {
+            super();
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>executeQuery</Name>
+						<Source><![CDATA[
+        public void executeQuery()
+        {
+            super();
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>markChanged</Name>
+						<Source><![CDATA[
+        /// <summary>
+        /// Fires when user marks/unmarks rows — updates selection counter.
+        /// </summary>
+        public void markChanged()
+        {
+            super();
+            element.updateSelectedCount();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+				<Fields />
+			</DataSource>
+		</DataSources>
+		<DataControls xmlns="">
+			<Control>
+				<Name>IsConsolidateHeader</Name>
+				<Type>CheckBox</Type>
+				<Methods>
+					<Method>
+						<Name>modified</Name>
+						<Source><![CDATA[
+        /// <summary>
+        /// Saves consolidation mode to form class variable.
+        /// </summary>
+        public boolean modified()
+        {
+            boolean ret       = super();
+            boolean isChecked = this.value() ? true : false;
+
+            element.parmIsConsolidateHeader(true, isChecked);
+
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources>
+		<AxFormDataSource xmlns="">
+			<Name>NVOrderStaging</Name>
+			<Table>NVOrderStaging</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>AdditionalSalary</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>AdditionalSalaryBefore</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>BaseSalary</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>BatchId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ChangeDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ContractDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>CreatedDateTime</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>DepartmentName</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>DepartmentRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmployeeFIN</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmployeeName</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EmploymentRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>EndDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>GovernmentGrade</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>HazardousConditionsPercent</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>IsConsolidated</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>IsSelected</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderGroupRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>OrderType</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PersonnelNumber</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PositionDescription</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PositionRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>PreviousDepartmentRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ProbationPeriod</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>StaffUnitBefore</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>StartDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TransactionDate</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>UserId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>WorkerRecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>WorkSchedule</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
+	</DataSources>
+	<Design>
+		<Caption xmlns="">Selected Orders</Caption>
+		<DialogSize xmlns="">Full</DialogSize>
+		<Pattern xmlns="">Dialog</Pattern>
+		<PatternVersion xmlns="">1.2</PatternVersion>
+		<Style xmlns="">Dialog</Style>
+		<WindowType xmlns="">Popup</WindowType>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>DialogContent</Name>
+				<HeightMode>SizeToAvailable</HeightMode>
+				<Pattern>Custom</Pattern>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormGroupControl">
+						<Name>HeaderGroup</Name>
+						<Type>Group</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormDateControl">
+								<Name>OrderDateEdit</Name>
+								<Type>Date</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>OrderDate</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+								<Label>Order Date</Label>
+								<Mandatory>Yes</Mandatory>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormCheckBoxControl">
+								<Name>IsConsolidateHeader</Name>
+								<Type>CheckBox</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Label>Consolidate</Label>
+							</AxFormControl>
+						</Controls>
+						<Columns>2</Columns>
+						<Caption>Order Information</Caption>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormGridControl">
+						<Name>TransactionsGrid</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<Type>Grid</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>EmployeeName</Name>
+								<AllowEdit>No</AllowEdit>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>EmployeeName</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+								<Label>Employee Name</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>EmployeeFIN</Name>
+								<AllowEdit>No</AllowEdit>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>EmployeeFIN</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+								<Label>FIN</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>PersonnelNumber</Name>
+								<AllowEdit>No</AllowEdit>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>PersonnelNumber</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+								<Label>Personnel Number</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>Department</Name>
+								<AllowEdit>No</AllowEdit>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>DepartmentName</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+								<Label>Department</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>PositionDescription</Name>
+								<AllowEdit>No</AllowEdit>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>PositionDescription</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormDateControl">
+								<Name>StartDate</Name>
+								<AllowEdit>No</AllowEdit>
+								<Type>Date</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>StartDate</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+								<Label>Start Date</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormDateControl">
+								<Name>EndDate</Name>
+								<AllowEdit>No</AllowEdit>
+								<Type>Date</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<DataField>EndDate</DataField>
+								<DataSource>NVOrderStaging</DataSource>
+								<Label>End Date</Label>
+							</AxFormControl>
+						</Controls>
+						<DataSource>NVOrderStaging</DataSource>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormGroupControl">
+						<Name>FooterGroup</Name>
+						<Type>Group</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>SelectedCountLabel</Name>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Text>Selected: 0 of 0</Text>
+							</AxFormControl>
+						</Controls>
+					</AxFormControl>
+				</Controls>
+				<Style>DialogContent</Style>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>ButtonGroup</Name>
+				<Type>ButtonGroup</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormCommandButtonControl">
+						<Name>OKButton</Name>
+						<Type>CommandButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Big>Yes</Big>
+						<Command>OK</Command>
+						<DefaultButton>Yes</DefaultButton>
+						<Text>Generate Orders</Text>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormCommandButtonControl">
+						<Name>CancelButton</Name>
+						<Type>CommandButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Big>Yes</Big>
+						<Command>Cancel</Command>
+						<SaveRecord>No</SaveRecord>
+						<Text>Cancel</Text>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>HorizontalRight</ArrangeMethod>
+				<Style>DialogCommitContainer</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVPayrollWorkerPositionEarningCodeEventHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public final class NVPayrollWorkerPositionEarningCodeEventHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>NVWorkerPositionEarningCode_EarningCode_OnLookup</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(HcmWorkerPayroll, NVWorkerPositionEarningCode_EarningCode), FormControlEventType::Lookup)]
+    public static void NVWorkerPositionEarningCode_EarningCode_OnLookup(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+        FormDataSource fds = formRun.dataSource(formDataSourceStr(HcmWorkerPayroll, WorkerPositionEarningCode));
+        PayrollWorkerPositionEarningCode workerPositionEarningCode = fds.cursor();
+
+        HcmPositionDetail positionDetail = HcmPositionDetail::findByPosition(workerPositionEarningCode.Position);
+        FormControlCancelableSuperEventArgs event = e as FormControlCancelableSuperEventArgs;
+        event.CancelSuperCall();
+
+        if(positionDetail.NVHcmHazardousAllowanceId == "")
+        {
+            PayrollEarningCode selectedRecord = PayrollEarningCode::lookupEarningCodeWithoutAutoPayment(sender);
+        }
+        else
+        {
+            SysReferenceTableLookup sysRefTableLookup = SysReferenceTableLookup::newParameters(tableNum(PayrollEarningCode), sender);
+        
+            Query query = new Query();
+        
+            QueryBuildDataSource qbds = query.addDataSource(tableNum(PayrollEarningCode));
+        
+            QueryBuildRange includeInPaymentTypeRange = qbds.addRange(fieldNum(PayrollEarningCode, IncludeInPaymentType));
+            includeInPaymentTypeRange.value(SysQuery::valueNot(PayrollIncludeInPaymentType::Auto));
+            includeInPaymentTypeRange.status(RangeStatus::Hidden);
+
+            QueryBuildRange hazardousAllowanceRange = qbds.addRange(fieldNum(PayrollEarningCode, NVHcmHazardousAllowanceId));
+            hazardousAllowanceRange.value(positionDetail.NVHcmHazardousAllowanceId);
+        
+            qbds.addSortField(fieldNum(PayrollEarningCode, EarningCode));
+        
+            sysRefTableLookup.addLookupfield(fieldNum(PayrollEarningCode, EarningCode));
+            sysRefTableLookup.addLookupfield(fieldNum(PayrollEarningCode, Description));
+        
+            sysRefTableLookup.parmQuery(query);
+
+            PayrollEarningCode selectedRecord = sysRefTableLookup.performFormLookup();
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

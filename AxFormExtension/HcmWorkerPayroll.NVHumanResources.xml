@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmWorkerPayroll.NVHumanResources</Name>
+	<ControlModifications>
+		<AxExtensionModification xmlns="">
+			<Name>WorkerPositionEarningCode_EarningCode</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Visible</Name>
+					<Value>No</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</ControlModifications>
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copyfj2b1fx41</Name>
+			<FormControl xmlns=""
+				i:type="AxFormReferenceGroupControl">
+				<Name>NVWorkerPositionEarningCode_EarningCode</Name>
+				<Type>ReferenceGroup</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls />
+				<DataSource>WorkerPositionEarningCode</DataSource>
+				<ReferenceField>EarningCode</ReferenceField>
+			</FormControl>
+			<Parent>PayrollTab_PositionEarningCodeGrid</Parent>
+			<PositionType>AfterItem</PositionType>
+			<PreviousSibling>WorkerPositionEarningCode_EarningCode</PreviousSibling>
+		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlmtvnks1t1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormStringControl">
+				<Name>WorkerPositionEarningCode_NVSalaryChangeReasonId</Name>
+				<Type>String</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataField>NVSalaryChangeReasonId</DataField>
+				<DataSource>WorkerPositionEarningCode</DataSource>
+			</FormControl>
+			<Parent>PayrollTab_PositionEarningCodeGrid</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPosition_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(HcmPosition))]
+internal final class NVHcmPosition_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getPositionDetails</Name>
+				<Source><![CDATA[
+    public static HcmPositionDetail getPositionDetails(HcmPositionRecId _position,
+        utcdatetime _asofDateTime = DateTimeUtil::utcNow())
+    {
+        HcmPositionDetail positionDetail;
+
+        positionDetail = HcmPositionDetail::findByPosition(_position, _asofDateTime, _asofDateTime);
+   
+        return positionDetail;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>positionDepartmentLevel2</Name>
+				<Source><![CDATA[
+    /*[SysClientCacheDataMethodAttribute(true)]
+    display OMDepartmentName positionDepartmentLevel1()
+    {
+        return OMOperatingUnit::find(HcmPosition::getPositionDetails(this.RecId).NVDepartLegalEntity, OMOperatingUnitType::OMDepartment).Name;
+    }*/
+
+    [SysClientCacheDataMethodAttribute(true)]
+    display OMDepartmentName positionDepartmentLevel2()
+    {
+        return OMOperatingUnit::find(HcmPosition::getPositionDetails(this.RecId).NVDepartBusinessUnit, OMOperatingUnitType::OMDepartment).Name;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>positionDepartmentLevel3</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethodAttribute(true)]
+    display OMDepartmentName positionDepartmentLevel3()
+    {
+        return OMOperatingUnit::find(HcmPosition::getPositionDetails(this.RecId).NVDepartDepartment, OMOperatingUnitType::OMDepartment).Name;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>positionDepartmentLevel4</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethodAttribute(true)]
+    display OMDepartmentName positionDepartmentLevel4()
+    {
+        return OMOperatingUnit::find(HcmPosition::getPositionDetails(this.RecId).NVDepartDivision, OMOperatingUnitType::OMDepartment).Name;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>positionDepartmentLevel5</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethodAttribute(true)]
+    display OMDepartmentName positionDepartmentLevel5()
+    {
+        return OMOperatingUnit::find(HcmPosition::getPositionDetails(this.RecId).NVDepartGroup1, OMOperatingUnitType::OMDepartment).Name;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>positionDepartmentLevel6</Name>
+				<Source><![CDATA[
+    [SysClientCacheDataMethodAttribute(true)]
+    display OMDepartmentName positionDepartmentLevel6()
+    {
+        return OMOperatingUnit::find(HcmPosition::getPositionDetails(this.RecId).NVDepartGroup2, OMOperatingUnitType::OMDepartment).Name;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

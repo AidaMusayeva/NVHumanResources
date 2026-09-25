@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxWorkflowTemplate xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V2">
+	<Name>NVOrderHeaderWorkflow</Name>
+	<CancelMenuItem>NVOrderHeaderWorkflowCancelMenuItem</CancelMenuItem>
+	<CanceledEventHandler>NVOrderHeaderWorkflowEventHandler</CanceledEventHandler>
+	<Category>NVOrderWorkflowCategory</Category>
+	<CompletedEventHandler>NVOrderHeaderWorkflowEventHandler</CompletedEventHandler>
+	<Document>NVOrderHeaderWorkflowDocument</Document>
+	<DocumentMenuItem>NVOrderDetailsMenuItem</DocumentMenuItem>
+	<HelpText>Help text for the NVOrderHeaderWorkflow workflow type element'</HelpText>
+	<Label>HR Order WorkflowType</Label>
+	<StartedEventHandler>NVOrderHeaderWorkflowEventHandler</StartedEventHandler>
+	<SubmitToWorkflowMenuItem>NVOrderHeaderWorkflowSubmitMenuItem</SubmitToWorkflowMenuItem>
+	<LineItemWorkflows />
+	<SupportedElements>
+		<AxWorkflowElementReference xmlns="">
+			<Name>NVOrderApproval</Name>
+			<ElementName>NVOrderApproval</ElementName>
+		</AxWorkflowElementReference>
+	</SupportedElements>
+</AxWorkflowTemplate>

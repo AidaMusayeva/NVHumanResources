@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>HcmEmploymentDateManager.NVHumanResources</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>Copypmrxaoin1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>NVDetail_Misc</Name>
+				<ElementPosition>1431655764</ElementPosition>
+				<FilterExpression>%1</FilterExpression>
+				<Type>Group</Type>
+				<VerticalSpacing>-1</VerticalSpacing>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormReferenceGroupControl">
+						<Name>HcmEmploymentDetail_NVHcmRealTermReasonCode</Name>
+						<Type>ReferenceGroup</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls />
+						<DataSource>HcmEmploymentDetail</DataSource>
+						<ReferenceField>NVHcmRealTermReasonCode</ReferenceField>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormComboBoxControl">
+						<Name>HcmEmploymentDetail_NVHcmTerminationClassification</Name>
+						<Type>ComboBox</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVHcmTerminationClassification</DataField>
+						<DataSource>HcmEmploymentDetail</DataSource>
+						<Items />
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormStringControl">
+						<Name>HcmEmploymentDetail_NVTerminationNotes</Name>
+						<Type>String</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<DataField>NVTerminationNotes</DataField>
+						<DataSource>HcmEmploymentDetail</DataSource>
+					</AxFormControl>
+				</Controls>
+				<BackgroundColor>WindowBackground</BackgroundColor>
+				<Breakable>No</Breakable>
+				<Caption>@SYS305463</Caption>
+				<DataSource>HcmEmploymentDetail</DataSource>
+			</FormControl>
+			<Parent>DetailBottomGroup</Parent>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications />
+</AxFormExtension>

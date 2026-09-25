@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeaveRequestAmountHelper_Events</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+final class NVLeaveRequestAmountHelper_Events
+{
+}
+
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>LeaveRequestAmountHelper_Post_calculateDefaultRequestAmounts</Name>
+				<Source><![CDATA[
+    [PostHandlerFor(classStr(LeaveRequestAmountHelper), staticMethodStr(LeaveRequestAmountHelper, calculateDefaultRequestAmounts))]
+    public static void LeaveRequestAmountHelper_Post_calculateDefaultRequestAmounts(XppPrePostArgs args)
+    {
+        LeaveTypeRecId leaveTypeRecId = args.getArg(identifierStr('_leaveType'));
+        LeaveType leaveType = LeaveType::findLeaveTypeByCrossCompanyFeature(leaveTypeRecId);
+
+        if(leaveType.LeaveAmountUnit == LeaveAmountUnit::Days)
+        {
+            Map defaultRequestAmounts = new Map(Types::Date, Types::Real);
+            Map defaultValueMap = args.getReturnValue();
+            MapEnumerator defaultValueMapEnum = defaultValueMap.getEnumerator();
+
+            while(defaultValueMapEnum.moveNext())
+            {
+                Amount amount = defaultValueMapEnum.currentValue();
+
+                if(amount == 0)
+                    amount = 1;
+
+                defaultRequestAmounts.insert(defaultValueMapEnum.currentKey(), amount);
+            }
+
+            args.setReturnValue(defaultRequestAmounts);
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

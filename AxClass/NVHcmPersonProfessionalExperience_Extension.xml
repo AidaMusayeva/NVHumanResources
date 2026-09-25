@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPersonProfessionalExperience_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(tableStr(HcmPersonProfessionalExperience))]
+public final class NVHcmPersonProfessionalExperience_Extension
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>yearsOfService</Name>
+				<Source><![CDATA[
+    public display real yearsOfService()
+    {
+        return HcmDateTimeUtil::yearDifference(this.StartDate, this.EndDate);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

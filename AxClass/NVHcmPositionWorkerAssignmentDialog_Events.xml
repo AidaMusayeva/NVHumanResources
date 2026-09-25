@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmPositionWorkerAssignmentDialog_Events</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class NVHcmPositionWorkerAssignmentDialog_Events
+{
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>NVTemporaryCheckbox_OnModified</Name>
+				<Source><![CDATA[
+    [
+        FormControlEventHandler(formControlStr(HcmPositionWorkerAssignmentDialog, NVTemporaryCheckbox), FormControlEventType::Modified),
+        FormControlEventHandler(formControlStr(HcmPositionWorkerAssignmentDialog, TempPosition_Control), FormControlEventType::Modified)
+    ]
+    public static void NVTemporaryCheckbox_OnModified(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+        
+        formRun.updateDesignTemporary();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>TempWorkerAssignmentOk_OnClicked</Name>
+				<Source><![CDATA[
+    [FormControlEventHandler(formControlStr(HcmPositionWorkerAssignmentDialog, TempWorkerAssignmentOk), FormControlEventType::Clicked)]
+    public static void TempWorkerAssignmentOk_OnClicked(FormControl sender, FormControlEventArgs e)
+    {
+        FormRun formRun = sender.formRun();
+        
+        formRun.performTemporaryAssignment();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

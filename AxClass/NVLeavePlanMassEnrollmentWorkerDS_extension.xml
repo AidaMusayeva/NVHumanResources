@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVLeavePlanMassEnrollmentWorkerDS_extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[ExtensionOf(formDataSourceStr(LeavePlanMassEnrollment, HcmWorker))]
+final class NVLeavePlanMassEnrollmentWorkerDS_extension
+{
+    private LeavePlan leavePlan;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>executeQuery</Name>
+				<Source><![CDATA[
+    public void executeQuery()
+    {
+        if(!leavePlan)
+        {
+            leavePlan = this.formRun().args().record() as LeavePlan;
+        }
+
+        if(leavePlan.NVHcmLeaveGroupId != "")
+        {
+            Query query = this.query();
+            QueryBuildDataSource workerDS = query.dataSourceTable(tableNum(HcmWorker));
+            workerDS.addRange(fieldNum(HcmWorker, NVHcmLeaveGroupId)).value(leavePlan.NVHcmLeaveGroupId);
+        }
+        next executeQuery();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>
