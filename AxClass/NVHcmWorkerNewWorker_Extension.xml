@@ -235,21 +235,22 @@ internal final class nvhcmworkernewworker_extension
                                 // =========================
 
                                 HcmPersonDetails personDetails;
+                                                                str maritalStatusValue = strLwr(strLRTrim(response.parmMaritalStatus()));
 
                                 select firstOnly forUpdate personDetails
-                                  where personDetails.Person == person.RecId;
+                                                                    where personDetails.Person == newlyCreatedWorker.Person;
 
                                 if (!personDetails.RecId)
                                 {
-                                    personDetails.Person = person.RecId;
+                                                                        personDetails.Person = newlyCreatedWorker.Person;
                                     personDetails.insert();
                                 }
 
                                 personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
 
-                                if (response.parmMaritalStatus())
+                                if (maritalStatusValue)
                                 {
-                                    switch (strLwr(strLRTrim(response.parmMaritalStatus())))
+                                    switch (maritalStatusValue)
                                     {
                                             case "subay":
                                                 personDetails.MaritalStatus = HcmPersonMaritalStatus::Single;
