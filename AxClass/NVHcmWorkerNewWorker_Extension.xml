@@ -77,55 +77,6 @@ internal final class nvhcmworkernewworker_extension
 
                         NVWorkerHireResponse response = contract.parmResponse();
 
-                        str militaryStatus = strLwr(strLRTrim(response.parmMilitaryStatus()));
-                        NoYes militaryStatusValue = NoYes::No;
-                        boolean validMilitaryStatus = true;
-
-                        switch (militaryStatus)
-                        {
-                            case "yes":
-                            case "true":
-                            case "1":
-                            case "bəli":
-                            case "hə":
-                            case "var":
-                                militaryStatusValue = NoYes::Yes;
-                                break;
-
-                            case "no":
-                            case "false":
-                            case "0":
-                            case "xeyr":
-                            case "yox":
-                                militaryStatusValue = NoYes::No;
-                                break;
-
-                            default:
-                                validMilitaryStatus = false;
-                                break;
-                        }
-
-                        if (validMilitaryStatus)
-                        {
-                            HcmMilitaryService militaryService;
-
-                            select firstOnly forUpdate militaryService
-                                where militaryService.Worker == newlyCreatedWorker.RecId;
-
-                            militaryService.DisabledVeteran = militaryStatusValue;
-
-                            if (militaryService.RecId)
-                            {
-                                militaryService.update();
-                            }
-                            else
-                            {
-                                militaryService.Worker = newlyCreatedWorker.RecId;
-                                militaryService.insert();
-                            }
-                        }
-                       
-
                         //FormDataSource hcmWorker_ds = this.dataSource(1);
                         //HcmWorker newlyCreatedWorker = hcmWorker_ds.cursor();
                         HcmWorker newlyCreatedWorker;
@@ -136,6 +87,54 @@ internal final class nvhcmworkernewworker_extension
 
                         if (newlyCreatedWorker && newlyCreatedWorker.RecId)
                         {
+                            str militaryStatus = strLwr(strLRTrim(response.parmMilitaryStatus()));
+                            NoYes militaryStatusValue = NoYes::No;
+                            boolean validMilitaryStatus = true;
+
+                            switch (militaryStatus)
+                            {
+                                case "yes":
+                                case "true":
+                                case "1":
+                                case "bəli":
+                                case "hə":
+                                case "var":
+                                    militaryStatusValue = NoYes::Yes;
+                                    break;
+
+                                case "no":
+                                case "false":
+                                case "0":
+                                case "xeyr":
+                                case "yox":
+                                    militaryStatusValue = NoYes::No;
+                                    break;
+
+                                default:
+                                    validMilitaryStatus = false;
+                                    break;
+                            }
+
+                            if (validMilitaryStatus)
+                            {
+                                HcmMilitaryService militaryService;
+
+                                select firstOnly forUpdate militaryService
+                                    where militaryService.Worker == newlyCreatedWorker.RecId;
+
+                                militaryService.DisabledVeteran = militaryStatusValue;
+
+                                if (militaryService.RecId)
+                                {
+                                    militaryService.update();
+                                }
+                                else
+                                {
+                                    militaryService.Worker = newlyCreatedWorker.RecId;
+                                    militaryService.insert();
+                                }
+                            }
+
                             DirPerson newlyCreatedPerson = DirPerson::find(newlyCreatedWorker.Person);
 
                             if (newlyCreatedPerson)
