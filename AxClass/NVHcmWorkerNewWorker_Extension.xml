@@ -6,6 +6,7 @@
 [extensionof(formstr(hcmworkernewworker))]
 internal final class nvhcmworkernewworker_extension
 {
+    RecId hiredWorkerRecId;
 }
 ]]></Declaration>
 		<Methods>
@@ -42,6 +43,8 @@ internal final class nvhcmworkernewworker_extension
 
             if (locworker)
             {
+                hiredWorkerRecId = locworker.RecId;
+
                 ttsbegin;
 
                 locworker.nvhcmworkerhirereasonid       = hirereasonid;
@@ -220,6 +223,7 @@ internal final class nvhcmworkernewworker_extension
                                 if (response.parmGivenDate())
                                 {
                                     identification.IssuedDate = str2Date(response.parmGivenDate(),123);
+                                    Nijat Hidayetzade | Novum LLC
                                     
                                 }
                                 if (response.parmExpireDate())
@@ -234,27 +238,28 @@ internal final class nvhcmworkernewworker_extension
                                 // =========================
 
                                 HcmPersonDetails personDetails;
+                                str maritalStatusValue = strLwr(strLRTrim(response.parmMaritalStatus()));
 
                                 select firstOnly forUpdate personDetails
-                                  where personDetails.Person == person.RecId;
+                                    where personDetails.Person == person.RecId;
 
                                 if (!personDetails.RecId)
                                 {
+                                    personDetails.clear();
                                     personDetails.Person = person.RecId;
                                     personDetails.insert();
                                 }
 
-                                personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
-
-                                if (response.parmMaritalStatus())
+                                if (maritalStatusValue)
                                 {
-                                    switch (strLwr(strLRTrim(response.parmMaritalStatus())))
+                                    switch (maritalStatusValue)
                                     {
                                             case "subay":
                                                 personDetails.MaritalStatus = HcmPersonMaritalStatus::Single;
                                                 break;
 
                                             case "evli":
+                                            case "married":
                                                 personDetails.MaritalStatus = HcmPersonMaritalStatus::Married;
                                                 break;
 
@@ -283,17 +288,16 @@ internal final class nvhcmworkernewworker_extension
                                                 break;
 
                                             default:
-                                                warning(strFmt(
-                                                      "Unknown marital status received from API: '%1'",
-                                                     response.parmMaritalStatus()));
+                warning(strFmt(
+                    "Unknown marital status received from API: '%1'",
+                    response.parmMaritalStatus()));
                                                 break;
                                         }
                                     }
-                                
-                                     personDetails.update();
                                 }
 
-                             
+                                personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+                                personDetails.update();
 
                               
                                 if (response.parmImage())
@@ -323,7 +327,7 @@ internal final class nvhcmworkernewworker_extension
 
             }
 
-        
+        }
         return success;
     }
 
@@ -334,8 +338,20 @@ internal final class nvhcmworkernewworker_extension
 				<Source><![CDATA[
     public void closeOk()
     {
-        
         next closeOk();
+
+        if (hiredWorkerRecId)
+        {
+            HcmWorker hiredWorker = HcmWorker::find(hiredWorkerRecId);
+
+            if (hiredWorker.RecId)
+            {
+                Args args = new Args();
+                args.record(hiredWorker);
+
+                new MenuFunction(menuItemDisplayStr(HcmWorkerV2), MenuItemType::Display).run(args);
+            }
+        }
     }
 
 ]]></Source>
@@ -345,7 +361,6 @@ internal final class nvhcmworkernewworker_extension
 				<Source><![CDATA[
     public void init()
     {
-
         next init();
 
         Args args = this.args();
