@@ -54,7 +54,7 @@ public class NVWorkerHireService
         jsonResponse = reader.ReadToEnd();
         Info(jsonResponse);
         
-        CodeAccessPermission::revertAssert();
+       
 
         contract =
             FormJsonSerializer::deserializeObject(

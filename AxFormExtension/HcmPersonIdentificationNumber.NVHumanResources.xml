@@ -23,6 +23,7 @@
 					i:nil="true" />
 				<DataField>NVActivationDate</DataField>
 				<DataSource>HcmPersonIdentificationNumber</DataSource>
+				<Label>Activation Date</Label>
 			</FormControl>
 			<Parent>DetailsTabPage</Parent>
 			<PositionType>AfterItem</PositionType>

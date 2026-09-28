@@ -183,7 +183,7 @@ internal final class nvhcmworkernewworker_extension
                                     }
                                     if (response.parmBloodType())
                                     {
-                                        personName.NVBloodType= response.parmBloodType(); 
+                                        personName.NVBloodType= response.parmBloodType();
                                     }
 
                                     personName.update();
@@ -223,9 +223,10 @@ internal final class nvhcmworkernewworker_extension
                                 if (response.parmGivenDate())
                                 {
                                     identification.IssuedDate = str2Date(response.parmGivenDate(),123);
-                                    Nijat Hidayetzade | Novum LLC
+
                                     
                                 }
+
                                 if (response.parmExpireDate())
                                 {
                                     identification.ExpirationDate = str2Date(response.parmExpireDate(),123);
@@ -254,79 +255,78 @@ internal final class nvhcmworkernewworker_extension
                                 {
                                     switch (maritalStatusValue)
                                     {
-                                            case "subay":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Single;
-                                                break;
+                                        case "subay":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::Single;
+                                            break;
 
-                                            case "evli":
-                                            case "married":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Married;
-                                                break;
+                                        case "evli":
+                                        case "married":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::Married;
+                                            break;
 
-                                            case "widowed":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Widowed;
-                                                break;
+                                        case "widowed":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::Widowed;
+                                            break;
 
-                                            case "divorced":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Divorced;
-                                                break;
+                                        case "divorced":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::Divorced;
+                                            break;
 
-                                            case "birlikdə yaşamaq":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Cohabiting;
-                                                break;
+                                        case "birlikdə yaşamaq":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::Cohabiting;
+                                            break;
 
-                                            case "qeydiyyatdan keçmiş tərəfdaşlıq":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::RegisteredPartnership;
-                                                break;
+                                        case "qeydiyyatdan keçmiş tərəfdaşlıq":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::RegisteredPartnership;
+                                            break;
 
-                                            case "ayrılmış":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::Separated;
-                                                break;
+                                        case "ayrılmış":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::Separated;
+                                            break;
 
-                                            case "vətəndaşlıq tərəfdaşlığı":
-                                                personDetails.MaritalStatus = HcmPersonMaritalStatus::CivilPartnership;
-                                                break;
+                                        case "vətəndaşlıq tərəfdaşlığı":
+                                            personDetails.MaritalStatus = HcmPersonMaritalStatus::CivilPartnership;
+                                            break;
 
-                                            default:
+                                        default:
                 warning(strFmt(
                     "Unknown marital status received from API: '%1'",
                     response.parmMaritalStatus()));
-                                                break;
-                                        }
+                                            break;
                                     }
                                 }
-
                                 personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
                                 personDetails.update();
+                            }
+
+                            
 
                               
-                                if (response.parmImage())
-                                {
-                                    HcmPersonImage personImage;
+                            if (response.parmImage())
+                            {
+                                HcmPersonImage personImage;
 
-                                    System.Byte[] imageBytes = System.Convert::FromBase64String(response.parmImage());
+                                System.Byte[] imageBytes = System.Convert::FromBase64String(response.parmImage());
 
-                                    System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(imageBytes);
+                                System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(imageBytes);
 
-                                    Binary binaryImage = Binary::constructFromMemoryStream(memoryStream);
+                                Binary binaryImage = Binary::constructFromMemoryStream(memoryStream);
 
-                                    personImage.Person = newlyCreatedPerson.RecId;
+                                personImage.Person = newlyCreatedPerson.RecId;
 
-                                    personImage.Image = binaryImage.getContainer();
+                                personImage.Image = binaryImage.getContainer();
 
-                                    personImage.insert();
-                                }
-    
+                                personImage.insert();
                             }
+    
                         }
                     }
+                }
                 
 
-                    ttscommit;
-                }
-
+                ttscommit;
             }
-
+            
         }
         return success;
     }
@@ -336,7 +336,7 @@ internal final class nvhcmworkernewworker_extension
 			<Method>
 				<Name>closeOk</Name>
 				<Source><![CDATA[
-    public void closeOk()
+     public void closeOk()
     {
         next closeOk();
 
@@ -360,6 +360,7 @@ internal final class nvhcmworkernewworker_extension
 				<Name>init</Name>
 				<Source><![CDATA[
     public void init()
+
     {
         next init();
 
