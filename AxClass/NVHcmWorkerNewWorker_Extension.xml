@@ -11,16 +11,16 @@ internal final class nvhcmworkernewworker_extension
 }
 ]]></Declaration>
 		<Methods>
-            <Method>
+			<Method>
 				<Name>setSkipWorkerDetails</Name>
-                <Source><![CDATA[
-        public void setSkipWorkerDetails(boolean _skipWorkerDetails)
+				<Source><![CDATA[
+    public void setSkipWorkerDetails(boolean _skipWorkerDetails)
     {
         skipWorkerDetails = _skipWorkerDetails;
     }
 
 ]]></Source>
-            </Method>
+			</Method>
 			<Method>
 				<Name>nvhcmworkereducationtype_onlookup</Name>
 				<Source><![CDATA[
@@ -388,7 +388,7 @@ internal final class nvhcmworkernewworker_extension
 			<Method>
 				<Name>closeOk</Name>
 				<Source><![CDATA[
-     public void closeOk()
+    public void closeOk()
     {
         next closeOk();
 
@@ -396,10 +396,11 @@ internal final class nvhcmworkernewworker_extension
         {
             HcmWorker hiredWorker = HcmWorker::find(hiredWorkerRecId);
 
-            if (hiredWorker.RecId)
+            if (hiredWorker.RecId && hiredWorker.Person)
             {
                 Args args = new Args();
                 args.record(hiredWorker.dirPerson());
+                args.parm("NVHirePersonDetails");
 
                 new MenuFunction(menuItemDisplayStr(HcmWorkerV2), MenuItemType::Display).run(args);
             }
