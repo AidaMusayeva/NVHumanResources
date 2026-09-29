@@ -399,7 +399,7 @@ internal final class nvhcmworkernewworker_extension
             if (hiredWorker.RecId)
             {
                 Args args = new Args();
-                args.record(hiredWorker);
+                args.record(hiredWorker.dirPerson());
 
                 new MenuFunction(menuItemDisplayStr(HcmWorkerV2), MenuItemType::Display).run(args);
             }
