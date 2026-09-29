@@ -277,7 +277,6 @@ internal final class nvhcmworkernewworker_extension
                                 {
                                     personDetails.clear();
                                     personDetails.Person = person.RecId;
-                                    personDetails.insert();
                                 }
 
                                 if (maritalStatusValue)
@@ -324,8 +323,15 @@ internal final class nvhcmworkernewworker_extension
                                             break;
                                     }
                                 }
-                                personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
-                                personDetails.update();
+                                if (personDetails.RecId)
+                                {
+                                    personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+                                    personDetails.update();
+                                }
+                                else
+                                {
+                                    personDetails.insert();
+                                }
                             }
 
                             
