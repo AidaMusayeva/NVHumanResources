@@ -7,9 +7,20 @@
 internal final class nvhcmworkernewworker_extension
 {
     private RecId hiredWorkerRecId;
+    private boolean skipWorkerDetails;
 }
 ]]></Declaration>
 		<Methods>
+            <Method>
+				<Name>setSkipWorkerDetails</Name>
+                <Source><![CDATA[
+        public void setSkipWorkerDetails(boolean _skipWorkerDetails)
+    {
+        skipWorkerDetails = _skipWorkerDetails;
+    }
+
+]]></Source>
+            </Method>
 			<Method>
 				<Name>nvhcmworkereducationtype_onlookup</Name>
 				<Source><![CDATA[
@@ -381,7 +392,7 @@ internal final class nvhcmworkernewworker_extension
     {
         next closeOk();
 
-        if (hiredWorkerRecId)
+        if (hiredWorkerRecId && !skipWorkerDetails)
         {
             HcmWorker hiredWorker = HcmWorker::find(hiredWorkerRecId);
 
