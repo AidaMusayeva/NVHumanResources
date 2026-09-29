@@ -27,7 +27,7 @@ internal final class nvhcmworkernewworker_extension
 			<Method>
 				<Name>tryhire</Name>
 				<Source><![CDATA[
-    protected final boolean tryhire(companyinfo _companyinfo)
+                    public final boolean tryhire(companyinfo _companyinfo)
     {
         boolean success = next tryhire(_companyinfo);
 
