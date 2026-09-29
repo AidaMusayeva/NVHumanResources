@@ -326,7 +326,7 @@ internal final class nvhcmworkernewworker_extension
 
                                 personDetails.DisabledVeteran = militaryStatusValue;
                                 personDetails.ValidFrom = DateTimeUtil::utcNow();
-                                personDetails.ValidTo = DateTimeUtil::utcNow();
+                                personDetails.ValidTo = DateTimeUtil::maxValue();
 
                                 if (personDetails.RecId)
                                 {
