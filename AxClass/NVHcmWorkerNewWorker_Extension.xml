@@ -99,6 +99,7 @@ internal final class nvhcmworkernewworker_extension
                                 case "bəli":
                                 case "hə":
                                 case "var":
+                                case "hərbi mükəlləfiyyətli":
                                     militaryStatusValue = NoYes::Yes;
                                     break;
 
@@ -107,6 +108,7 @@ internal final class nvhcmworkernewworker_extension
                                 case "0":
                                 case "xeyr":
                                 case "yox":
+                                case "yoxdur":
                                     militaryStatusValue = NoYes::No;
                                     break;
 
@@ -322,6 +324,11 @@ internal final class nvhcmworkernewworker_extension
                                             break;
                                     }
                                 }
+
+                                personDetails.DisabledVeteran = militaryStatusValue;
+                                personDetails.ValidFrom = DateTimeUtil::utcNow();
+                                personDetails.ValidTo = DateTimeUtil::utcNow();
+
                                 if (personDetails.RecId)
                                 {
                                     personDetails.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
@@ -329,8 +336,6 @@ internal final class nvhcmworkernewworker_extension
                                 }
                                 else
                                 {
-                                    personDetails.ValidFrom = DateTimeUtil::utcNow();
-                                    personDetails.ValidTo = DateTimeUtil::maxValue();
                                     personDetails.insert();
                                 }
                             }
