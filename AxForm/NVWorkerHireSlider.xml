@@ -52,7 +52,8 @@ public class NVWorkerHireSlider extends FormRun
             {
                 Args formArgs = new Args();
 
-                formArgs.caller(element);
+				FormRun workerCaller = element.args() ? element.args().caller() : null;
+				formArgs.caller(workerCaller ? workerCaller : element);
                 formArgs.parmObject(contract);
 
                 MenuFunction menuFunction =

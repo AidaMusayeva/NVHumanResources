@@ -31,19 +31,6 @@ internal final class NVHcmWorkerV2_Extension
         next init();
 
 		this.applyFilterOptions();
-
-		if (this.args() && this.args().parm() == "NVHirePersonDetails"
-			&& this.args().dataset() == tableNum(DirPerson))
-		{
-			DirPerson person = this.args().record();
-			FormDataSource personDataSource = this.dataSource(formDataSourceStr(HcmWorkerV2, DirPerson));
-
-			if (person.RecId && personDataSource)
-			{
-				QueryBuildDataSource personQuery = personDataSource.query().dataSourceTable(tableNum(DirPerson));
-				personQuery.addRange(fieldNum(DirPerson, RecId)).value(queryValue(person.RecId));
-			}
-		}
     }
 
 ]]></Source>
