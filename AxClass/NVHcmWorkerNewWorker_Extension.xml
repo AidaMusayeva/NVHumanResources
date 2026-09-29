@@ -332,8 +332,6 @@ internal final class nvhcmworkernewworker_extension
                                     personDetails.insert();
                                 }
                             }
-                            newlyCreatedPerson.selectForUpdate(true);
-                            newlyCreatedPerson.update();
 
                             
 
