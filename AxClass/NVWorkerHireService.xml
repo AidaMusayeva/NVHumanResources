@@ -52,8 +52,7 @@ public class NVWorkerHireService
         reader = new System.IO.StreamReader(stream);
 
         jsonResponse = reader.ReadToEnd();
-        Info(jsonResponse);
-       
+      
 
         contract =
             FormJsonSerializer::deserializeObject(

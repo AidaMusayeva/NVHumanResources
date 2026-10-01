@@ -32,7 +32,7 @@ public class NVWorkerHireSlider extends FormRun
             NVWorkerHireService service = new NVWorkerHireService();
 
             NVWorkerHireContract contract =
-        service.getWorkerData(fin, serial);
+             service.getWorkerData(fin, serial);
             NVWorkerHireResponse response =contract.parmResponse();
             
 
@@ -57,9 +57,9 @@ public class NVWorkerHireSlider extends FormRun
                 formArgs.parmObject(contract);
 
                 MenuFunction menuFunction =
-        new MenuFunction(
-            menuItemDisplayStr(HcmWorkerNewWorker),
-            MenuItemType::Display);
+                  new MenuFunction(
+                  menuItemDisplayStr(HcmWorkerNewWorker),
+                  MenuItemType::Display);
 
                 menuFunction.run(formArgs);
 

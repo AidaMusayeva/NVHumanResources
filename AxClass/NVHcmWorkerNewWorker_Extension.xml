@@ -224,9 +224,6 @@ internal final class nvhcmworkernewworker_extension
                                 {
                                     identification.Person = person.RecId;
 
-                                    // lazım olsa identification type ver
-                                    // identification.IdentificationType = ...;
-
                                     identification.insert();
 
                                     select firstOnly forUpdate identification
@@ -250,8 +247,6 @@ internal final class nvhcmworkernewworker_extension
                                 if (response.parmGivenDate())
                                 {
                                     identification.IssuedDate = str2Date(response.parmGivenDate(),123);
-
-                                    
                                 }
 
                                 if (response.parmExpireDate())
@@ -339,9 +334,7 @@ internal final class nvhcmworkernewworker_extension
                                 }
                             }
 
-                            
-
-                              
+                                                          
                             if (response.parmImage())
                             {
                                 HcmPersonImage personImage;
