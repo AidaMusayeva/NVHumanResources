@@ -42,6 +42,19 @@
 			</FormControl>
 			<Parent>PayrollTab_PositionEarningCodeGrid</Parent>
 		</AxFormExtensionControl>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControltgsiy1uq1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormDropDialogButtonControl">
+				<Name>NVHcmWorkerSalaryDropDialog</Name>
+				<Type>DropDialogButton</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<DataSource>HcmWorker</DataSource>
+				<MenuItemName>NVHcmWorkerSalaryDropDialog</MenuItemName>
+			</FormControl>
+			<Parent>PayrollTab_WorkerPositionEarningButtonGroup</Parent>
+		</AxFormExtensionControl>
 	</Controls>
 	<DataSourceModifications />
 	<DataSourceReferences />

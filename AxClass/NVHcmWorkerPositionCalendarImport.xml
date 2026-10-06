@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>NVHcmWorkerPositionCalendarImport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+Using System.IO;
+Using OfficeOpenXml;
+Using OfficeOpenXml.ExcelPackage;
+Using OfficeOpenXml.ExcelRange;
+
+final class NVHcmWorkerPositionCalendarImport
+{
+    #Define.TotalColumns(5)
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateNoOverlap</Name>
+				<Source><![CDATA[
+    private boolean validateNoOverlap(NVHcmWorkerPositionCalendar _workerCalendar, HcmPersonnelNumberId _personnelNumber, int _rowNumber)
+    {
+        NVHcmWorkerPositionCalendar existingCalendar;
+
+        TransDate begin = dateNull();
+        TransDate end   = dateMax();
+
+        select firstonly validTimeState(begin, end) RecId, ValidFrom, ValidTo from existingCalendar
+            where existingCalendar.Worker    == _workerCalendar.Worker
+               && existingCalendar.RecId     != _workerCalendar.RecId
+               && existingCalendar.ValidFrom <= _workerCalendar.ValidTo
+               && existingCalendar.ValidTo   >= _workerCalendar.ValidFrom;
+
+        if (existingCalendar.RecId)
+        {
+            return checkFailed(strFmt(
+                "Overlapping calendar record found for worker '%1' at row %2. Existing period is %3 - %4.",
+                _personnelNumber,
+                _rowNumber,
+                date2StrUsr(existingCalendar.ValidFrom),
+                date2StrUsr(existingCalendar.ValidTo)));
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getExcelDate</Name>
+				<Source><![CDATA[
+    private TransDate getExcelDate(ExcelRange _range, int _row, int _column)
+    {
+        System.Object   cellValue = _range.get_Item(_row, _column).Value;
+        System.DateTime excelDate;
+
+        if (cellValue == null || !cellValue.ToString())
+        {
+            return dateNull();
+        }
+
+        excelDate = System.DateTime::FromOADate(System.Convert::ToDouble(cellValue));
+
+        return mkDate(excelDate.Day, excelDate.Month, excelDate.Year);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    public void run()
+    {
+        System.IO.Stream stream;
+        DialogGroup dlgUploadGroup;
+        FileUploadBuild fileUploadBuild;
+        FormBuildControl formBuildControl;
+        Dialog dialog = new Dialog("Import worker calendar");
+
+        dlgUploadGroup = dialog.addGroup("@SYS54759");
+        formBuildControl = dialog.formBuildDesign().control(dlgUploadGroup.name());
+        fileUploadBuild = formBuildControl.addControlEx(classStr(FileUpload), "Upload");
+        fileUploadBuild.style(FileUploadStyle::MinimalWithFilename);
+        fileUploadBuild.fileTypesAccepted(".xlsx");
+
+        if (dialog.run() && dialog.closedOk())
+        {
+            FileUpload fileUploadControl = dialog.formRun().control(dialog.formRun().controlId("Upload"));
+            FileUploadTemporaryStorageResult fileUploadResult = fileUploadControl.getFileUploadResult();
+
+            if (fileUploadResult != null && fileUploadResult.getUploadStatus())
+            {
+                stream = fileUploadResult.openResult();
+
+                using (ExcelPackage package = new ExcelPackage(stream))
+                {
+                    int rowCount, i, j;
+
+                    package.Load(stream);
+
+                    ExcelWorksheet worksheet = package.get_Workbook().get_Worksheets().get_Item(1);
+                    ExcelRange range = worksheet.Cells;
+
+                    rowCount = worksheet.Dimension.End.Row - worksheet.Dimension.Start.Row + 1;
+
+                    ttsbegin;
+
+                    for (i = 2; i <= rowCount; i++)
+                    {
+                        container recordCon = conNull();
+
+                        for (j = 1; j <= #TotalColumns; j++)
+                        {
+                            recordCon += [range.get_Item(i, j).Value ? range.get_Item(i, j).Value.ToString() : ""];
+                        }
+
+                        HcmPersonnelNumberId personnelNumber = conPeek(recordCon, 1);
+                        CalendarId calendarId = conPeek(recordCon, 2);
+                        str coefficientValue = conPeek(recordCon, 3);
+                        real employmentCoefficient = coefficientValue ? str2Num(coefficientValue) : 1;
+                        TransDate validFrom = this.getExcelDate(range, i, 4);
+                        TransDate validTo = this.getExcelDate(range, i, 5);
+
+                        if (!personnelNumber && !calendarId && !validFrom && !validTo)
+                        {
+                            continue;
+                        }
+
+                        boolean canSave = true;
+                        HcmWorker worker = HcmWorker::findByPersonnelNumber(personnelNumber);
+
+                        if (!worker.RecId)
+                        {
+                            canSave = checkFailed(strFmt(
+                                "Worker not found against personnel number '%1' at row %2.",
+                                personnelNumber,
+                                i));
+                        }
+
+                        if (canSave && !validFrom)
+                        {
+                            canSave = checkFailed(strFmt(
+                                "Valid From is required for worker '%1' at row %2.",
+                                personnelNumber,
+                                i));
+                        }
+
+                        if (canSave && !validTo)
+                        {
+                            canSave = checkFailed(strFmt(
+                                "Valid To is required for worker '%1' at row %2.",
+                                personnelNumber,
+                                i));
+                        }
+
+                        if (canSave && validFrom > validTo)
+                        {
+                            canSave = checkFailed(strFmt(
+                                "Valid From cannot be later than Valid To for worker '%1' at row %2.",
+                                personnelNumber,
+                                i));
+                        }
+
+                        if (canSave)
+                        {
+                            NVHcmWorkerPositionCalendar workerCalendar = NVHcmWorkerPositionCalendar::find(worker.RecId, validFrom, true);
+
+                            if (!workerCalendar.RecId)
+                            {
+                                workerCalendar.clear();
+                                workerCalendar.initValue();
+                            }
+
+                            workerCalendar.Worker                = worker.RecId;
+                            workerCalendar.CalendarDataAreaId    = curext();
+                            workerCalendar.CalendarId            = calendarId;
+                            workerCalendar.EmploymentCoefficient = employmentCoefficient;
+                            workerCalendar.ValidFrom             = validFrom;
+                            workerCalendar.ValidTo               = validTo;
+
+                            canSave = this.validateNoOverlap(workerCalendar, personnelNumber, i);
+
+                            if (canSave)
+                            {
+                                canSave = workerCalendar.validateWrite();
+                            }
+
+                            if (canSave)
+                            {
+                                if (workerCalendar.RecId)
+                                {
+                                    workerCalendar.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+                                    workerCalendar.update();
+                                }
+                                else
+                                {
+                                    workerCalendar.insert();
+                                }
+                            }
+                        }
+                    }
+
+                    ttscommit;
+                }
+
+                info("Operation completed.");
+            }
+            else
+            {
+                error("Error occurred during upload. Please try again.");
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        NVHcmWorkerPositionCalendarImport import = new NVHcmWorkerPositionCalendarImport();
+        import.run();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

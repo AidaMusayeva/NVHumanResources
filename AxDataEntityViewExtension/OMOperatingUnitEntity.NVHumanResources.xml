@@ -4,7 +4,17 @@
 	<DataSources />
 	<FieldGroupExtensions />
 	<FieldGroups />
-	<FieldModifications />
+	<FieldModifications>
+		<AxExtensionModification>
+			<Name>HcmWorker</Name>
+			<PropertyModifications>
+				<AxPropertyModification>
+					<Name>Label</Name>
+					<Value>Head of structure unit</Value>
+				</AxPropertyModification>
+			</PropertyModifications>
+		</AxExtensionModification>
+	</FieldModifications>
 	<Fields>
 		<AxDataEntityViewField xmlns=""
 			i:type="AxDataEntityViewMappedField">

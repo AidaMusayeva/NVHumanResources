@@ -316,6 +316,7 @@ class NVGenerateTimeSheet extends RunBaseBatch
         NvTimeSheetHeader                       header;
         HcmWorker                               hcmWorker;
         HcmPosition                             hcmPosition;
+        NVHcmWorkerPositionCalendar             workerPositionCalendar;
         PayrollPayPeriod                        payrollPayPeriod;
         TransDate                               leaveStartDate, leaveEndDate, employmentStartDate;
         int                                     totalLeaveDays;
@@ -357,33 +358,65 @@ class NVGenerateTimeSheet extends RunBaseBatch
 
             hcmPosition = queryRun.get(tableNum(HcmPosition));
             employmentStartDate = DateTimeUtil::date(this.findWorkerEmployment(hcmWorker.RecId).ValidFrom);
-
-            lines.clear();
-            lines.TimeSheetHeader = header.RecId;
-            lines.initValue();
-            lines.EmpId = hcmWorker.PersonnelNumber;
-            lines.Worker = hcmWorker.RecId;
-            lines.EmpName = hcmWorker.name();
-            lines.PositionId            = hcmPosition.PositionId;
-            lines.ManagerPositionId     = hcmPosition.reportsToPosition();
-            lines.ManagerName           = HcmPosition::findByPosition(lines.ManagerPositionId).worker();
-            lines.CalendarId            = this.getCalendarId(hcmWorker, payrollPayPeriod);
-
-            this.setLeaveInitials(hcmWorker, payrollPayPeriod);
-            this.setTripsInitials(hcmWorker, payrollPayPeriod);
-            lines.TotalWorkingHours = this.syncWorkingHours(payrollPayPeriod, lines.CalendarId, lines);
-            lines.TotalWorkingDays  = this.getTotalWorkingDays(payrollPayPeriod, lines.CalendarId);
-            this.setHolidays(payrollPayPeriod, lines.CalendarId);
-
-            TransDate current = header.StartDate;
-            while(current < employmentStartDate)
+            TransDate startDate = header.StartDate;
+            TransDate endDate = header.EndDate;
+            while select validTimeState(startDate, endDate) workerPositionCalendar
+                order by ValidFrom
+                where workerPositionCalendar.Worker     == hcmWorker.RecId
             {
-                lines.setValueToDayColumn(current, 'NA');
-                current++;
-            }
+                TransDate                           effectiveFromDate = startDate;
+                TransDate                           effectiveToDate = endDate;
+                
+                if (workerPositionCalendar.ValidFrom > effectiveFromDate)
+                {
+                    effectiveFromDate = workerPositionCalendar.ValidFrom;
+                }
+
+                if (workerPositionCalendar.ValidTo < effectiveToDate)
+                {
+                    effectiveToDate = workerPositionCalendar.ValidTo;
+                }
+
+                if (employmentStartDate > effectiveFromDate)
+                {
+                    effectiveFromDate = employmentStartDate;
+                }
+
+                if (effectiveFromDate > effectiveToDate)
+                {
+                    continue;
+                }
+                lines.clear();
+                lines.TimeSheetHeader = header.RecId;
+                lines.initValue();
+                lines.EmpId = hcmWorker.PersonnelNumber;
+                lines.Worker = hcmWorker.RecId;
+                lines.EmpName = hcmWorker.name();
+                lines.PositionId            = hcmPosition.PositionId;
+                lines.ManagerPositionId     = hcmPosition.reportsToPosition();
+                lines.ManagerName           = HcmPosition::findByPosition(lines.ManagerPositionId).worker();
+                lines.WorkerPositionCalendar    = workerPositionCalendar.RecId;
+                lines.EmploymentCoefficient     = workerPositionCalendar.EmploymentCoefficient;
+                lines.CalendarDataAreaId        = workerPositionCalendar.CalendarDataAreaId;
+                lines.CalendarId                = workerPositionCalendar.CalendarId;
+
+                this.setLeaveInitials(hcmWorker, payrollPayPeriod);
+                this.setTripsInitials(hcmWorker, payrollPayPeriod);
+
+                lines.TotalWorkingHours = this.setWorkingHours(effectiveFromDate, effectiveToDate, lines);
+                lines.TotalWorkingDays  = this.getTotalWorkingDays(payrollPayPeriod, lines.CalendarId);
+                this.setHolidays(payrollPayPeriod, lines.CalendarId);
+
+                TransDate current = header.StartDate;
+                while(current < employmentStartDate)
+                {
+                    lines.setValueToDayColumn(current, 'NA');
+                    current++;
+                }
             
-            lines.insert();
-            counter++;
+                lines.insert();
+                counter++;
+            }
         }
         ttsbegin;
         if(header.RecId && leaveTypeMap.elements())
@@ -404,36 +437,68 @@ class NVGenerateTimeSheet extends RunBaseBatch
 ]]></Source>
 			</Method>
 			<Method>
-				<Name>getCalendarId</Name>
+				<Name>timeSheetLineExists</Name>
 				<Source><![CDATA[
-    CalendarId getCalendarId(HcmWorker _worker, PayrollPayPeriod _payPeriod)
+    private boolean timeSheetLineExists(RefRecId _timeSheetHeader, RefRecId _workerPositionCalendar)
     {
-        return WorkCalendarEmployment::findByWorkerRecId(_worker.RecId, _payPeriod.PeriodStartDate).CalendarId;
+        NVTimeSheetLines existingLine;
+
+        select firstonly RecId from existingLine
+            where existingLine.TimeSheetHeader      == _timeSheetHeader
+            && existingLine.WorkerPositionCalendar  == _workerPositionCalendar;
+
+        return existingLine.RecId != 0;
     }
 
 ]]></Source>
 			</Method>
 			<Method>
-				<Name>syncWorkingHours</Name>
+				<Name>setWorkingHours</Name>
 				<Source><![CDATA[
-    Hours syncWorkingHours(PayrollPayPeriod _payPeriod, CalendarId _calendarId, NVTimesheetLines _line)
+    private Hours setWorkingHours(
+        TransDate _fromDate,
+        TransDate _toDate,
+        NVTimeSheetLines _line)
     {
+        WorkCalendarDate        workCalendarDate;
         WorkCalendarDateLine    calendarLine;
-        Seconds                 seconds = 0;
+    
+        CalendarId              calendarId;
+        DataAreaId              calendarDataAreaId;
+        real                    coefficient;
+        Hours                   totalAdjustedHours = 0;
 
-        while select calendarLine
-            where calendarLine.CalendarId == _calendarId
-                && calendarLine.TransDate >= _payPeriod.PeriodStartDate
-                && calendarLine.TransDate <= _payPeriod.PeriodEndDate
+        calendarId          = _line.CalendarId;
+        calendarDataAreaId  = _line.CalendarDataAreaId;
+        coefficient         = _line.EmploymentCoefficient;
+
+        changecompany (calendarDataAreaId)
         {
-            Seconds currentDateDuration = calendarLine.duration();
-            seconds += currentDateDuration;
+            while select workCalendarDate
+                where workCalendarDate.CalendarId == calendarId
+                   && workCalendarDate.TransDate >= _fromDate
+                   && workCalendarDate.TransDate <= _toDate
+                   && workCalendarDate.WorkTimeControl == WorkTimeControl::Open
+            {
+                Seconds seconds = 0;
 
-            currentDateDuration = currentDateDuration/3600;
+                while select calendarLine
+            where calendarLine.CalendarId == calendarId
+               && calendarLine.TransDate == workCalendarDate.TransDate
+                {
+                    seconds += calendarLine.duration();
+                }
 
-            _line.setValueToDayColumn(calendarLine.TransDate, int2Str(currentDateDuration));
+                Hours productionHours = seconds / 3600.0;
+                Hours adjustedHours = productionHours * coefficient;
+
+                totalAdjustedHours += adjustedHours;
+
+                _line.setValueToDayColumn(workCalendarDate.TransDate, num2Str(adjustedHours, ThousandSeparator::Comma, 2, DecimalSeparator::Dot, ThousandSeparator::Auto));
+            }
         }
-        return seconds / 3600;
+
+        return totalAdjustedHours;
     }
 
 ]]></Source>

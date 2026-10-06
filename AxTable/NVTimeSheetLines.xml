@@ -810,6 +810,27 @@ public class NVTimeSheetLines extends common
 			<ExtendedDataType>CalendarId</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
 		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt64">
+			<Name>WorkerPositionCalendar</Name>
+			<ExtendedDataType>RefRecId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldReal">
+			<Name>EmploymentCoefficient</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<Label>Employment coefficient</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>CalendarDataAreaId</Name>
+			<AssetClassification>Customer Content</AssetClassification>
+			<ExtendedDataType>DataAreaId</ExtendedDataType>
+			<Label>Calendar legal entity</Label>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
 	</Fields>
 	<FullTextIndexes />
 	<Indexes />

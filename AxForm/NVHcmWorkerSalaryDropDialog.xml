@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>NVHcmWorkerSalaryDropDialog</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Form]
+public class NVHcmWorkerSalaryDropDialog extends FormRun
+{
+    HcmWorkerRecId                workerRecId;
+    boolean                       basicSalaryFound;
+    NVHcmCompensationLevelPayroll gradePayroll;
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        super();
+
+        workerRecId = this.resolveWorkerRecId();
+
+        if (!workerRecId)
+        {
+            throw error("A worker record must be selected.");
+        }
+
+        this.defaultPosition();
+        this.calculateSalary();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>resolveWorkerRecId</Name>
+				<Source><![CDATA[
+    private HcmWorkerRecId resolveWorkerRecId()
+    {
+        Common          callerRecord = element.args().record();
+        FieldId         workerFieldId;
+        HcmWorkerRecId  resolvedWorkerRecId;
+
+        if (callerRecord)
+        {
+            if (callerRecord.TableId == tableNum(HcmWorker))
+            {
+                return callerRecord.RecId;
+            }
+
+            workerFieldId = fieldName2Id(callerRecord.TableId, identifierStr(Worker));
+
+            if (workerFieldId)
+            {
+                resolvedWorkerRecId = callerRecord.(workerFieldId);
+            }
+        }
+
+        if (!resolvedWorkerRecId && element.args().parm())
+        {
+            resolvedWorkerRecId = str2Int64(element.args().parm());
+        }
+
+        return resolvedWorkerRecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>defaultPosition</Name>
+				<Source><![CDATA[
+    private void defaultPosition()
+    {
+        TransDateTime               currentDateTime = DateTimeUtil::getSystemDateTime();
+        HcmWorker                   worker          = HcmWorker::find(workerRecId);
+        HcmPosition                 position;
+        HcmPosition                 primaryPosition = HcmPosition::findByPosition(worker.primaryPositionId());
+        HcmPositionWorkerAssignment workerPosition;
+        Set                         assignedPositions = new Set(Types::Int64);
+        HcmPositionId               onlyPositionId;
+        HcmPositionId               primaryPositionId;
+
+        while select workerPosition
+            where workerPosition.Worker    == workerRecId
+               && workerPosition.ValidFrom <= currentDateTime
+               && workerPosition.ValidTo   >= currentDateTime
+        {
+            if (!assignedPositions.in(workerPosition.Position))
+            {
+                assignedPositions.add(workerPosition.Position);
+                position       = HcmPosition::find(workerPosition.Position);
+                onlyPositionId = position.PositionId;
+
+                if (primaryPosition && workerPosition.Position == primaryPosition.RecId)
+                {
+                    primaryPositionId = position.PositionId;
+                }
+            }
+        }
+
+        if (primaryPositionId)
+        {
+            PositionId.text(primaryPositionId);
+        }
+        else if (assignedPositions.elements() == 1)
+        {
+            PositionId.text(onlyPositionId);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupPosition</Name>
+				<Source><![CDATA[
+    private void lookupPosition(FormStringControl _control)
+    {
+        TransDateTime         currentDateTime = DateTimeUtil::getSystemDateTime();
+        SysTableLookup        sysTableLookup  = SysTableLookup::newParameters(tableNum(HcmPosition), _control);
+        Query                 query           = new Query();
+        QueryBuildDataSource  positionQbds;
+        QueryBuildDataSource  assignmentQbds;
+
+        positionQbds   = query.addDataSource(tableNum(HcmPosition));
+        assignmentQbds = positionQbds.addDataSource(tableNum(HcmPositionWorkerAssignment));
+
+        assignmentQbds.relations(false);
+        assignmentQbds.joinMode(JoinMode::ExistsJoin);
+        assignmentQbds.addLink(fieldNum(HcmPosition, RecId), fieldNum(HcmPositionWorkerAssignment, Position));
+        assignmentQbds.addRange(fieldNum(HcmPositionWorkerAssignment, Worker)).value(queryValue(workerRecId));
+        assignmentQbds.addRange(fieldNum(HcmPositionWorkerAssignment, ValidFrom)).value(SysQuery::range(DateTimeUtil::minValue(), currentDateTime));
+        assignmentQbds.addRange(fieldNum(HcmPositionWorkerAssignment, ValidTo)).value(SysQuery::range(currentDateTime, DateTimeUtil::maxValue()));
+
+        sysTableLookup.addLookupfield(fieldNum(HcmPosition, PositionId), true);
+        sysTableLookup.parmQuery(query);
+        sysTableLookup.performFormLookup();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>isPositionAssigned</Name>
+				<Source><![CDATA[
+    private boolean isPositionAssigned(HcmPositionRecId _positionRecId)
+    {
+        TransDateTime               currentDateTime = DateTimeUtil::getSystemDateTime();
+        HcmPositionWorkerAssignment workerPosition;
+
+        select firstOnly RecId from workerPosition
+            where workerPosition.Worker    == workerRecId
+               && workerPosition.Position  == _positionRecId
+               && workerPosition.ValidFrom <= currentDateTime
+               && workerPosition.ValidTo   >= currentDateTime;
+
+        return workerPosition.RecId != 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>findBasicSalary</Name>
+				<Source><![CDATA[
+    private AmountCur findBasicSalary()
+    {
+        TransDate                     currentDate       = systemDateGet();
+        TransDateTime                 currentDateTime   = DateTimeUtil::getSystemDateTime();
+        DataAreaId                    legalEntity       = curext();
+        HcmPosition                   position          = HcmPosition::findByPosition(PositionId.text());
+        HcmPositionDetail             positionDetail    = HcmPositionDetail::findByPosition(position.RecId);
+        basicSalaryFound = false;
+        gradePayroll.clear();
+
+        if (!position)
+        {
+            return 0;
+        }
+
+        if (!positionDetail)
+        {
+            return 0;
+        }
+
+        select firstOnly gradePayroll
+            order by gradePayroll.FromDate desc
+            where gradePayroll.CompensationLevelId  == positionDetail.NVLegalGrade
+               && gradePayroll.LegalEntity          == legalEntity
+               && gradePayroll.PayrollEarningCodeId != ''
+               && gradePayroll.AdditionalPayrollEarningCodeId != ''
+               && gradePayroll.FromDate             <= currentDate
+               && gradePayroll.ToDate               >= currentDate;
+
+        if (gradePayroll)
+        {
+            basicSalaryFound = true;
+            return gradePayroll.SalaryAmount;
+        }
+
+        return 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>calculateSalary</Name>
+				<Source><![CDATA[
+    private void calculateSalary()
+    {
+        AmountCur locBsicSalary         = 0;
+        AmountCur locAdditionalSalary   = 0;
+        AmountCur locTotalSalary        = TotalSalary.realValue();
+
+        if (PositionId.text())
+        {
+            locBsicSalary      = this.findBasicSalary();
+            locAdditionalSalary = locTotalSalary - locBsicSalary;
+        }
+        else
+        {
+            basicSalaryFound = false;
+        }
+
+        BasicSalary.realValue(locBsicSalary);
+        AdditionalSalary.realValue(locAdditionalSalary > 0 ? locAdditionalSalary : 0);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateInput</Name>
+				<Source><![CDATA[
+    private boolean validateInput()
+    {
+        HcmPosition position;
+
+        if (!PositionId.text())
+        {
+            return checkFailed("Position is required.");
+        }
+
+        position = HcmPosition::findByPosition(PositionId.text());
+
+        if (!position || !this.isPositionAssigned(position.RecId))
+        {
+            return checkFailed("Select a position currently assigned to the worker.");
+        }
+
+        if (TotalSalary.realValue() <= 0)
+        {
+            return checkFailed("Total salary must be greater than zero.");
+        }
+
+        this.calculateSalary();
+
+        if (!basicSalaryFound)
+        {
+            return checkFailed("No active grade-wise payroll setup was found for the selected position.");
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateWorkerPositionEarningCode</Name>
+				<Source><![CDATA[
+    private void updateWorkerPositionEarningCode(PayrollEarningCodeId _earningCodeId, AmountCur _amount)
+    {
+        TransDate                       currentDate = systemDateGet();
+        HcmPosition                     position    = HcmPosition::findByPosition(PositionId.text());
+        PayrollEarningCode              earningCode = PayrollEarningCode::findByEarningCode(_earningCodeId);
+        PayrollWorkerPositionEarningCode workerPositionEarningCode;
+
+        if (!earningCode)
+        {
+            throw error(strFmt("Payroll earning code '%1' does not exist.", _earningCodeId));
+        }
+
+        select firstOnly forUpdate validTimeState(currentDate) workerPositionEarningCode
+            where workerPositionEarningCode.Worker      == workerRecId
+               && workerPositionEarningCode.Position    == position.RecId
+               && workerPositionEarningCode.EarningCode == earningCode.RecId;
+
+        if (workerPositionEarningCode)
+        {
+            if (workerPositionEarningCode.Formula == _amount)
+            {
+                return;
+            }
+
+            if (workerPositionEarningCode.ValidFrom == currentDate)
+            {
+                workerPositionEarningCode.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
+            }
+            else
+            {
+                workerPositionEarningCode.validTimeStateUpdateMode(ValidTimeStateUpdate::CreateNewTimePeriod);
+            }
+
+            workerPositionEarningCode.Formula = _amount;
+            workerPositionEarningCode.update();
+        }
+        else
+        {
+            workerPositionEarningCode.clear();
+            workerPositionEarningCode.Worker      = workerRecId;
+            workerPositionEarningCode.Position    = position.RecId;
+            workerPositionEarningCode.EarningCode = earningCode.RecId;
+            workerPositionEarningCode.modifiedField(fieldNum(PayrollWorkerPositionEarningCode, EarningCode));
+            workerPositionEarningCode.Formula     = _amount;
+            workerPositionEarningCode.ValidFrom   = currentDate;
+            workerPositionEarningCode.ValidTo     = gradePayroll.ToDate;
+            workerPositionEarningCode.insert();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>saveSalary</Name>
+				<Source><![CDATA[
+    private void saveSalary()
+    {
+        ttsbegin;
+
+        this.updateWorkerPositionEarningCode(
+            gradePayroll.PayrollEarningCodeId,
+            BasicSalary.realValue());
+
+        this.updateWorkerPositionEarningCode(
+            gradePayroll.AdditionalPayrollEarningCodeId,
+            AdditionalSalary.realValue());
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmWorkerRecId</Name>
+				<Source><![CDATA[
+    public HcmWorkerRecId parmWorkerRecId()
+    {
+        return workerRecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPositionRecId</Name>
+				<Source><![CDATA[
+    public HcmPositionRecId parmPositionRecId()
+    {
+        return HcmPosition::findByPosition(PositionId.text()).RecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTotalSalary</Name>
+				<Source><![CDATA[
+    public AmountCur parmTotalSalary()
+    {
+        return TotalSalary.realValue();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBasicSalary</Name>
+				<Source><![CDATA[
+    public AmountCur parmBasicSalary()
+    {
+        return BasicSalary.realValue();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAdditionalSalary</Name>
+				<Source><![CDATA[
+    public AmountCur parmAdditionalSalary()
+    {
+        return AdditionalSalary.realValue();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>refreshCallerForm</Name>
+				<Source><![CDATA[
+    private void refreshCallerForm()
+    {
+        FormRun        callerForm = element.args().caller() as FormRun;
+        FormDataSource earningCodeDataSource;
+
+        if (!callerForm)
+        {
+            return;
+        }
+
+        earningCodeDataSource = callerForm.dataSource(formDataSourceStr(HcmWorkerPayroll, WorkerPositionEarningCode));
+
+        if (earningCodeDataSource)
+        {
+            earningCodeDataSource.research(true);
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="">
+			<Control>
+				<Name>PositionId</Name>
+				<Type>String</Type>
+				<Methods>
+					<Method>
+						<Name>lookup</Name>
+						<Source><![CDATA[
+        public void lookup()
+        {
+            element.lookupPosition(this);
+        }
+
+]]></Source>
+					</Method>
+					<Method>
+						<Name>modified</Name>
+						<Source><![CDATA[
+        public boolean modified()
+        {
+            boolean ret = super();
+
+            element.calculateSalary();
+
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>TotalSalary</Name>
+				<Type>Real</Type>
+				<Methods>
+					<Method>
+						<Name>modified</Name>
+						<Source><![CDATA[
+        public boolean modified()
+        {
+            boolean ret = super();
+
+            element.calculateSalary();
+
+            return ret;
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>ApplyButton</Name>
+				<Type>CommandButton</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        public void clicked()
+        {
+            if (!element.validateInput())
+            {
+                return;
+            }
+
+            element.saveSalary();
+            element.refreshCallerForm();
+
+            super();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources />
+	<Design>
+		<Caption xmlns="">Salary breakdown</Caption>
+		<Pattern xmlns="">DropDialog</Pattern>
+		<PatternVersion xmlns="">1.2</PatternVersion>
+		<Style xmlns="">DropDialog</Style>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>ContentGroup</Name>
+				<Pattern>FieldsFieldGroups</Pattern>
+				<PatternVersion>1.1</PatternVersion>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormGroupControl">
+						<Name>SalaryGroup</Name>
+						<Type>Group</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormStringControl">
+								<Name>PositionId</Name>
+								<AutoDeclaration>Yes</AutoDeclaration>
+								<Type>String</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<ExtendedDataType>HcmPositionId</ExtendedDataType>
+								<Label>Position</Label>
+								<Mandatory>Yes</Mandatory>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormRealControl">
+								<Name>TotalSalary</Name>
+								<AutoDeclaration>Yes</AutoDeclaration>
+								<Type>Real</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<ExtendedDataType>AmountCur</ExtendedDataType>
+								<Label>Total salary</Label>
+								<Mandatory>Yes</Mandatory>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormRealControl">
+								<Name>BasicSalary</Name>
+								<AllowEdit>No</AllowEdit>
+								<AutoDeclaration>Yes</AutoDeclaration>
+								<Type>Real</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<ExtendedDataType>AmountCur</ExtendedDataType>
+								<Label>Basic salary</Label>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormRealControl">
+								<Name>AdditionalSalary</Name>
+								<AllowEdit>No</AllowEdit>
+								<AutoDeclaration>Yes</AutoDeclaration>
+								<Type>Real</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<ExtendedDataType>AmountCur</ExtendedDataType>
+								<Label>Additional salary</Label>
+							</AxFormControl>
+						</Controls>
+						<FrameType>None</FrameType>
+					</AxFormControl>
+				</Controls>
+				<ColumnsMode>Fill</ColumnsMode>
+				<Style>DialogContent</Style>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormButtonGroupControl">
+				<Name>ButtonGroup</Name>
+				<Type>ButtonGroup</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormCommandButtonControl">
+						<Name>ApplyButton</Name>
+						<AutoDeclaration>Yes</AutoDeclaration>
+						<Type>CommandButton</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Command>OK</Command>
+						<Text>OK</Text>
+					</AxFormControl>
+				</Controls>
+				<ArrangeMethod>HorizontalRight</ArrangeMethod>
+				<Style>DialogCommitContainer</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

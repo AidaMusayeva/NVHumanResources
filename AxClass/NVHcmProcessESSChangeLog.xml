@@ -6,9 +6,19 @@
 class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
 {
     #Define.SuccessStatusCode('200')
-    RecId changeLogRecId;
-    str token;
-    str requestBody;
+    #define.CurrentVersion(1)
+
+    #localmacro.CurrentList
+        changeLogRecId,
+        timesheetLineLimit
+    #endmacro
+
+    RecId       changeLogRecId;
+    str         token;
+    str         requestBody;
+    int         timesheetLineLimit;
+
+    DialogField dlgTimesheetLineLimit;
 
 }
 ]]></Declaration>
@@ -20,6 +30,17 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
     {
         changeLogRecId = _parm;
         return changeLogRecId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTimesheetLineLimit</Name>
+				<Source><![CDATA[
+    public int parmTimesheetLineLimit(int _parm = timesheetLineLimit)
+    {
+        timesheetLineLimit = _parm;
+        return timesheetLineLimit;
     }
 
 ]]></Source>
@@ -39,8 +60,14 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
 				<Source><![CDATA[
     public Object dialog()
     {
-        DialogRunbase       dialog = super();
-        
+        DialogRunbase dialog = super();
+
+        dlgTimesheetLineLimit = dialog.addFieldValue(
+            extendedTypeStr(Integer),
+            timesheetLineLimit,
+            "Timesheet lines per request",
+            "Maximum number of timesheet lines to send in one ESS request.");
+
         return dialog;
     }
 
@@ -61,7 +88,16 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
 				<Source><![CDATA[
     public boolean getFromDialog()
     {
-        return super();
+        boolean ret = super();
+
+        timesheetLineLimit = dlgTimesheetLineLimit.value();
+
+        if (timesheetLineLimit <= 0)
+        {
+            timesheetLineLimit = 10;
+        }
+
+        return ret;
     }
 
 ]]></Source>
@@ -82,6 +118,45 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
     protected void new()
     {
         super();
+
+        timesheetLineLimit = 10;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>pack</Name>
+				<Source><![CDATA[
+    public container pack()
+    {
+        return [#CurrentVersion, #CurrentList];
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>unpack</Name>
+				<Source><![CDATA[
+    public boolean unpack(container _packedClass)
+    {
+        Version version = RunBase::getVersion(_packedClass);
+
+        switch (version)
+        {
+            case #CurrentVersion:
+                [version, #CurrentList] = _packedClass;
+                break;
+
+            default:
+                return false;
+        }
+
+        if (timesheetLineLimit <= 0)
+        {
+            timesheetLineLimit = 10;
+        }
+
+        return true;
     }
 
 ]]></Source>
@@ -92,35 +167,13 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
     public void run()
     {
         #OCCRetryCount
+
         try
         {
             token = this.getAccessToken();
 
-            NVHcmESSChangeLog changeLog;
-            while select forupdate changeLog
-                order by changeLog.CreatedDateTime asc
-                where changeLog.Processed == NoYes::No
-                    && (changeLogRecId == 0 || changeLog.RecId == changeLogRecId)
-            {
-                container response = conNull();
-                requestBody = "";
-                ttsbegin;
-                if(changeLog.RefTableId == tableNum(NVTrvWorkerExpenseRequest))
-                {
-                    response = this.processExpenseRequest(changeLog.RefRecId);
-                }
-                else if(changeLog.RefTableId == tableNum(NVTimeSheetLines))
-                {
-                    response = this.processTimesheetLine(changeLog.RefRecId);
-                }
-
-                changeLog.Processed     = conPeek(response, 1) == true? NoYes::Yes: NoYes::No;
-                changeLog.Description   = conPeek(response, 2);
-                changeLog.RequestSent   = requestBody;
-
-                changeLog.update();
-                ttscommit;
-            }
+            this.processExpenseChangeLogs();
+            this.processTimesheetChangeLogs();
         }
         catch (Exception::Deadlock)
         {
@@ -149,25 +202,130 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
 ]]></Source>
 			</Method>
 			<Method>
+				<Name>processExpenseChangeLogs</Name>
+				<Source><![CDATA[
+    private void processExpenseChangeLogs()
+    {
+        NVHcmESSChangeLog changeLog;
+
+        while select forupdate changeLog
+            order by changeLog.CreatedDateTime asc
+            where changeLog.Processed   == NoYes::No
+               && changeLog.RefTableId  == tableNum(NVTrvWorkerExpenseRequest)
+               && (changeLogRecId == 0 || changeLog.RecId == changeLogRecId)
+        {
+            container response = conNull();
+
+            requestBody = "";
+
+            response = this.processExpenseRequest(changeLog.RefRecId);
+
+            ttsbegin;
+
+            changeLog.Processed   = conPeek(response, 1) == true ? NoYes::Yes : NoYes::No;
+            changeLog.Description = conPeek(response, 2);
+            changeLog.RequestSent = requestBody;
+            changeLog.update();
+
+            ttscommit;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processTimesheetChangeLogs</Name>
+				<Source><![CDATA[
+    private void processTimesheetChangeLogs()
+    {
+        NVHcmESSChangeLog changeLog;
+
+        while select changeLog
+            order by changeLog.CreatedDateTime asc
+            where changeLog.Processed   == NoYes::No
+               && changeLog.RefTableId  == tableNum(NVTimeSheetLines)
+               && (changeLogRecId == 0 || changeLog.RecId == changeLogRecId)
+        {
+            container response;
+            container processedChangeLogRecIds;
+
+            requestBody = "";
+
+            response = this.processTimesheetLine(changeLog.RefRecId);
+
+            processedChangeLogRecIds = conPeek(response, 3);
+
+            this.updateProcessedChangeLogs(
+                processedChangeLogRecIds,
+                conPeek(response, 1),
+                conPeek(response, 2),
+                requestBody);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateProcessedChangeLogs</Name>
+				<Source><![CDATA[
+    private void updateProcessedChangeLogs(
+        container _changeLogRecIds,
+        boolean   _isSuccess,
+        str       _description,
+        str       _requestSent)
+    {
+        NVHcmESSChangeLog changeLogLocal;
+        int i;
+
+        if (conLen(_changeLogRecIds) == 0)
+        {
+            return;
+        }
+
+        ttsbegin;
+
+        for (i = 1; i <= conLen(_changeLogRecIds); i++)
+        {
+            select forupdate changeLogLocal
+                where changeLogLocal.RecId == conPeek(_changeLogRecIds, i);
+
+            if (changeLogLocal.RecId)
+            {
+                changeLogLocal.Processed   = _isSuccess ? NoYes::Yes : NoYes::No;
+                changeLogLocal.Description = _description;
+                changeLogLocal.RequestSent = _requestSent;
+                changeLogLocal.update();
+            }
+        }
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
 				<Name>getAccessToken</Name>
 				<Source><![CDATA[
     private str getAccessToken()
     {
-        HcmSharedParameters         parameters = HcmSharedParameters::find();
-        str responseBody;
-        str url = strFmt("https://login.microsoftonline.com/%1/oauth2/v2.0/token", parameters.NVESSOAppId);
+        HcmSharedParameters       parameters = HcmSharedParameters::find();
+        str                       responseBody;
+        str                       url = strFmt("https://login.microsoftonline.com/%1/oauth2/v2.0/token", parameters.NVESSOAppId);
 
-        System.Net.HttpWebRequest   request;
-        System.IO.Stream            stream;
-        System.Exception            sysEx;
-        // OAuth body
-        str body = strfmt("grant_type=client_credentials&client_id=%1&client_secret=%2&scope=%3",
-                parameters.NVESSOAuthClientId, parameters.NVESSOAuthAppSecretKey, parameters.NSESSScope);
-        
+        System.Net.HttpWebRequest request;
+        System.IO.Stream          stream;
+        System.Exception          sysEx;
+
+        str body = strFmt(
+            "grant_type=client_credentials&client_id=%1&client_secret=%2&scope=%3",
+            parameters.NVESSOAuthClientId,
+            parameters.NVESSOAuthAppSecretKey,
+            parameters.NSESSScope);
+
         request = System.Net.WebRequest::Create(url) as System.Net.HttpWebRequest;
-        request.Method = "POST";
+        request.Method      = "POST";
         request.ContentType = "application/x-www-form-urlencoded";
-        request.Accept = "application/json";
+        request.Accept      = "application/json";
 
         var utf8 = System.Text.Encoding::get_UTF8();
         System.Byte[] payload = utf8.GetBytes(body);
@@ -183,9 +341,8 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
             System.Net.HttpWebResponse response;
             response = request.GetResponse() as System.Net.HttpWebResponse;
 
-            if(response)
+            if (response)
             {
-                str statusCode = response.StatusCode.ToString();
                 stream = response.GetResponseStream();
 
                 using (System.IO.StreamReader reader = new System.IO.StreamReader(stream))
@@ -199,7 +356,6 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
             throw error(strFmt("Token request failed: %1", sysEx.ToString()));
         }
 
-        // Parse JSON
         Newtonsoft.Json.Linq.JObject json = Newtonsoft.Json.Linq.JObject::Parse(responseBody);
 
         return json.GetValue("access_token").ToString();
@@ -213,51 +369,80 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
     private container processExpenseRequest(RefRecId _refRecId)
     {
         NVTrvWorkerExpenseRequest expenseRequest = NVTrvWorkerExpenseRequest::find(_refRecId);
-        if(expenseRequest.RecId        == 0)
+
+        if (expenseRequest.RecId == 0)
         {
             return [false, "Unable to find record"];
         }
 
-        System.IO.StringWriter          stringWriter;
-        Newtonsoft.Json.JsonTextWriter  jsonWriter;
+        System.IO.StringWriter         stringWriter;
+        Newtonsoft.Json.JsonTextWriter jsonWriter;
 
-        stringWriter       = new System.IO.StringWriter();
-        jsonWriter         = new Newtonsoft.Json.JsonTextWriter(stringWriter);
+        stringWriter = new System.IO.StringWriter();
+        jsonWriter   = new Newtonsoft.Json.JsonTextWriter(stringWriter);
 
         jsonWriter.WriteStartObject();
 
         jsonWriter.WritePropertyName("tripId");
         jsonWriter.WriteValue(expenseRequest.ESSRequestId);
+
         jsonWriter.WritePropertyName("fromLocationId");
         jsonWriter.WriteValue(expenseRequest.FromLocation);
+
         jsonWriter.WritePropertyName("fromLocationDescription");
         jsonWriter.WriteValue(NVTrvWorkerLocation::find(expenseRequest.FromLocation).Description);
+
         jsonWriter.WritePropertyName("toLocationId");
         jsonWriter.WriteValue(expenseRequest.ToLocation);
+
         jsonWriter.WritePropertyName("toLocationDescription");
         jsonWriter.WriteValue(NVTrvWorkerLocation::find(expenseRequest.ToLocation).Description);
+
         jsonWriter.WritePropertyName("fromDate");
-        jsonWriter.WriteValue(date2Str(expenseRequest.FromDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateMonth::Digits2, DateSeparator::Hyphen, DateYear::Digits4));
+        jsonWriter.WriteValue(date2Str(
+            expenseRequest.FromDate,
+            321,
+            DateDay::Digits2,
+            DateSeparator::Hyphen,
+            DateMonth::Digits2,
+            DateSeparator::Hyphen,
+            DateYear::Digits4));
+
         jsonWriter.WritePropertyName("toDate");
-        jsonWriter.WriteValue(date2Str(expenseRequest.ToDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateMonth::Digits2, DateSeparator::Hyphen, DateYear::Digits4));
+        jsonWriter.WriteValue(date2Str(
+            expenseRequest.ToDate,
+            321,
+            DateDay::Digits2,
+            DateSeparator::Hyphen,
+            DateMonth::Digits2,
+            DateSeparator::Hyphen,
+            DateYear::Digits4));
+
         jsonWriter.WritePropertyName("includeLastDayHotel");
         jsonWriter.WriteValue(expenseRequest.IncludeLastDayHotel);
+
         jsonWriter.WritePropertyName("isBudgeted");
         jsonWriter.WriteValue(expenseRequest.IsBudgeted);
+
         jsonWriter.WritePropertyName("comment");
         jsonWriter.WriteValue(expenseRequest.Comment);
+
         jsonWriter.WritePropertyName("managerComment");
         jsonWriter.WriteValue(expenseRequest.ManagerComment);
+
         jsonWriter.WritePropertyName("purpose");
         jsonWriter.WriteValue(expenseRequest.getESSPurpose());
+
         jsonWriter.WritePropertyName("status");
         jsonWriter.WriteValue(expenseRequest.getESSRequestStatus());
 
         jsonWriter.WriteEndObject();
-        
+
         HcmSharedParameters parameters = HcmSharedParameters::find();
-        
-        return this.callESSApi(stringWriter.ToString(), strFmt("%1%2", parameters.NVESSUrl, parameters.NVESSBusinessTripDecision));
+
+        return this.callESSApi(
+            stringWriter.ToString(),
+            strFmt("%1%2", parameters.NVESSUrl, parameters.NVESSBusinessTripDecision));
     }
 
 ]]></Source>
@@ -267,171 +452,278 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
 				<Source><![CDATA[
     private container processTimesheetLine(RefRecId _refRecId)
     {
-        NVTimeSheetLines timeSheetLines = NVTimeSheetLines::findRecId(_refRecId);
-        NvTimeSheetHeader timeSheetHeader = timeSheetLines.timeSheetHeader();
+        NVTimeSheetLines  baseTimeSheetLine = NVTimeSheetLines::findRecId(_refRecId);
+        NVTimeSheetHeader timeSheetHeader   = baseTimeSheetLine.timeSheetHeader();
 
-        if(timeSheetHeader.RecId        == 0
-            || timeSheetLines.RecId     == 0)
+        if (timeSheetHeader.RecId == 0 || baseTimeSheetLine.RecId == 0)
         {
-            return [false, "Unable to find record"];
+            return [false, "Unable to find record", conNull()];
         }
+
+        if (timesheetLineLimit <= 0)
+        {
+            timesheetLineLimit = 10;
+        }
+
         changecompany(timeSheetHeader.DataAreaId)
         {
-            System.IO.StringWriter          stringWriter       = new System.IO.StringWriter();
-            Newtonsoft.Json.JsonTextWriter  jsonWriter         = new Newtonsoft.Json.JsonTextWriter(stringWriter);
+            System.IO.StringWriter         stringWriter = new System.IO.StringWriter();
+            Newtonsoft.Json.JsonTextWriter jsonWriter   = new Newtonsoft.Json.JsonTextWriter(stringWriter);
+
+            container processedChangeLogRecIds = conNull();
+            int       processedLineCount       = 0;
 
             jsonWriter.WriteStartObject();
 
             jsonWriter.WritePropertyName("payCycle");
             jsonWriter.WriteValue(timeSheetHeader.PayCycleId);
-            jsonWriter.WritePropertyName("payPeriodStartDate");
-            jsonWriter.WriteValue(date2Str(timeSheetHeader.StartDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateMonth::Digits2, DateSeparator::Hyphen, DateYear::Digits4));
-            jsonWriter.WritePropertyName("payPeriodEndDate");
-            jsonWriter.WriteValue(date2Str(timeSheetHeader.EndDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateMonth::Digits2, DateSeparator::Hyphen, DateYear::Digits4));
-            jsonWriter.WritePropertyName("status");
-            jsonWriter.WriteValue(timeSheetHeader.Status == NVTimeSheetStatus::Draft? 0: 2);
 
+            jsonWriter.WritePropertyName("payPeriodStartDate");
+            jsonWriter.WriteValue(date2Str(
+                timeSheetHeader.StartDate,
+                321,
+                DateDay::Digits2,
+                DateSeparator::Hyphen,
+                DateMonth::Digits2,
+                DateSeparator::Hyphen,
+                DateYear::Digits4));
+
+            jsonWriter.WritePropertyName("payPeriodEndDate");
+            jsonWriter.WriteValue(date2Str(
+                timeSheetHeader.EndDate,
+                321,
+                DateDay::Digits2,
+                DateSeparator::Hyphen,
+                DateMonth::Digits2,
+                DateSeparator::Hyphen,
+                DateYear::Digits4));
+
+            jsonWriter.WritePropertyName("status");
+            jsonWriter.WriteValue(timeSheetHeader.Status == NVTimeSheetStatus::Draft ? 0 : 2);
 
             jsonWriter.WritePropertyName("lines");
             jsonWriter.WriteStartArray();
 
-            jsonWriter.WriteStartObject();
+            NVHcmESSChangeLog changeLogLocal;
+            NVTimeSheetLines  timeSheetLineLocal;
 
-            // employee object start
-            jsonWriter.WritePropertyName("employee");
-            jsonWriter.WriteStartObject();
-
-            NVHcmWorkerDetailsView worker;
-            select worker where worker.PersonnelNumber == timeSheetLines.EmpId;
-
-            NVHcmGetWorkerDetails workerDetails = NVHcmGetWorkerDetails::construct(timeSheetLines.EmpId);
-            NVHcmWorkerInfoContract workerInfo  = workerDetails.getWorkerDetais(worker);
-
-            jsonWriter.WritePropertyName("id");
-            jsonWriter.WriteValue(workerInfo.parmWorkerId());
-
-            jsonWriter.WritePropertyName("fullName");
-            jsonWriter.WriteValue(workerInfo.parmFullName());
-        
-            jsonWriter.WritePropertyName("firstName");
-            jsonWriter.WriteValue(workerInfo.parmFirstName());
-        
-            jsonWriter.WritePropertyName("middleName");
-            jsonWriter.WriteValue(workerInfo.parmMiddleName());
-        
-            jsonWriter.WritePropertyName("lastName");
-            jsonWriter.WriteValue(workerInfo.parmLastName());
-        
-            jsonWriter.WritePropertyName("position");
-            jsonWriter.WriteValue(workerInfo.parmPosition());
-        
-            jsonWriter.WritePropertyName("department");
-            jsonWriter.WriteValue(workerInfo.parmDepartment());
-        
-            jsonWriter.WritePropertyName("jobTitle");
-            jsonWriter.WriteValue(workerInfo.parmJobTitle());
-        
-            jsonWriter.WritePropertyName("managerId");
-            jsonWriter.WriteValue(workerInfo.parmManagerId());
-        
-            jsonWriter.WritePropertyName("managerName");
-            jsonWriter.WriteValue(workerInfo.parmManagerName());
-        
-            jsonWriter.WriteEndObject(); // employee object end
-        
-            jsonWriter.WritePropertyName("totalWorkingDays");
-            jsonWriter.WriteValue(timeSheetLines.TotalWorkingDays);
-            jsonWriter.WritePropertyName("actualWorkingDays");
-            jsonWriter.WriteValue(timeSheetLines.getWorkedDays());
-            jsonWriter.WritePropertyName("totalWorkingHours");
-            jsonWriter.WriteValue(timeSheetLines.TotalWorkingHours);
-            jsonWriter.WritePropertyName("actualWorkingHours");
-            jsonWriter.WriteValue(timeSheetLines.ActualWorkingHours);
-            jsonWriter.WritePropertyName("overtimeHours");
-            jsonWriter.WriteValue(timeSheetLines.OvertimeHours);
-            jsonWriter.WritePropertyName("nightHours");
-            jsonWriter.WriteValue(timeSheetLines.NightHours);
-            jsonWriter.WritePropertyName("CalculatedNightHours");
-            jsonWriter.WriteValue(timeSheetLines.CalcNightHours);
-            jsonWriter.WritePropertyName("TotalNightHours");
-            jsonWriter.WriteValue(timeSheetLines.totalNightHours());
-            jsonWriter.WritePropertyName("status");
-            jsonWriter.WriteValue(enum2int(timeSheetLines.Status));
-            jsonWriter.WritePropertyName("isEmployeeSelfEditAllowed");
-            jsonWriter.WriteValue(enum2int(HcmWorker::findByPersonnelNumber(timeSheetLines.EmpId).NVSelfEditTimesheet));
-
-            // Calendar start
-            WorkCalendarEmployment workCalendarEmployment = WorkCalendarEmployment::findByWorkerRecId(timeSheetLines.Worker, timeSheetHeader.StartDate);
-            WorkCalendarTable workCalendarTable = WorkCalendarTable::find(workCalendarEmployment.CalendarId);
-                
-            jsonWriter.WritePropertyName("nightStartTime");
-            jsonWriter.WriteValue(workCalendarTable.NVNightTimeFrom);
-            jsonWriter.WritePropertyName("nightEndTime");
-            jsonWriter.WriteValue(workCalendarTable.NVNightTimeTo);
-            jsonWriter.WritePropertyName("nightTimeCap");
-            jsonWriter.WriteValue(workCalendarTable.NVNightHoursCap);
-
-            // Calendar end
-            // dailyEntries array start
-            jsonWriter.WritePropertyName("dailyEntries");
-            jsonWriter.WriteStartArray();
-            int     firstDay            = dayOfMth(timeSheetHeader.StartDate);
-            int     lastDay             = dayOfMth(timeSheetHeader.EndDate);
-
-            for(int day = firstDay; day <= lastDay; day++)
+            while select changeLogLocal
+                order by changeLogLocal.CreatedDateTime asc
+                where changeLogLocal.Processed   == NoYes::No
+                   && changeLogLocal.RefTableId  == tableNum(NVTimeSheetLines)
+                   && (changeLogRecId == 0 || changeLogLocal.RecId == changeLogRecId)
+                join timeSheetLineLocal
+                    where timeSheetLineLocal.RecId == changeLogLocal.RefRecId
             {
-                date currentDate = timeSheetHeader.StartDate + day - 1;
-            
-                jsonWriter.WriteStartObject();
-
-                jsonWriter.WritePropertyName("date");
-                jsonWriter.WriteValue(date2Str(currentDate, 321, 2, DateSeparator::Hyphen, 2, DateSeparator::Hyphen, 4));
-
-                jsonWriter.WritePropertyName("value");
-                jsonWriter.WriteValue(timeSheetLines.getValueFromDate(currentDate));
-
-                jsonWriter.WritePropertyName("workerShift");
-                jsonWriter.WriteStartArray();
-                WorkCalendarDate workCalendarDate;
-                select firstOnly workCalendarDate
-                where workCalendarDate.CalendarId       == workCalendarEmployment.CalendarId
-                   && workCalendarDate.TransDate        == currentDate
-                   && workCalendarDate.WorkTimeControl  == WorkTimeControl::Open;
-                WorkCalendarDateLine workCalendarDateLine;
-                while select workCalendarDateLine
-                order by workCalendarDateLine.ModifiedDateTime asc
-                where workCalendarDateLine.CalendarId == workCalendarDate.CalendarId
-                    && workCalendarDateLine.TransDate == workCalendarDate.TransDate
+                if (processedLineCount >= timesheetLineLimit)
                 {
-                    jsonWriter.WriteStartObject();
-
-                    jsonWriter.WritePropertyName("fromTime");
-                    jsonWriter.WriteValue(workCalendarDateLine.FromTime);
-
-                    jsonWriter.WritePropertyName("toTime");
-                    jsonWriter.WriteValue(workCalendarDateLine.ToTIme);
-
-                    jsonWriter.WritePropertyName("order");
-                    jsonWriter.WriteValue(workCalendarDateLine.NVOrder);
-
-                    jsonWriter.WriteEndObject();
+                    break;
                 }
 
-                jsonWriter.WriteEndArray();
-                jsonWriter.WriteEndObject();
+                if (timeSheetLineLocal.timeSheetHeader().RecId != timeSheetHeader.RecId)
+                {
+                    continue;
+                }
+
+                this.writeTimesheetLineJson(
+                    jsonWriter,
+                    timeSheetHeader,
+                    timeSheetLineLocal);
+
+                processedChangeLogRecIds += changeLogLocal.RecId;
+                processedLineCount++;
             }
 
-            jsonWriter.WriteEndArray(); // dailyEntries  array start
-        
-            jsonWriter.WriteEndObject(); // line
             jsonWriter.WriteEndArray(); // lines
             jsonWriter.WriteEndObject();
-        
-        
+
+            if (processedLineCount == 0)
+            {
+                return [false, "No pending timesheet lines found.", conNull()];
+            }
+
             HcmSharedParameters parameters = HcmSharedParameters::find();
-        
-            return this.callESSApi(stringWriter.ToString(), strFmt("%1%2", parameters.NVESSUrl, parameters.NVVESSTimesheetUrl));
+
+            container response = this.callESSApi(
+                stringWriter.ToString(),
+                strFmt("%1%2", parameters.NVESSUrl, parameters.NVVESSTimesheetUrl));
+
+            return [
+                conPeek(response, 1),
+                conPeek(response, 2),
+                processedChangeLogRecIds
+            ];
         }
+
+        return [false, "Unable to process timesheet lines.", conNull()];
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>writeTimesheetLineJson</Name>
+				<Source><![CDATA[
+    private void writeTimesheetLineJson(
+        Newtonsoft.Json.JsonTextWriter _jsonWriter,
+        NVTimeSheetHeader              _timeSheetHeader,
+        NVTimeSheetLines               _timeSheetLines)
+    {
+        _jsonWriter.WriteStartObject();
+
+        _jsonWriter.WritePropertyName("employee");
+        _jsonWriter.WriteStartObject();
+
+        NVHcmWorkerDetailsView worker;
+
+        select firstonly worker
+            where worker.PersonnelNumber == _timeSheetLines.EmpId;
+
+        NVHcmGetWorkerDetails   workerDetails = NVHcmGetWorkerDetails::construct(_timeSheetLines.EmpId);
+        NVHcmWorkerInfoContract workerInfo    = workerDetails.getWorkerDetais(worker);
+
+        _jsonWriter.WritePropertyName("id");
+        _jsonWriter.WriteValue(workerInfo.parmWorkerId());
+
+        _jsonWriter.WritePropertyName("fullName");
+        _jsonWriter.WriteValue(workerInfo.parmFullName());
+
+        _jsonWriter.WritePropertyName("firstName");
+        _jsonWriter.WriteValue(workerInfo.parmFirstName());
+
+        _jsonWriter.WritePropertyName("middleName");
+        _jsonWriter.WriteValue(workerInfo.parmMiddleName());
+
+        _jsonWriter.WritePropertyName("lastName");
+        _jsonWriter.WriteValue(workerInfo.parmLastName());
+
+        _jsonWriter.WritePropertyName("position");
+        _jsonWriter.WriteValue(workerInfo.parmPosition());
+
+        _jsonWriter.WritePropertyName("department");
+        _jsonWriter.WriteValue(workerInfo.parmDepartment());
+
+        _jsonWriter.WritePropertyName("jobTitle");
+        _jsonWriter.WriteValue(workerInfo.parmJobTitle());
+
+        _jsonWriter.WritePropertyName("managerId");
+        _jsonWriter.WriteValue(workerInfo.parmManagerId());
+
+        _jsonWriter.WritePropertyName("managerName");
+        _jsonWriter.WriteValue(workerInfo.parmManagerName());
+
+        _jsonWriter.WriteEndObject(); // employee
+
+        _jsonWriter.WritePropertyName("totalWorkingDays");
+        _jsonWriter.WriteValue(_timeSheetLines.TotalWorkingDays);
+
+        _jsonWriter.WritePropertyName("actualWorkingDays");
+        _jsonWriter.WriteValue(_timeSheetLines.getWorkedDays());
+
+        _jsonWriter.WritePropertyName("totalWorkingHours");
+        _jsonWriter.WriteValue(_timeSheetLines.TotalWorkingHours);
+
+        _jsonWriter.WritePropertyName("actualWorkingHours");
+        _jsonWriter.WriteValue(_timeSheetLines.ActualWorkingHours);
+
+        _jsonWriter.WritePropertyName("overtimeHours");
+        _jsonWriter.WriteValue(_timeSheetLines.OvertimeHours);
+
+        _jsonWriter.WritePropertyName("nightHours");
+        _jsonWriter.WriteValue(_timeSheetLines.NightHours);
+
+        _jsonWriter.WritePropertyName("CalculatedNightHours");
+        _jsonWriter.WriteValue(_timeSheetLines.CalcNightHours);
+
+        _jsonWriter.WritePropertyName("TotalNightHours");
+        _jsonWriter.WriteValue(_timeSheetLines.totalNightHours());
+
+        _jsonWriter.WritePropertyName("status");
+        _jsonWriter.WriteValue(enum2int(_timeSheetLines.Status));
+
+        _jsonWriter.WritePropertyName("isEmployeeSelfEditAllowed");
+        _jsonWriter.WriteValue(enum2int(HcmWorker::findByPersonnelNumber(_timeSheetLines.EmpId).NVSelfEditTimesheet));
+
+        WorkCalendarEmployment workCalendarEmployment;
+        WorkCalendarTable      workCalendarTable;
+
+        workCalendarEmployment = WorkCalendarEmployment::findByWorkerRecId(
+            _timeSheetLines.Worker,
+            _timeSheetHeader.StartDate);
+
+        workCalendarTable = WorkCalendarTable::find(workCalendarEmployment.CalendarId);
+
+        _jsonWriter.WritePropertyName("nightStartTime");
+        _jsonWriter.WriteValue(workCalendarTable.NVNightTimeFrom);
+
+        _jsonWriter.WritePropertyName("nightEndTime");
+        _jsonWriter.WriteValue(workCalendarTable.NVNightTimeTo);
+
+        _jsonWriter.WritePropertyName("nightTimeCap");
+        _jsonWriter.WriteValue(workCalendarTable.NVNightHoursCap);
+
+        _jsonWriter.WritePropertyName("dailyEntries");
+        _jsonWriter.WriteStartArray();
+
+        int firstDay = dayOfMth(_timeSheetHeader.StartDate);
+        int lastDay  = dayOfMth(_timeSheetHeader.EndDate);
+
+        for (int day = firstDay; day <= lastDay; day++)
+        {
+            date currentDate = _timeSheetHeader.StartDate + day - 1;
+
+            _jsonWriter.WriteStartObject();
+
+            _jsonWriter.WritePropertyName("date");
+            _jsonWriter.WriteValue(date2Str(
+                currentDate,
+                321,
+                DateDay::Digits2,
+                DateSeparator::Hyphen,
+                DateMonth::Digits2,
+                DateSeparator::Hyphen,
+                DateYear::Digits4));
+
+            _jsonWriter.WritePropertyName("value");
+            _jsonWriter.WriteValue(_timeSheetLines.getValueFromDate(currentDate));
+
+            _jsonWriter.WritePropertyName("workerShift");
+            _jsonWriter.WriteStartArray();
+
+            WorkCalendarDate workCalendarDate;
+
+            select firstonly workCalendarDate
+                where workCalendarDate.CalendarId      == workCalendarEmployment.CalendarId
+                   && workCalendarDate.TransDate       == currentDate
+                   && workCalendarDate.WorkTimeControl == WorkTimeControl::Open;
+
+            WorkCalendarDateLine workCalendarDateLine;
+
+            while select workCalendarDateLine
+                order by workCalendarDateLine.ModifiedDateTime asc
+                where workCalendarDateLine.CalendarId == workCalendarDate.CalendarId
+                   && workCalendarDateLine.TransDate  == workCalendarDate.TransDate
+            {
+                _jsonWriter.WriteStartObject();
+
+                _jsonWriter.WritePropertyName("fromTime");
+                _jsonWriter.WriteValue(workCalendarDateLine.FromTime);
+
+                _jsonWriter.WritePropertyName("toTime");
+                _jsonWriter.WriteValue(workCalendarDateLine.ToTIme);
+
+                _jsonWriter.WritePropertyName("order");
+                _jsonWriter.WriteValue(workCalendarDateLine.NVOrder);
+
+                _jsonWriter.WriteEndObject();
+            }
+
+            _jsonWriter.WriteEndArray(); // workerShift
+            _jsonWriter.WriteEndObject(); // daily entry
+        }
+
+        _jsonWriter.WriteEndArray(); // dailyEntries
+
+        _jsonWriter.WriteEndObject(); // line
     }
 
 ]]></Source>
@@ -454,10 +746,15 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
         try
         {
             httpClient = new System.Net.Http.HttpClient();
+
             httpClient.get_DefaultRequestHeaders().Clear();
             httpClient.get_DefaultRequestHeaders().Add("Authorization", "Bearer " + token);
 
-            content = new System.Net.Http.StringContent(_body, System.Text.Encoding::get_UTF8(), "application/json");
+            content = new System.Net.Http.StringContent(
+                _body,
+                System.Text.Encoding::get_UTF8(),
+                "application/json");
+
             response = httpClient.PostAsync(_url, content).Result;
 
             responseText = response.Content.ReadAsStringAsync().Result;
@@ -476,14 +773,17 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
                 isSuccess = false;
 
                 if (!description)
+                {
                     description = strFmt("HTTP %1: %2", response.get_StatusCode(), responseText);
+                }
             }
         }
         catch (Exception::CLRError)
         {
             System.Exception clrEx = CLRInterop::getLastException();
+
             description = clrEx.get_Message();
-            isSuccess = false;
+            isSuccess   = false;
         }
 
         return [isSuccess, description];
@@ -506,7 +806,14 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
 				<Source><![CDATA[
     public boolean validate(Object _calledFrom = null)
     {
-        return true;
+        boolean ret = true;
+
+        if (timesheetLineLimit <= 0)
+        {
+            ret = checkFailed("Timesheet lines per request must be greater than zero.");
+        }
+
+        return ret;
     }
 
 ]]></Source>
@@ -536,12 +843,14 @@ class NVHcmProcessESSChangeLog extends RunBaseBatch implements BatchRetryable
 				<Source><![CDATA[
     static void main(Args args)
     {
-        NVHcmProcessESSChangeLog    process;
-        ;
+        NVHcmProcessESSChangeLog process;
+
         process = NVHcmProcessESSChangeLog::construct();
 
         if (process.prompt())
+        {
             process.runOperation();
+        }
     }
 
 ]]></Source>

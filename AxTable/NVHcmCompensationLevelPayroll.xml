@@ -16,6 +16,10 @@ public class NVHcmCompensationLevelPayroll extends common
         super();
 
         this.ToDate = maxDate();
+
+        PayrollParameters payrollParameters = PayrollParameters::find();
+        this.PayrollEarningCodeId           = payrollParameters.NVBasicPayrollEarningCode;
+        this.AdditionalPayrollEarningCodeId = payrollParameters.NVAdditionalPayrollEarningCode;
     }
 
 ]]></Source>
@@ -48,6 +52,7 @@ public class NVHcmCompensationLevelPayroll extends common
         select firstOnly payrollLevel
             where payrollLevel.RecId                != this.RecId
                 && payrollLevel.CompensationLevelId == this.CompensationLevelId
+                && payrollLevel.LegalEntity         == this.LegalEntity
                 && payrollLevel.FromDate            <= this.ToDate
                 && payrollLevel.ToDate              >= this.FromDate;
 
@@ -64,14 +69,15 @@ public class NVHcmCompensationLevelPayroll extends common
 			<Method>
 				<Name>findCurrent</Name>
 				<Source><![CDATA[
-    public static NVHcmCompensationLevelPayroll findCurrent(HcmCompensationLevelId _level)
+    public static NVHcmCompensationLevelPayroll findCurrent(HcmCompensationLevelId _level, LegalEntityDataAreaId _legalEntity = curExt())
     {
         NVHcmCompensationLevelPayroll levelPayroll;
 
         select firstonly levelPayroll
-            where levelPayroll.CompensationLevelId  == _level
-                && levelPayroll.FromDate           <= systemDateGet()
-                && levelPayroll.ToDate             >= systemDateGet();
+            where levelPayroll.CompensationLevelId      == _level
+                && levelPayroll.LegalEntity             == _legalEntity
+                && levelPayroll.FromDate                <= systemDateGet()
+                && levelPayroll.ToDate                  >= systemDateGet();
 
         return levelPayroll;
     }
@@ -232,6 +238,21 @@ public class NVHcmCompensationLevelPayroll extends common
 			<Name>PayrollEarningCodeId</Name>
 			<ExtendedDataType>PayrollEarningCodeId</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>LegalEntity</Name>
+			<ExtendedDataType>LegalEntityDataAreaId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>AdditionalPayrollEarningCodeId</Name>
+			<ExtendedDataType>PayrollEarningCodeId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Additional earning code</Label>
+			<Mandatory>Yes</Mandatory>
 		</AxTableField>
 	</Fields>
 	<FullTextIndexes />
@@ -266,6 +287,22 @@ public class NVHcmCompensationLevelPayroll extends common
 					i:type="AxTableRelationConstraintField">
 					<Name>PayrollEarningCodeId</Name>
 					<Field>PayrollEarningCodeId</Field>
+					<RelatedField>EarningCode</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+		<AxTableRelation>
+			<Name>AdditionalPayrollEarningCode</Name>
+			<Cardinality>ZeroOne</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>PayrollEarningCode</RelatedTable>
+			<RelatedTableCardinality>ZeroOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>AdditionalPayrollEarningCodeId</Name>
+					<Field>AdditionalPayrollEarningCodeId</Field>
 					<RelatedField>EarningCode</RelatedField>
 				</AxTableRelationConstraint>
 			</Constraints>

@@ -6,6 +6,7 @@
 class NVHcmSyncGradeWisePayroll extends RunBaseBatch implements BatchRetryable
 {
     #NVHcmEmailAlertsMacro
+
 }
 ]]></Declaration>
 		<Methods>
@@ -25,7 +26,7 @@ class NVHcmSyncGradeWisePayroll extends RunBaseBatch implements BatchRetryable
     public Object dialog()
     {
         DialogRunbase dialog = super();
-        
+
         return dialog;
     }
 
@@ -76,63 +77,87 @@ class NVHcmSyncGradeWisePayroll extends RunBaseBatch implements BatchRetryable
 				<Source><![CDATA[
     public void run()
     {
-        TransDate curDate = systemDateGet();
-        TransDateTime curDateTime = DateTimeUtil::getSystemDateTime();//DateTimeUtil::newDateTime(curDate, 0);
-        HcmPositionDetail positionDetail;
-        HcmWorker worker;
-        HcmPositionWorkerAssignment workerPosition;
-        NVHcmCompensationLevelPayroll gradePayroll;
+        TransDate                      curDate       = systemDateGet();
+        TransDateTime                  curDateTime   = DateTimeUtil::getSystemDateTime();
+        DataAreaId                     legalEntity   = curext();
+        HcmPositionDetail              positionDetail;
+        HcmWorker                      worker;
+        HcmPositionWorkerAssignment    workerPosition;
+        NVHcmCompensationLevelPayroll  gradePayroll;
 
         while select worker
-            join workerPosition 
-                where workerPosition.Worker == worker.RecId
-                    && workerPosition.ValidFrom <= curDateTime
-                    && workerPosition.ValidTo >= curDateTime
+            join workerPosition
+                where workerPosition.Worker    == worker.RecId
+                   && workerPosition.ValidFrom <= curDateTime
+                   && workerPosition.ValidTo   >= curDateTime
             join positionDetail
-                where positionDetail.Position == workerPosition.Position
-                    && positionDetail.ValidFrom <= curDateTime
-                    && positionDetail.ValidTo >= curDateTime
+                where positionDetail.Position  == workerPosition.Position
+                   && positionDetail.ValidFrom <= curDateTime
+                   && positionDetail.ValidTo   >= curDateTime
             join gradePayroll
-                where gradePayroll.CompensationLevelId == positionDetail.NVLegalGrade
-                    && gradePayroll.PayrollEarningCodeId != ''
-                    && gradePayroll.FromDate <= curDate
-                    && gradePayroll.ToDate >= curDate
-                    
+                where gradePayroll.CompensationLevelId  == positionDetail.NVLegalGrade
+                   && gradePayroll.LegalEntity          == legalEntity
+                   && gradePayroll.PayrollEarningCodeId != ''
+                   && gradePayroll.FromDate             <= curDate
+                   && gradePayroll.ToDate               >= curDate
         {
             ttsbegin;
-            PayrollEarningCode earningCode = PayrollEarningCode::findByEarningCode(gradePayroll.PayrollEarningCodeId);
+
+            PayrollEarningCode earningCode =
+                PayrollEarningCode::findByEarningCode(
+                    gradePayroll.PayrollEarningCodeId);
+
             PayrollWorkerPositionEarningCode workerPositionEarningCode;
 
             select workerPositionEarningCode
-                where workerPositionEarningCode.Worker == worker.RecId
-                    && workerPositionEarningCode.Position == positionDetail.Position
-                    && workerPositionEarningCode.EarningCode == earningCode.RecId
-                    && workerPositionEarningCode.ValidFrom <= curDate
-                    && workerPositionEarningCode.ValidTo >= curDate;
+                where workerPositionEarningCode.Worker      == worker.RecId
+                   && workerPositionEarningCode.Position    == positionDetail.Position
+                   && workerPositionEarningCode.EarningCode == earningCode.RecId
+                   && workerPositionEarningCode.ValidFrom   <= curDate
+                   && workerPositionEarningCode.ValidTo     >= curDate;
 
-            if(workerPositionEarningCode)
+            if (workerPositionEarningCode)
             {
-                if(workerPositionEarningCode.Formula != gradePayroll.SalaryAmount)
+                if (workerPositionEarningCode.Formula != gradePayroll.SalaryAmount)
                 {
                     workerPositionEarningCode.selectForUpdate(true);
-                    workerPositionEarningCode.validTimeStateUpdateMode(ValidTimeStateUpdate::Correction);
-                    workerPositionEarningCode.Formula = gradePayroll.SalaryAmount;
+                    workerPositionEarningCode.validTimeStateUpdateMode(
+                        ValidTimeStateUpdate::Correction);
+
+                    workerPositionEarningCode.Formula =
+                        gradePayroll.SalaryAmount;
 
                     workerPositionEarningCode.update();
                 }
             }
             else
             {
-                workerPositionEarningCode.Formula = gradePayroll.SalaryAmount;
-                workerPositionEarningCode.EarningCode = earningCode.RecId;
-                workerPositionEarningCode.modifiedField(fieldNum(PayrollWorkerPositionEarningCode, EarningCode));
-                workerPositionEarningCode.Position = positionDetail.Position;
-                workerPositionEarningCode.Worker = worker.RecId;
-                workerPositionEarningCode.ValidFrom = gradePayroll.FromDate;
-                workerPositionEarningCode.ValidTo = gradePayroll.ToDate;
+                workerPositionEarningCode.Formula =
+                    gradePayroll.SalaryAmount;
+
+                workerPositionEarningCode.EarningCode =
+                    earningCode.RecId;
+
+                workerPositionEarningCode.modifiedField(
+                    fieldNum(
+                        PayrollWorkerPositionEarningCode,
+                        EarningCode));
+
+                workerPositionEarningCode.Position =
+                    positionDetail.Position;
+
+                workerPositionEarningCode.Worker =
+                    worker.RecId;
+
+                workerPositionEarningCode.ValidFrom =
+                    gradePayroll.FromDate;
+
+                workerPositionEarningCode.ValidTo =
+                    gradePayroll.ToDate;
 
                 workerPositionEarningCode.insert();
             }
+
             ttscommit;
         }
     }
@@ -175,11 +200,13 @@ class NVHcmSyncGradeWisePayroll extends RunBaseBatch implements BatchRetryable
     static void main(Args args)
     {
         NVHcmSyncGradeWisePayroll job;
-        
+
         job = NVHcmSyncGradeWisePayroll::construct();
 
-        if(job.prompt())
+        if (job.prompt())
+        {
             job.runOperation();
+        }
     }
 
 ]]></Source>

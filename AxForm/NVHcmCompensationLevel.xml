@@ -176,6 +176,9 @@
 					<DataField>FromDate</DataField>
 				</AxFormDataSourceField>
 				<AxFormDataSourceField>
+					<DataField>LegalEntity</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
 					<DataField>MaxSalary</DataField>
 				</AxFormDataSourceField>
 				<AxFormDataSourceField>
@@ -541,6 +544,15 @@
 									i:nil="true" />
 								<Controls>
 									<AxFormControl xmlns=""
+										i:type="AxFormStringControl">
+										<Name>NVHcmCompensationLevelPayroll_LegalEntity</Name>
+										<Type>String</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataField>LegalEntity</DataField>
+										<DataSource>NVHcmCompensationLevelPayroll</DataSource>
+									</AxFormControl>
+									<AxFormControl xmlns=""
 										i:type="AxFormDateControl">
 										<Name>NVHcmCompensationLevelPayroll_FromDate</Name>
 										<Type>Date</Type>
@@ -621,6 +633,15 @@
 										<FormControlExtension
 											i:nil="true" />
 										<DataField>PayrollEarningCodeId</DataField>
+										<DataSource>NVHcmCompensationLevelPayroll</DataSource>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormStringControl">
+										<Name>NVHcmCompensationLevelPayroll_AdditionalPayrollEarningCodeId</Name>
+										<Type>String</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataField>AdditionalPayrollEarningCodeId</DataField>
 										<DataSource>NVHcmCompensationLevelPayroll</DataSource>
 									</AxFormControl>
 								</Controls>

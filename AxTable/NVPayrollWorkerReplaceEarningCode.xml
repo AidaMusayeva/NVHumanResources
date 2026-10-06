@@ -5,8 +5,6 @@
 		<Declaration><![CDATA[
 public class NVPayrollWorkerReplaceEarningCode extends common
 {
-
-
 }
 ]]></Declaration>
 		<Methods>
@@ -55,17 +53,17 @@ public class NVPayrollWorkerReplaceEarningCode extends common
         NVPayrollWorkerReplaceEarningCode payrollWorkerReplaceEarningCode;
 
         select firstonly payrollWorkerReplaceEarningCode
-             where payrollWorkerReplaceEarningCode.ReplacedPosition == _positionRecId
-                && (_checkDate == dateNull() ||
-                    (payrollWorkerReplaceEarningCode.StartDate <= _checkDate && payrollWorkerReplaceEarningCode.EndDate >= _checkDate))
-            ;
+            where payrollWorkerReplaceEarningCode.ReplacedPosition == _positionRecId
+               && (_checkDate == dateNull()
+                || (payrollWorkerReplaceEarningCode.StartDate <= _checkDate
+                && payrollWorkerReplaceEarningCode.EndDate >= _checkDate));
 
-        boolean ret = (payrollWorkerReplaceEarningCode.RecId != 0);
+        boolean ret = payrollWorkerReplaceEarningCode.RecId != 0;
 
-        if(ret)
+        if (ret)
         {
-            HcmPosition position    = HcmPosition::find(payrollWorkerReplaceEarningCode.ReplacedPosition);
-            HcmWorker   worker      = HcmWorker::find(payrollWorkerReplaceEarningCode.Worker);
+            HcmPosition position = HcmPosition::find(payrollWorkerReplaceEarningCode.ReplacedPosition);
+            HcmWorker worker = HcmWorker::find(payrollWorkerReplaceEarningCode.Worker);
 
             warning(strFmt("%1 position is assigned to %2 as temporary replacement.", position.PositionId, worker.PersonnelNumber));
         }
@@ -78,18 +76,14 @@ public class NVPayrollWorkerReplaceEarningCode extends common
 			<Method>
 				<Name>find</Name>
 				<Source><![CDATA[
-    public static NVPayrollWorkerReplaceEarningCode find(
-        RefRecId            _recId,
-        boolean             _forUpdate = false)
+    public static NVPayrollWorkerReplaceEarningCode find(RefRecId _recId, boolean _forUpdate = false)
     {
         NVPayrollWorkerReplaceEarningCode payrollWorkerReplaceEarningCode;
-        ValidFromDate  validFrom = DateTimeUtil::getSystemDate(DateTimeUtil::getUserPreferredTimeZone());
-        ValidToDate    validTo   = dateMax();
 
-        payrollWorkerReplaceEarningCode.selectForUpdate(_forUpdate );
-       
+        payrollWorkerReplaceEarningCode.selectForUpdate(_forUpdate);
+
         select firstonly payrollWorkerReplaceEarningCode
-             where payrollWorkerReplaceEarningCode.RecId == _recId;
+            where payrollWorkerReplaceEarningCode.RecId == _recId;
 
         return payrollWorkerReplaceEarningCode;
     }
@@ -107,22 +101,57 @@ public class NVPayrollWorkerReplaceEarningCode extends common
 ]]></Source>
 			</Method>
 			<Method>
+				<Name>findBasicSalary</Name>
+				<Source><![CDATA[
+    private AmountCur findBasicSalary(HcmPositionRecId _positionRecId)
+    {
+        NVHcmCompensationLevelPayroll gradePayroll;
+        HcmPositionDetail positionDetail;
+        TransDate currentDate = systemDateGet();
+        DataAreaId legalEntity = curext();
+
+        if (!_positionRecId)
+        {
+            return 0;
+        }
+
+        positionDetail = HcmPositionDetail::findByPosition(_positionRecId);
+
+        if (!positionDetail)
+        {
+            return 0;
+        }
+
+        select firstOnly gradePayroll
+            order by gradePayroll.FromDate desc
+            where gradePayroll.CompensationLevelId == positionDetail.NVLegalGrade
+               && gradePayroll.LegalEntity == legalEntity
+               && gradePayroll.PayrollEarningCodeId != ''
+               && gradePayroll.AdditionalPayrollEarningCodeId != ''
+               && gradePayroll.FromDate <= currentDate
+               && gradePayroll.ToDate >= currentDate;
+
+        return gradePayroll.SalaryAmount;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
 				<Name>validateField</Name>
 				<Source><![CDATA[
     public boolean validateField(FieldId _fieldIdToCheck)
     {
-        boolean ret;
+        boolean ret = super(_fieldIdToCheck);
 
-        ret = super(_fieldIdToCheck);
-
-        if(_fieldIdToCheck == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedPosition))
+        if (_fieldIdToCheck == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedPosition))
         {
             HcmWorkerRecId workerRecId = HcmPositionWorkerAssignment::findByPosition(this.ReplacedPosition).Worker;
-            if(this.ReplacedWorker != 0 && workerRecId != this.ReplacedWorker)
+
+            if (this.ReplacedWorker != 0 && workerRecId != this.ReplacedWorker)
             {
-                HcmWorker   worker      = HcmWorker::find(this.ReplacedWorker);
-                HcmPosition position    = HcmPosition::find(this.ReplacedPosition);
-                
+                HcmWorker worker = HcmWorker::find(this.ReplacedWorker);
+                HcmPosition position = HcmPosition::find(this.ReplacedPosition);
+
                 ret = checkFailed(strFmt("%1 not assigned to %2.", position.description(), worker.name()));
             }
         }
@@ -139,23 +168,34 @@ public class NVPayrollWorkerReplaceEarningCode extends common
     {
         super(_fieldId);
 
-        if(_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacementMethod))
+        if (_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacementMethod))
         {
-            if(this.ReplacementMethod != NVPayrollReplacementMethod::Fixed)
+            if (this.ReplacementMethod != NVPayrollReplacementMethod::Fixed)
             {
                 this.Formula = 1;
             }
         }
-        else if(_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedWorker))
+        else if (_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedWorker))
         {
-            if(this.ReplacedPosition == 0)
+            if (this.ReplacedPosition == 0)
             {
-                this.ReplacedPosition   = HcmPosition::findByPosition(HcmWorker::find(this.ReplacedWorker).primaryPositionId()).RecId;
+                this.ReplacedPosition = HcmPosition::findByPosition(HcmWorker::find(this.ReplacedWorker).primaryPositionId()).RecId;
             }
         }
-        else if(_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedPosition))
+        else if (_fieldId == fieldNum(NVPayrollWorkerReplaceEarningCode, ReplacedPosition))
         {
-            this.ReplacedWorker         = HcmPositionWorkerAssignment::findByPosition(this.ReplacedPosition).Worker;
+            HcmPositionWorkerAssignment positionAssignment = HcmPositionWorkerAssignment::findByPosition(this.ReplacedPosition);
+
+            if (positionAssignment)
+            {
+                this.ReplacedWorker = positionAssignment.Worker;
+            }
+            else
+            {
+                this.ReplacedWorker = 0;
+                this.ReplacementMethod = NVPayrollReplacementMethod::Fixed;
+                this.Formula = this.findBasicSalary(this.ReplacedPosition) * PayrollParameters::find().NVTempPosPayrollPercent/100;
+            }
         }
     }
 
@@ -166,12 +206,11 @@ public class NVPayrollWorkerReplaceEarningCode extends common
 				<Source><![CDATA[
     public boolean validateWrite()
     {
-        boolean ret;
+        boolean ret = super();
 
-        ret = super();
-
-        if (this.ReplacedEarningCode == 0 &&
-            ((this.ReplacementMethod == NVPayrollReplacementMethod::Percentage && this.ReplacementMethodPerc == NVPayrollReplacementMethodPerc::ReplacedWorker)
+        if (this.ReplacedEarningCode == 0
+            && ((this.ReplacementMethod == NVPayrollReplacementMethod::Percentage
+            && this.ReplacementMethodPerc == NVPayrollReplacementMethodPerc::ReplacedWorker)
             || this.ReplacementMethod == NVPayrollReplacementMethod::Difference))
         {
             ret = checkFailed(strFmt("%1 must be filled in.", fieldPName(NVPayrollWorkerReplaceEarningCode, ReplacedEarningCode)));
@@ -182,13 +221,13 @@ public class NVPayrollWorkerReplaceEarningCode extends common
             ret = checkFailed(strFmt("%1 must be %2, if worker is not selected.", fieldPName(NVPayrollWorkerReplaceEarningCode, ReplacementMethod), this.ReplacementMethod));
         }
 
-        if(ret
-            && this.Position    != 0
-            && this.Worker      != 0
+        if (ret
+            && this.Position != 0
+            && this.Worker != 0
             && !HcmPositionWorkerAssignment::existPositionWorker(this.Position, this.Worker))
         {
-            HcmPosition position    = HcmPosition::find(this.Position);
-            HcmWorker   worker      = HcmWorker::find(this.Worker);
+            HcmPosition position = HcmPosition::find(this.Position);
+            HcmWorker worker = HcmWorker::find(this.Worker);
 
             ret = checkFailed(strFmt("Position '%1' not assigned to worker '%2'", position.PositionId, worker.PersonnelNumber));
         }

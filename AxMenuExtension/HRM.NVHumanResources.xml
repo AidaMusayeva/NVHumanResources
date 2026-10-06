@@ -165,6 +165,12 @@
 						<MenuItemName>NVHcmPositionStructureImport</MenuItemName>
 						<MenuItemType>Action</MenuItemType>
 					</AxMenuElement>
+					<AxMenuElement xmlns=""
+						i:type="AxMenuElementMenuItem">
+						<Name>NVHcmWorkerPositionCalendarImport</Name>
+						<MenuItemName>NVHcmWorkerPositionCalendarImport</MenuItemName>
+						<MenuItemType>Action</MenuItemType>
+					</AxMenuElement>
 				</Elements>
 			</MenuElement>
 		</AxMenuExtensionElement>

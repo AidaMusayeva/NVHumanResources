@@ -114,7 +114,7 @@ public class NVWorkerHireSlider extends FormRun
 						<Type>String</Type>
 						<FormControlExtension
 							i:nil="true" />
-						<Label>Personal NO</Label>
+						<Label>Fin Kod</Label>
 					</AxFormControl>
 					<AxFormControl xmlns=""
 						i:type="AxFormStringControl">
@@ -123,7 +123,8 @@ public class NVWorkerHireSlider extends FormRun
 						<Type>String</Type>
 						<FormControlExtension
 							i:nil="true" />
-						<Label>Card NO</Label>
+						<Label>ŞV seriya və nömrə
+ </Label>
 					</AxFormControl>
 				</Controls>
 				<Style>DialogContent</Style>
